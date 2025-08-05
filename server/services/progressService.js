@@ -74,42 +74,82 @@ function sendSSEEvent(res, event, data) {
  * @returns {Function} Função para manter a conexão ativa (keepAlive)
  */
 function registerConnection(clientId, res, type = 'progress') {
-  // Configurar cabeçalhos para SSE
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Cache-Control'
+  console.log(`🔍 [DEBUG-REGISTER-CONNECTION] ===== INICIANDO REGISTRO DE CONEXÃO SSE =====`);
+  console.log(`🔍 [DEBUG-REGISTER-CONNECTION] clientId: ${clientId}`);
+  console.log(`🔍 [DEBUG-REGISTER-CONNECTION] type: ${type}`);
+  console.log(`🔍 [DEBUG-REGISTER-CONNECTION] res object:`, res ? 'presente' : 'ausente');
+  console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Estado atual do Map:`, {
+    totalConexoes: sseConnections.size,
+    chaves: Array.from(sseConnections.keys())
   });
   
+  // Configurar cabeçalhos para SSE
+  console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Configurando headers SSE...`);
+  try {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Cache-Control'
+    });
+    console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Headers SSE configurados com sucesso`);
+  } catch (error) {
+    console.error(`❌ [DEBUG-REGISTER-CONNECTION] Erro ao configurar headers:`, error);
+    return null;
+  }
+  
   // Enviar evento inicial baseado no tipo
-  if (type === 'progress') {
-    sendSSEEvent(res, 'progress', {
-      percentage: 0,
-      message: 'Iniciando análise...',
-      step: 1,
-      stepStatus: 'active'
-    });
-  } else if (type === 'processes') {
-    // Enviar processos ativos existentes
-    const userProcesses = activeProcesses.get(clientId);
-    const processes = userProcesses ? Array.from(userProcesses.values()) : [];
-    
-    sendSSEEvent(res, 'processes-list', {
-      processes: processes,
-      totalProcesses: processes.length
-    });
+  console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Enviando evento inicial para tipo: ${type}`);
+  try {
+    if (type === 'progress') {
+      sendSSEEvent(res, 'progress', {
+        percentage: 0,
+        message: 'Iniciando análise...',
+        step: 1,
+        stepStatus: 'active'
+      });
+    } else if (type === 'processes') {
+      // Enviar processos ativos existentes
+      const userProcesses = activeProcesses.get(clientId);
+      const processes = userProcesses ? Array.from(userProcesses.values()) : [];
+      
+      console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Enviando ${processes.length} processos ativos existentes`);
+      sendSSEEvent(res, 'processes-list', {
+        processes: processes,
+        totalProcesses: processes.length
+      });
+    }
+    console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Evento inicial enviado com sucesso`);
+  } catch (error) {
+    console.error(`❌ [DEBUG-REGISTER-CONNECTION] Erro ao enviar evento inicial:`, error);
   }
   
   // Função para manter a conexão ativa
+  console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Criando keepAlive interval...`);
   const keepAlive = setInterval(() => {
-    res.write(': keepalive\n\n');
+    try {
+      res.write(': keepalive\n\n');
+    } catch (error) {
+      console.error(`❌ [DEBUG-REGISTER-CONNECTION] Erro no keepAlive:`, error);
+      clearInterval(keepAlive);
+    }
   }, 30000);
+  console.log(`🔍 [DEBUG-REGISTER-CONNECTION] keepAlive criado:`, keepAlive ? 'sucesso' : 'falha');
   
   // Armazenar a conexão para uso posterior com identificação do tipo
   const connectionKey = type === 'processes' ? `${clientId}_processes` : clientId;
+  console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Chave da conexão: ${connectionKey}`);
+  
+  console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Adicionando conexão ao Map...`);
   sseConnections.set(connectionKey, res);
+  
+  console.log(`🔍 [DEBUG-REGISTER-CONNECTION] ===== CONEXÃO REGISTRADA COM SUCESSO =====`);
+  console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Estado final do Map:`, {
+    totalConexoes: sseConnections.size,
+    chaves: Array.from(sseConnections.keys()),
+    conexaoAdicionada: sseConnections.has(connectionKey)
+  });
   
   return keepAlive;
 }

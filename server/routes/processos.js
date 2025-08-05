@@ -57,20 +57,34 @@ router.delete('/:processId', requireAuth, async (req, res) => {
 router.get('/sse', requireAuth, (req, res) => {
   const userId = req.user._id.toString();
   
-  console.log(`🔌 [SSE-PROCESSOS] Nova conexão SSE para painel de processos - Usuário: ${userId}`);
+  console.log(`🔌 [SSE-PROCESSOS] ===== NOVA CONEXÃO SSE INICIADA =====`);
+  console.log(`🔌 [SSE-PROCESSOS] Usuário: ${userId}`);
+  console.log(`🔌 [SSE-PROCESSOS] IP: ${req.ip}`);
+  console.log(`🔌 [SSE-PROCESSOS] User-Agent: ${req.get('User-Agent')}`);
+  console.log(`🔌 [SSE-PROCESSOS] Headers Accept: ${req.get('Accept')}`);
   
   // Registrar conexão SSE específica para processos
+  console.log(`🔌 [SSE-PROCESSOS] Chamando progressService.registerConnection...`);
   const keepAlive = progressService.registerConnection(userId, res, 'processes');
+  console.log(`🔌 [SSE-PROCESSOS] registerConnection retornou:`, keepAlive ? 'keepAlive function' : 'undefined');
+  
+  // Verificar se a conexão foi realmente registrada
+  const connectionKey = `${userId}_processes`;
+  console.log(`🔌 [SSE-PROCESSOS] Verificando se conexão ${connectionKey} foi registrada...`);
   
   // Cleanup quando conexão for fechada
   req.on('close', () => {
-    console.log(`🔌 [SSE-PROCESSOS] Conexão SSE fechada - Usuário: ${userId}`);
-    progressService.removeConnection(`${userId}_processes`, keepAlive);
+    console.log(`🔌 [SSE-PROCESSOS] ===== CONEXÃO SSE FECHADA =====`);
+    console.log(`🔌 [SSE-PROCESSOS] Usuário: ${userId}`);
+    console.log(`🔌 [SSE-PROCESSOS] Removendo conexão ${connectionKey}...`);
+    progressService.removeConnection(connectionKey, keepAlive);
   });
   
   req.on('error', (error) => {
-    console.error(`❌ [SSE-PROCESSOS] Erro na conexão SSE - Usuário: ${userId}`, error);
-    progressService.removeConnection(`${userId}_processes`, keepAlive);
+    console.error(`❌ [SSE-PROCESSOS] ===== ERRO NA CONEXÃO SSE =====`);
+    console.error(`❌ [SSE-PROCESSOS] Usuário: ${userId}`);
+    console.error(`❌ [SSE-PROCESSOS] Erro:`, error);
+    progressService.removeConnection(connectionKey, keepAlive);
   });
 });
 

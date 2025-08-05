@@ -101,6 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // ===== GERENCIADOR DE PROCESSOS ATIVOS =====
   class ActiveProcessesManager {
     constructor() {
+      console.log(`🔍 [DEBUG-FRONTEND] ===== INICIALIZANDO ActiveProcessesManager =====`);
+      
       this.panel = document.getElementById('active-processes-panel');
       this.processList = document.getElementById('processes-list');
       this.processCount = document.getElementById('process-count');
@@ -108,18 +110,32 @@ document.addEventListener('DOMContentLoaded', () => {
       this.eventSource = null;
       this.processes = new Map();
       
+      console.log(`🔍 [DEBUG-FRONTEND] Elementos encontrados:`, {
+        panel: this.panel ? 'presente' : 'ausente',
+        processList: this.processList ? 'presente' : 'ausente',
+        processCount: this.processCount ? 'presente' : 'ausente',
+        appWrapper: this.appWrapper ? 'presente' : 'ausente'
+      });
+      
       this.init();
     }
     
     init() {
+      console.log(`🔍 [DEBUG-FRONTEND] ===== INICIANDO INICIALIZAÇÃO =====`);
+      
       // Carregar processos ativos existentes
+      console.log(`🔍 [DEBUG-FRONTEND] Carregando processos ativos existentes...`);
       this.loadActiveProcesses();
       
       // Iniciar conexão SSE
+      console.log(`🔍 [DEBUG-FRONTEND] Iniciando conexão SSE...`);
       this.startSSEConnection();
       
       // Configurar eventos de clique nos processos
+      console.log(`🔍 [DEBUG-FRONTEND] Configurando event listeners...`);
       this.setupEventListeners();
+      
+      console.log(`🔍 [DEBUG-FRONTEND] ===== INICIALIZAÇÃO CONCLUÍDA =====`);
     }
     
     async loadActiveProcesses() {
@@ -140,18 +156,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     startSSEConnection() {
+      console.log(`🔍 [DEBUG-SSE] ===== INICIANDO CONEXÃO SSE =====`);
+      
       // Fechar conexão anterior se existir
       if (this.eventSource) {
         console.log('🔍 [DEBUG-SSE] Fechando conexão SSE anterior');
+        console.log('🔍 [DEBUG-SSE] Estado da conexão anterior:', this.eventSource.readyState);
         this.eventSource.close();
       }
       
       // Abrir nova conexão SSE
       console.log('🔍 [DEBUG-SSE] Abrindo nova conexão SSE para /api/processos/sse');
-      this.eventSource = new EventSource('/api/processos/sse');
+      console.log('🔍 [DEBUG-SSE] URL completa:', window.location.origin + '/api/processos/sse');
+      
+      try {
+        this.eventSource = new EventSource('/api/processos/sse');
+        console.log('🔍 [DEBUG-SSE] EventSource criado com sucesso');
+        console.log('🔍 [DEBUG-SSE] Estado inicial da conexão:', this.eventSource.readyState);
+      } catch (error) {
+        console.error('❌ [DEBUG-SSE] Erro ao criar EventSource:', error);
+        return;
+      }
       
       this.eventSource.addEventListener('open', () => {
-        console.log('✅ [DEBUG-SSE] Conexão SSE estabelecida com sucesso');
+        console.log('✅ [DEBUG-SSE] ===== CONEXÃO SSE ESTABELECIDA COM SUCESSO =====');
+        console.log('🔍 [DEBUG-SSE] Estado da conexão:', this.eventSource.readyState);
+        console.log('🔍 [DEBUG-SSE] URL da conexão:', this.eventSource.url);
+      });
+      
+      this.eventSource.addEventListener('message', (event) => {
+        console.log('🔍 [DEBUG-SSE] Evento message genérico recebido:', event.data);
+      });
+      
+      this.eventSource.addEventListener('processes-list', (event) => {
+        console.log('🔍 [DEBUG-SSE] Evento processes-list recebido:', event.data);
+        const data = JSON.parse(event.data);
+        // Processar lista inicial de processos se necessário
+      });
+      
+      this.eventSource.addEventListener('process-registered', (event) => {
+        console.log('🔍 [DEBUG-SSE] Evento process-registered recebido:', event.data);
+        const data = JSON.parse(event.data);
+        this.addProcess(data.process);
       });
       
       this.eventSource.addEventListener('process-update', (event) => {
@@ -179,11 +225,28 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       
       this.eventSource.addEventListener('error', (event) => {
-        console.log('❌ [DEBUG-SSE] Erro na conexão SSE:', event);
-        console.log('🔍 [DEBUG-SSE] ReadyState:', this.eventSource.readyState);
-        console.log('🔄 [DEBUG-SSE] Tentando reconectar em 5 segundos...');
-        setTimeout(() => this.startSSEConnection(), 5000);
+        console.error('❌ [DEBUG-SSE] ===== ERRO NA CONEXÃO SSE =====');
+        console.error('❌ [DEBUG-SSE] Evento de erro:', event);
+        console.error('❌ [DEBUG-SSE] ReadyState:', this.eventSource.readyState);
+        console.error('❌ [DEBUG-SSE] URL:', this.eventSource.url);
+        
+        // ReadyState: 0 = CONNECTING, 1 = OPEN, 2 = CLOSED
+        if (this.eventSource.readyState === 2) {
+          console.log('🔄 [DEBUG-SSE] Conexão fechada, tentando reconectar em 5 segundos...');
+          setTimeout(() => this.startSSEConnection(), 5000);
+        } else {
+          console.log('🔍 [DEBUG-SSE] Conexão ainda ativa, aguardando...');
+        }
       });
+      
+      // Timeout de segurança para detectar se a conexão não abre
+      setTimeout(() => {
+        if (this.eventSource && this.eventSource.readyState === 0) {
+          console.error('❌ [DEBUG-SSE] TIMEOUT: Conexão SSE não foi estabelecida em 10 segundos');
+          console.error('❌ [DEBUG-SSE] ReadyState ainda é CONNECTING (0)');
+          console.error('❌ [DEBUG-SSE] Possível problema de autenticação ou rota');
+        }
+      }, 10000);
     }
     
     handleProcessUpdate(data) {
