@@ -1019,20 +1019,26 @@ ${currentAnalysisData.analysis}`;
     // Ordenar clientes por nome
     clients.sort((a, b) => a.nome.localeCompare(b.nome));
     
-    clientList.innerHTML = clients.map(client => `
-      <div class="client-item" data-id="${client._id}">
-        <div class="client-item-logo">
-          ${client.logo 
-            ? `<img src="${client.logo}" alt="${client.nome}">`
-            : `<i class="fas fa-building"></i>`
-          }
+    clientList.innerHTML = clients.map(client => {
+      // Aplicar cor personalizada do cliente como background
+      const clientColor = client.cor || '#6a5acd'; // cor padrão se não definida
+      const backgroundStyle = `background-color: ${hexToRgba(clientColor, 0.1)};`;
+      
+      return `
+        <div class="client-item" data-id="${client._id}" style="${backgroundStyle}">
+          <div class="client-item-logo">
+            ${client.logo 
+              ? `<img src="${client.logo}" alt="${client.nome}">`
+              : `<i class="fas fa-building"></i>`
+            }
+          </div>
+          <div class="client-item-info">
+            <h4>${client.nome}</h4>
+            <p>CNPJ: ${formatCnpj(client.cnpj)}</p>
+          </div>
         </div>
-        <div class="client-item-info">
-          <h4>${client.nome}</h4>
-          <p>CNPJ: ${formatCnpj(client.cnpj)}</p>
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
     
     // Adicionar evento de clique para cada cliente
     document.querySelectorAll('.client-item').forEach(item => {
@@ -2500,6 +2506,19 @@ ${currentAnalysisData.analysis}`;
     
     // Aplicar máscara XX.XXX.XXX/XXXX-XX
     return numericCnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+  }
+  
+  // Converter cor hexadecimal para rgba com transparência
+  function hexToRgba(hex, alpha) {
+    // Remover # se presente
+    hex = hex.replace('#', '');
+    
+    // Converter para RGB
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
   
   // ===== EVENTOS DE ANÁLISE =====
