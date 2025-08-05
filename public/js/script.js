@@ -163,6 +163,11 @@ document.addEventListener('DOMContentLoaded', () => {
         this.handleProcessError(data);
       });
       
+      this.eventSource.addEventListener('process-auto-removed', (event) => {
+        const data = JSON.parse(event.data);
+        this.handleProcessAutoRemoved(data);
+      });
+      
       this.eventSource.addEventListener('error', () => {
         console.log('Conexão SSE perdida, tentando reconectar...');
         setTimeout(() => this.startSSEConnection(), 5000);
@@ -187,6 +192,11 @@ document.addEventListener('DOMContentLoaded', () => {
         process.mensagem = 'Processo concluído!';
         process.resourceId = data.resourceId;
         this.updateUI();
+        
+        // Agendar remoção automática após 8 segundos (um pouco antes do backend)
+        setTimeout(() => {
+          this.removeProcess(data.processId);
+        }, 8000);
       }
     }
     
@@ -197,6 +207,11 @@ document.addEventListener('DOMContentLoaded', () => {
         process.mensagem = data.erro || 'Erro no processamento';
         this.updateUI();
       }
+    }
+    
+    handleProcessAutoRemoved(data) {
+      // Remover processo automaticamente (chamado pelo backend)
+      this.removeProcess(data.processId);
     }
     
     addProcess(processData) {

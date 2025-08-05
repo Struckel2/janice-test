@@ -329,6 +329,29 @@ function completeActiveProcess(userId, processId, resultData = {}) {
         resourceId: resultData.resourceId,
         process: completedProcess
       });
+      
+      // Agendar remoção automática do processo após 10 segundos
+      setTimeout(() => {
+        if (userProcesses.has(processId)) {
+          userProcesses.delete(processId);
+          
+          // Se não há mais processos, remover o usuário do mapa
+          if (userProcesses.size === 0) {
+            activeProcesses.delete(userId);
+          }
+          
+          // Enviar evento de remoção automática
+          const currentConnection = sseConnections.get(`${userId}_processes`);
+          if (currentConnection) {
+            sendSSEEvent(currentConnection, 'process-auto-removed', {
+              processId,
+              totalProcesses: userProcesses.size
+            });
+          }
+          
+          console.log(`🗑️ [PROCESSO-AUTO-REMOVIDO] ${processId} - Removido automaticamente após conclusão`);
+        }
+      }, 10000); // 10 segundos
     }
     
     console.log(`✅ [PROCESSO-CONCLUÍDO] ${processId} - Tipo: ${process.tipo}`);
