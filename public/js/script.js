@@ -416,6 +416,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     navigateToResult(type, resourceId, processId) {
+      // Remover o processo do painel ANTES de navegar para o resultado
+      if (processId) {
+        this.removeProcess(processId);
+      }
+      
       switch (type) {
         case 'analise':
           viewAnalysis(resourceId);
@@ -426,11 +431,6 @@ document.addEventListener('DOMContentLoaded', () => {
         case 'plano-acao':
           viewActionPlan(resourceId);
           break;
-      }
-      
-      // Remover o processo do painel imediatamente após navegar para o resultado
-      if (processId) {
-        this.removeProcess(processId);
       }
     }
     
