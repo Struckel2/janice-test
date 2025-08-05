@@ -2,28 +2,29 @@ const PDFDocument = require('pdfkit');
 const { uploadPDF } = require('../config/cloudinary');
 
 /**
- * Gera um arquivo PDF com o conteúdo da análise e faz upload para o Cloudinary
- * @param {string} cnpj - CNPJ formatado da empresa
- * @param {string} analysis - Texto da análise completa
+ * Gera um arquivo PDF genérico com o conteúdo fornecido e faz upload para o Cloudinary
+ * @param {Object} options - Opções para geração do PDF
+ * @param {string} options.filename - Nome do arquivo (sem extensão)
+ * @param {string} options.title - Título do documento
+ * @param {string} options.content - Conteúdo do documento
+ * @param {string} options.folder - Pasta no Cloudinary
  * @returns {string} - URL do PDF no Cloudinary
  */
-async function generatePDF(cnpj, analysis) {
+async function generateGenericPDF(options) {
+  const { filename, title, content, folder } = options;
+  
   try {
-    console.log(`\n----- GERANDO PDF PARA O CNPJ ${cnpj} -----`);
-    
-    // Define o nome do arquivo com o CNPJ e timestamp
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `analise_${cnpj.replace(/[^0-9]/g, '')}_${timestamp}`;
+    console.log(`\n----- GERANDO PDF GENÉRICO: ${filename} -----`);
     
     // Cria o documento PDF
     const doc = new PDFDocument({
       size: 'A4',
       margin: 50,
       info: {
-        Title: `Análise de Mercado - CNPJ ${cnpj}`,
-        Author: 'Janice CNPJ Analyzer',
-        Subject: 'Análise de Empresa e Mercado',
-        Keywords: 'análise, mercado, empresa, CNPJ'
+        Title: title,
+        Author: 'Janice Analyzer',
+        Subject: 'Documento Gerado pelo Sistema',
+        Keywords: 'análise, relatório, documento'
       }
     });
     
@@ -32,17 +33,15 @@ async function generatePDF(cnpj, analysis) {
     doc.on('data', buffers.push.bind(buffers));
     
     // Adiciona conteúdo ao PDF
-    doc.fontSize(16).font('Helvetica-Bold').text('ANÁLISE DE MERCADO', { align: 'center' });
-    doc.moveDown();
-    doc.fontSize(12).font('Helvetica-Bold').text(`CNPJ: ${cnpj}`, { align: 'center' });
+    doc.fontSize(16).font('Helvetica-Bold').text(title, { align: 'center' });
     doc.moveDown();
     doc.moveDown();
     
-    // Adiciona o conteúdo da análise
+    // Adiciona o conteúdo
     doc.fontSize(11).font('Helvetica');
     
     // Processa o texto para identificar títulos e melhorar formatação
-    const lines = analysis.split('\n');
+    const lines = content.split('\n');
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       
@@ -91,9 +90,9 @@ async function generatePDF(cnpj, analysis) {
           console.log(`PDF gerado em memória (${pdfBuffer.length} bytes)`);
           
           // Fazer upload para o Cloudinary
-          console.log('Fazendo upload do PDF para o Cloudinary...');
+          console.log(`Fazendo upload do PDF para o Cloudinary na pasta: ${folder}`);
           const uploadResult = await uploadPDF(pdfBuffer, {
-            folder: 'janice/analises',
+            folder: folder,
             public_id: filename,
             format: 'pdf'
           });
@@ -117,6 +116,28 @@ async function generatePDF(cnpj, analysis) {
   }
 }
 
+/**
+ * Gera um arquivo PDF com o conteúdo da análise e faz upload para o Cloudinary
+ * FUNÇÃO MANTIDA PARA COMPATIBILIDADE COM ANÁLISES EXISTENTES
+ * @param {string} cnpj - CNPJ formatado da empresa
+ * @param {string} analysis - Texto da análise completa
+ * @returns {string} - URL do PDF no Cloudinary
+ */
+async function generatePDF(cnpj, analysis) {
+  // Define o nome do arquivo com o CNPJ e timestamp
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const filename = `analise_${cnpj.replace(/[^0-9]/g, '')}_${timestamp}`;
+  
+  // Usar a função genérica com parâmetros específicos para análises
+  return generateGenericPDF({
+    filename: filename,
+    title: `ANÁLISE DE MERCADO - CNPJ ${cnpj}`,
+    content: analysis,
+    folder: 'janice/analises'
+  });
+}
+
 module.exports = {
-  generatePDF
+  generatePDF,
+  generateGenericPDF
 };

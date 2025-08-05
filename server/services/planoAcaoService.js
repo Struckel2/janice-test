@@ -1,6 +1,6 @@
 const axios = require('axios');
 const progressService = require('./progressService');
-const { generatePDF } = require('./pdfGenerator');
+const { generateGenericPDF } = require('./pdfGenerator');
 const Transcricao = require('../models/Transcricao');
 const Analise = require('../models/Analise');
 
@@ -114,7 +114,12 @@ async function generateActionPlan(transcricaoIds, analiseIds, clienteId, titulo)
     console.log('ETAPA 4: Gerando PDF do plano de ação');
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `plano_acao_${clienteId}_${timestamp}`;
-    const pdfUrl = await generatePDF(filename, planoAcao);
+    const pdfUrl = await generateGenericPDF({
+      filename: filename,
+      title: titulo,
+      content: planoAcao,
+      folder: 'janice/planos-acao'
+    });
     console.log(`PDF gerado: ${pdfUrl}`);
     
     progressService.sendProgressUpdate(clienteId, {
