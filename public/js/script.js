@@ -165,6 +165,12 @@ document.addEventListener('DOMContentLoaded', () => {
         this.eventSource.close();
       }
       
+      // Limpar timeout de reconexão se existir
+      if (this.reconnectTimeout) {
+        clearTimeout(this.reconnectTimeout);
+        this.reconnectTimeout = null;
+      }
+      
       // Abrir nova conexão SSE
       console.log('🔍 [DEBUG-SSE] Abrindo nova conexão SSE para /api/processos/sse');
       console.log('🔍 [DEBUG-SSE] URL completa:', window.location.origin + '/api/processos/sse');
@@ -175,6 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('🔍 [DEBUG-SSE] Estado inicial da conexão:', this.eventSource.readyState);
       } catch (error) {
         console.error('❌ [DEBUG-SSE] Erro ao criar EventSource:', error);
+        this.scheduleReconnect();
         return;
       }
       
@@ -232,8 +239,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // ReadyState: 0 = CONNECTING, 1 = OPEN, 2 = CLOSED
         if (this.eventSource.readyState === 2) {
-          console.log('🔄 [DEBUG-SSE] Conexão fechada, tentando reconectar em 5 segundos...');
-          setTimeout(() => this.startSSEConnection(), 5000);
+          console.log('🔄 [DEBUG-SSE] Conexão fechada, agendando reconexão...');
+          this.scheduleReconnect();
         } else {
           console.log('🔍 [DEBUG-SSE] Conexão ainda ativa, aguardando...');
         }
@@ -571,9 +578,29 @@ document.addEventListener('DOMContentLoaded', () => {
       return processId;
     }
     
+    scheduleReconnect() {
+      console.log('🔄 [DEBUG-SSE] Agendando reconexão em 5 segundos...');
+      
+      // Limpar timeout anterior se existir
+      if (this.reconnectTimeout) {
+        clearTimeout(this.reconnectTimeout);
+      }
+      
+      // Agendar nova tentativa de conexão
+      this.reconnectTimeout = setTimeout(() => {
+        console.log('🔄 [DEBUG-SSE] Tentando reconectar...');
+        this.startSSEConnection();
+      }, 5000);
+    }
+    
     destroy() {
       if (this.eventSource) {
         this.eventSource.close();
+      }
+      
+      if (this.reconnectTimeout) {
+        clearTimeout(this.reconnectTimeout);
+        this.reconnectTimeout = null;
       }
     }
   }

@@ -56,14 +56,35 @@ function checkOrphanedProcesses() {
 }
 
 /**
+ * Função para verificar se uma conexão SSE ainda está ativa
+ * @param {Object} res - Objeto de resposta do Express
+ * @returns {Boolean} True se a conexão estiver ativa
+ */
+function isConnectionActive(res) {
+  return res && !res.destroyed && res.writable && !res.finished;
+}
+
+/**
  * Função para enviar eventos SSE formatados corretamente
  * @param {Object} res - Objeto de resposta do Express
  * @param {String} event - Nome do evento
  * @param {Object} data - Dados a serem enviados
+ * @returns {Boolean} True se o evento foi enviado com sucesso
  */
 function sendSSEEvent(res, event, data) {
-  res.write(`event: ${event}\n`);
-  res.write(`data: ${JSON.stringify(data)}\n\n`);
+  try {
+    if (!isConnectionActive(res)) {
+      console.log(`⚠️ [SSE-SEND] Conexão não está ativa para evento: ${event}`);
+      return false;
+    }
+    
+    res.write(`event: ${event}\n`);
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+    return true;
+  } catch (error) {
+    console.error(`❌ [SSE-SEND] Erro ao enviar evento ${event}:`, error);
+    return false;
+  }
 }
 
 /**
@@ -125,16 +146,29 @@ function registerConnection(clientId, res, type = 'progress') {
     console.error(`❌ [DEBUG-REGISTER-CONNECTION] Erro ao enviar evento inicial:`, error);
   }
   
-  // Função para manter a conexão ativa
+  // Função para manter a conexão ativa (keepAlive mais frequente)
   console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Criando keepAlive interval...`);
   const keepAlive = setInterval(() => {
     try {
-      res.write(': keepalive\n\n');
+      if (isConnectionActive(res)) {
+        res.write(': keepalive\n\n');
+      } else {
+        console.log(`⚠️ [DEBUG-REGISTER-CONNECTION] Conexão inativa detectada no keepAlive - limpando interval`);
+        clearInterval(keepAlive);
+        
+        // Remover conexão morta do Map
+        const connectionKey = type === 'processes' ? `${clientId}_processes` : clientId;
+        sseConnections.delete(connectionKey);
+      }
     } catch (error) {
       console.error(`❌ [DEBUG-REGISTER-CONNECTION] Erro no keepAlive:`, error);
       clearInterval(keepAlive);
+      
+      // Remover conexão com erro do Map
+      const connectionKey = type === 'processes' ? `${clientId}_processes` : clientId;
+      sseConnections.delete(connectionKey);
     }
-  }, 30000);
+  }, 15000); // Reduzido de 30s para 15s para manter conexão mais ativa
   console.log(`🔍 [DEBUG-REGISTER-CONNECTION] keepAlive criado:`, keepAlive ? 'sucesso' : 'falha');
   
   // Armazenar a conexão para uso posterior com identificação do tipo
@@ -395,15 +429,29 @@ function completeActiveProcess(userId, processId, resultData = {}) {
     userProcesses.set(processId, completedProcess);
     console.log(`🔍 [DEBUG-COMPLETE] Processo marcado como concluído no Map`);
     
-    // Enviar atualização para o painel de processos se houver conexão SSE
+    // Verificar e enviar atualização para o painel de processos
     const processConnection = sseConnections.get(`${userId}_processes`);
-    if (processConnection) {
-      console.log(`🔍 [DEBUG-COMPLETE] Enviando evento process-complete via SSE para ${userId}`);
-      sendSSEEvent(processConnection, 'process-complete', {
+    console.log(`🔍 [DEBUG-COMPLETE] Verificando conexão SSE para ${userId}_processes:`, {
+      conexaoEncontrada: !!processConnection,
+      conexaoAtiva: processConnection ? isConnectionActive(processConnection) : false,
+      totalConexoes: sseConnections.size,
+      chaves: Array.from(sseConnections.keys())
+    });
+    
+    if (processConnection && isConnectionActive(processConnection)) {
+      console.log(`✅ [DEBUG-COMPLETE] Conexão SSE ativa encontrada - enviando notificação`);
+      
+      const eventSent = sendSSEEvent(processConnection, 'process-complete', {
         processId,
         resourceId: resultData.resourceId,
         process: completedProcess
       });
+      
+      if (eventSent) {
+        console.log(`✅ [DEBUG-COMPLETE] Evento process-complete enviado com sucesso`);
+      } else {
+        console.log(`❌ [DEBUG-COMPLETE] Falha ao enviar evento process-complete`);
+      }
       
       // Agendar remoção automática do processo após 10 segundos
       setTimeout(() => {
@@ -417,16 +465,16 @@ function completeActiveProcess(userId, processId, resultData = {}) {
             console.log(`🔍 [DEBUG-COMPLETE] UserId ${userId} removido do activeProcesses (sem mais processos)`);
           }
           
-          // Enviar evento de remoção automática
+          // Enviar evento de remoção automática se conexão ainda estiver ativa
           const currentConnection = sseConnections.get(`${userId}_processes`);
-          if (currentConnection) {
+          if (currentConnection && isConnectionActive(currentConnection)) {
             console.log(`🔍 [DEBUG-COMPLETE] Enviando evento process-auto-removed via SSE`);
             sendSSEEvent(currentConnection, 'process-auto-removed', {
               processId,
               totalProcesses: userProcesses.size
             });
           } else {
-            console.log(`⚠️ [DEBUG-COMPLETE] NENHUMA conexão SSE encontrada para enviar process-auto-removed`);
+            console.log(`⚠️ [DEBUG-COMPLETE] Conexão SSE não disponível para enviar process-auto-removed`);
           }
           
           console.log(`🗑️ [PROCESSO-AUTO-REMOVIDO] ${processId} - Removido automaticamente após conclusão`);
@@ -434,8 +482,19 @@ function completeActiveProcess(userId, processId, resultData = {}) {
           console.log(`⚠️ [DEBUG-COMPLETE] Processo ${processId} já foi removido do Map`);
         }
       }, 10000); // 10 segundos
+      
+    } else if (processConnection && !isConnectionActive(processConnection)) {
+      console.log(`⚠️ [DEBUG-COMPLETE] Conexão SSE encontrada mas INATIVA - removendo conexão morta`);
+      
+      // Remover conexão morta
+      sseConnections.delete(`${userId}_processes`);
+      
+      // Implementar fallback: marcar processo como concluído para próxima conexão
+      console.log(`🔄 [DEBUG-COMPLETE] FALLBACK: Processo marcado como concluído, será notificado na próxima conexão`);
+      
     } else {
-      console.log(`⚠️ [DEBUG-COMPLETE] NENHUMA conexão SSE encontrada para ${userId}_processes - processo NÃO será notificado como concluído!`);
+      console.log(`⚠️ [DEBUG-COMPLETE] NENHUMA conexão SSE encontrada para ${userId}_processes`);
+      console.log(`🔄 [DEBUG-COMPLETE] FALLBACK: Processo marcado como concluído, será notificado quando cliente reconectar`);
     }
     
     console.log(`✅ [PROCESSO-CONCLUÍDO] ${processId} - Tipo: ${process.tipo}`);
