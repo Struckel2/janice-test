@@ -1,0 +1,485 @@
+a<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Janice - AI Marketing Assistant</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- Painel de Processos Ativos -->
+        <div id="active-processes-panel" class="active-processes-panel hidden">
+            <div class="panel-header">
+                <h3><i class="fas fa-tasks"></i> Processos Ativos</h3>
+                <span class="process-count" id="process-count">0</span>
+            </div>
+            <div class="processes-list" id="processes-list">
+                <!-- Processos dinâmicos serão inseridos aqui -->
+            </div>
+        </div>
+
+        <!-- Painel principal -->
+        <div class="container main-panel">
+        <header>
+            <img src="https://res.cloudinary.com/du9a3e1nj/image/upload/w_450,h_180,c_fit/janice-logo_hkr10i" 
+                 alt="Janice - AI Marketing Assistant" 
+                 class="main-logo">
+        </header>
+
+        <div class="welcome-container" id="welcome-container">
+            <div class="welcome-content">
+                <i class="fas fa-arrow-right"></i>
+                <h2>Selecione um cliente</h2>
+                <p>Escolha um cliente na lista ao lado para visualizar ou criar análises</p>
+            </div>
+        </div>
+
+        <!-- Painel de detalhes do cliente no painel central -->
+        <div class="client-details-panel" id="client-details-panel">
+            <div class="client-details-header">
+                <div class="client-logo" id="central-client-logo">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="client-info">
+                    <h2 id="central-client-name">Nome da Empresa</h2>
+                    <p>CNPJ: <span id="central-client-cnpj"></span></p>
+                </div>
+            </div>
+            
+            <div class="client-actions">
+                <button id="edit-client-btn" class="action-button secondary">
+                    <i class="fas fa-edit"></i> Editar
+                </button>
+                <button id="new-analysis-btn" class="action-button">
+                    <i class="fas fa-chart-line"></i> Nova Análise
+                </button>
+                <button id="new-transcription-btn" class="action-button">
+                    <i class="fas fa-microphone"></i> Nova Transcrição
+                </button>
+                <button id="delete-client-btn" class="action-button danger">
+                    <i class="fas fa-trash-alt"></i> Excluir
+                </button>
+            </div>
+            
+            <div class="client-tabs">
+                <div class="tab-buttons">
+                    <button class="tab-button active" data-tab="analysis">Análises</button>
+                    <button class="tab-button" data-tab="transcriptions">Transcrições</button>
+                    <button class="tab-button" data-tab="action-plans">
+                        Planos de Ação
+                    </button>
+                </div>
+                
+                <div class="tab-content active" id="analysis-tab">
+                    <div class="client-analysis-history">
+                        <h3>Histórico de Análises</h3>
+                        <div id="analysis-list">
+                            <!-- Histórico de análises será carregado dinamicamente -->
+                            <div class="analysis-list-empty">
+                                <i class="fas fa-file-alt"></i>
+                                <p>Nenhuma análise realizada</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="transcriptions-tab">
+                    <div class="client-transcription-history">
+                        <h3>Histórico de Transcrições</h3>
+                        <div id="transcription-list">
+                            <!-- Histórico de transcrições será carregado dinamicamente -->
+                            <div class="transcription-list-empty">
+                                <i class="fas fa-microphone-slash"></i>
+                                <p>Nenhuma transcrição realizada</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="action-plans-tab">
+                    <div class="client-action-plans-history">
+                        <h3>Planos de Ação</h3>
+                        <div class="action-plans-header">
+                            <button id="new-action-plan-btn" class="action-button">
+                                <i class="fas fa-plus"></i> Novo Plano de Ação
+                            </button>
+                        </div>
+                        <div id="action-plans-list">
+                            <!-- Histórico de planos de ação será carregado dinamicamente -->
+                            <div class="action-plans-list-empty">
+                                <i class="fas fa-tasks"></i>
+                                <p>Nenhum plano de ação criado</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="loading-container" id="loading-container">
+            <div class="loading-animation">
+                <div class="spinner"></div>
+            </div>
+            <p class="loading-text">Analisando empresa e mercado...</p>
+            <p class="loading-subtext" id="loading-status">Iniciando análise...</p>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="progress-text" id="progress-text">0%</div>
+            </div>
+            
+            <div class="progress-steps">
+                <div class="progress-step" id="step-1">
+                    <div class="step-indicator pending"></div>
+                    <div class="step-text">Consulta CNPJ</div>
+                </div>
+                <div class="progress-step" id="step-2">
+                    <div class="step-indicator pending"></div>
+                    <div class="step-text">Análise da Empresa</div>
+                </div>
+                <div class="progress-step" id="step-3">
+                    <div class="step-indicator pending"></div>
+                    <div class="step-text">Análise de Mercado</div>
+                </div>
+                <div class="progress-step" id="step-4">
+                    <div class="step-indicator pending"></div>
+                    <div class="step-text">Geração de Relatório</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contêiner para nova análise -->
+        <div class="analysis-container" id="analysis-container">
+            <div class="analysis-header">
+                <h2>Nova Análise Empresarial</h2>
+                <p>Análise completa da empresa e posicionamento de mercado</p>
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Nossa análise combina dados públicos da empresa com inteligência de mercado para gerar insights estratégicos personalizados. O processo leva aproximadamente 2-3 minutos.</p>
+                </div>
+            </div>
+            
+            <div class="analysis-preview">
+                <h3>O que será analisado:</h3>
+                <ul>
+                    <li><i class="fas fa-building"></i> Dados cadastrais e situação da empresa</li>
+                    <li><i class="fas fa-chart-line"></i> Análise de mercado e concorrência</li>
+                    <li><i class="fas fa-target"></i> Oportunidades e recomendações estratégicas</li>
+                    <li><i class="fas fa-file-pdf"></i> Relatório completo em PDF</li>
+                </ul>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" id="cancel-analysis-btn" class="action-button secondary">Cancelar</button>
+                <button type="button" id="start-analysis-btn" class="action-button">Iniciar Análise</button>
+            </div>
+        </div>
+
+        <!-- Contêiner para criação de plano de ação -->
+        <div class="action-plan-container" id="action-plan-container">
+            <div class="action-plan-header">
+                <h2>Novo Plano de Ação</h2>
+                <p>Crie um plano estratégico baseado em transcrições e análises existentes</p>
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    <p>O plano de ação será gerado usando IA avançada (Claude 3.7) para criar estratégias detalhadas com base nos documentos selecionados. O processo leva aproximadamente 2-3 minutos.</p>
+                </div>
+            </div>
+            
+            <form id="action-plan-form">
+                <div class="form-group">
+                    <label for="action-plan-title">Título do Plano de Ação</label>
+                    <input type="text" id="action-plan-title" required placeholder="Ex: Plano Estratégico Q1 2025">
+                </div>
+                
+                <div class="form-group">
+                    <label>Documentos Base</label>
+                    <div class="documents-selection">
+                        <div class="document-type-section">
+                            <h4><i class="fas fa-microphone"></i> Transcrições Disponíveis</h4>
+                            <div id="available-transcriptions" class="document-list">
+                                <div class="no-documents">
+                                    <i class="fas fa-info-circle"></i>
+                                    <p>Nenhuma transcrição disponível</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="document-type-section">
+                            <h4><i class="fas fa-chart-line"></i> Análises Disponíveis</h4>
+                            <div id="available-analyses" class="document-list">
+                                <div class="no-documents">
+                                    <i class="fas fa-info-circle"></i>
+                                    <p>Nenhuma análise disponível</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="selected-documents" id="selected-documents">
+                    <h4>Documentos Selecionados</h4>
+                    <div class="selected-list" id="selected-documents-list">
+                        <div class="no-selection">
+                            <i class="fas fa-hand-pointer"></i>
+                            <p>Selecione pelo menos um documento acima</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" id="cancel-action-plan-btn" class="action-button secondary">Cancelar</button>
+                    <button type="submit" id="start-action-plan-btn" class="action-button" disabled>Gerar Plano de Ação</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Contêiner para visualização do plano de ação -->
+        <div class="action-plan-result-container" id="action-plan-result-container">
+            <div class="action-plan-result-header">
+                <h2 id="action-plan-title-display">Título do Plano de Ação</h2>
+                <div class="action-plan-meta">
+                    <p>Criado em: <span id="action-plan-date"></span></p>
+                    <p>Baseado em: <span id="action-plan-documents-count"></span></p>
+                </div>
+            </div>
+            
+            <div class="action-plan-content">
+                <div id="action-plan-text"></div>
+            </div>
+            
+            <div class="export-actions">
+                <button id="export-action-plan-pdf" class="action-button">
+                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                </button>
+                <button id="copy-action-plan" class="action-button">
+                    <i class="fas fa-copy"></i> Copiar Plano
+                </button>
+                <button id="back-to-client-from-plan" class="action-button secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </button>
+            </div>
+        </div>
+
+        <!-- Contêiner para upload e processamento de transcrições -->
+        <div class="transcription-container" id="transcription-container">
+            <div class="transcription-header">
+                <h2>Nova Transcrição</h2>
+                <p>Faça upload de um arquivo de áudio ou vídeo para transcrição</p>
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Para garantir máxima acurácia, o modelo de transcrição processa o áudio aproximadamente na mesma velocidade que um profissional ouviria - um áudio de 10 minutos leva cerca de 10 minutos para ser transcrito.</p>
+                </div>
+            </div>
+            
+            <form id="transcription-form">
+                <div class="form-group">
+                    <label for="transcription-title">Título da Transcrição</label>
+                    <input type="text" id="transcription-title" required placeholder="Ex: Reunião de Marketing - 25/07/2025">
+                </div>
+                
+                <div class="form-group">
+                    <label for="transcription-language">Idioma Principal</label>
+                    <select id="transcription-language">
+                        <option value="pt">Português</option>
+                        <option value="en">Inglês</option>
+                        <option value="es">Espanhol</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Arquivo de Áudio/Vídeo</label>
+                    <div class="file-upload">
+                        <input type="file" id="transcription-file" accept="audio/*,video/*" required>
+                        <div class="file-upload-placeholder">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Clique para selecionar ou arraste um arquivo de áudio/vídeo</p>
+                            <span class="file-limit-info">Limite: 500MB. Formatos suportados: MP3, WAV, MP4, etc.</span>
+                        </div>
+                        <div class="file-preview" id="audio-preview"></div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" id="cancel-transcription-btn" class="action-button secondary">Cancelar</button>
+                    <button type="submit" id="start-transcription-btn" class="action-button">Iniciar Transcrição</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Contêiner para visualização da transcrição concluída -->
+        <div class="transcription-result-container" id="transcription-result-container">
+            <div class="transcription-result-header">
+                <h2 id="transcription-title-display">Título da Transcrição</h2>
+                <div class="transcription-meta">
+                    <p>Realizada em: <span id="transcription-date"></span></p>
+                    <p>Duração: <span id="transcription-duration"></span></p>
+                </div>
+            </div>
+            
+            <div class="transcription-content">
+                <pre id="transcription-text"></pre>
+            </div>
+            
+            <div class="export-actions">
+                <button id="copy-transcription" class="action-button">
+                    <i class="fas fa-copy"></i> Copiar Texto
+                </button>
+                <button id="export-txt" class="action-button">
+                    <i class="fas fa-file-alt"></i> Exportar TXT
+                </button>
+                <button id="back-to-client" class="action-button secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </button>
+            </div>
+        </div>
+        
+        <div class="result-container" id="result-container">
+            <div class="result-header">
+                <h2 id="company-name">Nome da Empresa</h2>
+                <div class="result-meta">
+                    <p>CNPJ: <span id="result-cnpj"></span></p>
+                    <p>Análise realizada em: <span id="result-date"></span></p>
+                </div>
+            </div>
+
+            <div class="pdf-container">
+                <div class="content-section">
+                    <h3>Relatório Completo</h3>
+                    <p class="pdf-info">O relatório completo foi gerado com sucesso. Você pode visualizá-lo e baixá-lo abaixo.</p>
+                    <div id="pdf-viewer">
+                        <div class="pdf-placeholder">
+                            <i class="fas fa-file-pdf"></i>
+                            <p>Seu relatório estratégico está pronto</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="export-actions">
+                <button id="export-pdf" class="action-button">
+                    <i class="fas fa-file-pdf"></i> Exportar PDF
+                </button>
+                <button id="copy-report" class="action-button">
+                    <i class="fas fa-copy"></i> Copiar Relatório
+                </button>
+            </div>
+        </div>
+
+        <div class="error-container" id="error-container">
+            <div class="error-icon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <h3>Ocorreu um erro</h3>
+            <p id="error-message">Não foi possível processar sua solicitação.</p>
+            <button id="try-again" class="action-button">Tentar Novamente</button>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 Janice | Desenvolvido com IA</p>
+        </footer>
+    </div>
+    
+    <!-- Painel lateral de clientes -->
+    <div class="client-panel">
+        <div class="client-panel-header">
+            <h2>Gerenciamento de Clientes</h2>
+            <button id="new-client-btn" class="action-button">
+                <i class="fas fa-plus"></i> Novo Cliente
+            </button>
+        </div>
+        
+        <div class="client-list-container">
+            <div class="client-search">
+                <input type="text" id="client-search-input" placeholder="Buscar cliente...">
+                <i class="fas fa-search"></i>
+            </div>
+            
+            <div class="client-list" id="client-list">
+                <!-- Lista de clientes será carregada dinamicamente aqui -->
+                <div class="client-list-empty">
+                    <i class="fas fa-users"></i>
+                    <p>Nenhum cliente cadastrado</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Formulário para adicionar/editar cliente -->
+        <div class="client-form-container" id="client-form-container">
+            <h3 id="client-form-title">Novo Cliente</h3>
+            
+            <form id="client-form">
+                <div class="form-group">
+                    <label for="client-name">Nome da Empresa</label>
+                    <input type="text" id="client-name" name="nome" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="client-cnpj">CNPJ</label>
+                    <input type="text" id="client-cnpj" name="cnpj" maxlength="18" required>
+                    <p class="hint">Formato: XX.XXX.XXX/XXXX-XX ou apenas números</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="client-logo">Logo (opcional)</label>
+                    <div class="file-upload">
+                        <input type="file" id="client-logo" name="logo" accept="image/*">
+                        <div class="file-upload-placeholder">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Clique para selecionar ou arraste uma imagem</p>
+                        </div>
+                        <div class="file-preview" id="logo-preview"></div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" id="cancel-client-btn" class="action-button secondary">Cancelar</button>
+                    <button type="submit" id="save-client-btn" class="action-button">Salvar</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Detalhes do cliente (versão simplificada) -->
+        <div class="client-details-container" id="client-details-container">
+            <div class="client-details-header">
+                <div class="client-logo" id="detail-client-logo">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="client-info">
+                    <h3 id="detail-client-name">Nome da Empresa</h3>
+                    <p>CNPJ: <span id="detail-client-cnpj"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Modal de confirmação de exclusão -->
+    <div id="delete-confirm-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirmar Exclusão</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir o cliente <strong id="delete-client-name"></strong>?</p>
+                <p class="warning-text"><i class="fas fa-exclamation-triangle"></i> Esta ação é irreversível e todos os dados deste cliente serão perdidos.</p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-delete-btn" class="action-button secondary">Cancelar</button>
+                <button id="confirm-delete-btn" class="action-button danger">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inputs de arquivo ocultos para upload de logo -->
+    <input type="file" id="central-logo-input" class="logo-file-input" accept="image/*">
+    <input type="file" id="detail-logo-input" class="logo-file-input" accept="image/*">
+
+    <script src="js/script.js"></script>
+</body>
+</html>
