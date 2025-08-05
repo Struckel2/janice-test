@@ -231,9 +231,6 @@ Por favor, aguarde a conclusão do processamento. O conteúdo será atualizado a
     
     await novoPlano.save();
     
-    // O processo será registrado pelo frontend, não duplicar aqui
-    const processId = novoPlano._id.toString(); // Usar o ID do plano como processId
-    
     // Iniciar geração do plano de ação em background
     generateActionPlan(transcricaoIds, analiseIds, clienteId, titulo.trim())
       .then(async (resultado) => {
@@ -247,17 +244,32 @@ Por favor, aguarde a conclusão do processamento. O conteúdo será atualizado a
         
         await novoPlano.save();
         
-        // Marcar processo como concluído usando o ID do plano
-        progressService.completeActiveProcess(processId, {
-          progresso: 100,
-          resultado: 'Plano de ação gerado com sucesso',
-          resourceId: novoPlano._id,
-          detalhes: {
-            planoId: novoPlano._id,
-            pdfUrl: resultado.pdfUrl,
-            totalDocumentos
-          }
-        });
+        // Encontrar o processo correto no Map global que corresponde a este plano
+        const allProcesses = progressService.getAllGlobalProcesses();
+        const matchingProcess = allProcesses.find(p => 
+          p.tipo === 'plano-acao' && 
+          p.titulo === `Plano de Ação: ${titulo.trim()}` &&
+          p.status === 'em-progresso'
+        );
+        
+        if (matchingProcess) {
+          console.log(`🔍 [PLANO-ACAO] Processo encontrado para finalização: ${matchingProcess.id}`);
+          
+          // Marcar processo como concluído usando o ID correto do processo
+          progressService.completeGlobalProcess(matchingProcess.id, {
+            progresso: 100,
+            resultado: 'Plano de ação gerado com sucesso',
+            resourceId: novoPlano._id
+          });
+        } else {
+          console.log(`⚠️ [PLANO-ACAO] Processo não encontrado no Map global para plano: ${novoPlano._id}`);
+          console.log(`🔍 [PLANO-ACAO] Processos disponíveis:`, allProcesses.map(p => ({
+            id: p.id,
+            tipo: p.tipo,
+            titulo: p.titulo,
+            status: p.status
+          })));
+        }
         
         console.log(`Plano de ação ${novoPlano._id} gerado com sucesso`);
       })
@@ -269,8 +281,22 @@ Por favor, aguarde a conclusão do processamento. O conteúdo será atualizado a
         
         await novoPlano.save();
         
-        // Marcar processo como erro usando o ID do plano
-        progressService.errorActiveProcess(processId, error.message);
+        // Encontrar o processo correto no Map global que corresponde a este plano
+        const allProcesses = progressService.getAllGlobalProcesses();
+        const matchingProcess = allProcesses.find(p => 
+          p.tipo === 'plano-acao' && 
+          p.titulo === `Plano de Ação: ${titulo.trim()}` &&
+          p.status === 'em-progresso'
+        );
+        
+        if (matchingProcess) {
+          console.log(`🔍 [PLANO-ACAO] Processo encontrado para marcar erro: ${matchingProcess.id}`);
+          
+          // Marcar processo como erro usando o ID correto do processo
+          progressService.errorGlobalProcess(matchingProcess.id, error.message);
+        } else {
+          console.log(`⚠️ [PLANO-ACAO] Processo não encontrado no Map global para marcar erro do plano: ${novoPlano._id}`);
+        }
         
         console.error(`Erro na geração do plano de ação ${novoPlano._id}:`, error);
       });

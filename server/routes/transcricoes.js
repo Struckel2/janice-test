@@ -320,25 +320,31 @@ router.post('/upload/:clienteId', upload.single('arquivo'), async (req, res) => 
  * @param {String} idioma - Código do idioma
  */
 async function processTranscricaoAsync(filePath, transcricaoId, clienteId, idioma) {
-  // O processo será registrado pelo frontend, não duplicar aqui
-  const processId = transcricaoId; // Usar o ID da transcrição como processId
-  
   try {
     console.log(`=== INICIANDO TRANSCRIÇÃO ${transcricaoId} ===`);
     console.log(`Arquivo: ${filePath}`);
     console.log(`Cliente: ${clienteId}`);
     console.log(`Idioma: ${idioma}`);
-    console.log(`Process ID: ${processId}`);
     
     // Verificar se REPLICATE_API_TOKEN está configurado
     if (!process.env.REPLICATE_API_TOKEN) {
       console.warn('REPLICATE_API_TOKEN não configurado, usando smart-whisper como fallback');
       
-      // Atualizar processo para smart-whisper
-      progressService.updateGlobalProcess(processId, {
-        progresso: 10,
-        mensagem: 'Usando smart-whisper como fallback'
-      });
+      // Encontrar o processo correto no Map global
+      const allProcesses = progressService.getAllGlobalProcesses();
+      const matchingProcess = allProcesses.find(p => 
+        p.tipo === 'transcricao' && 
+        p.cliente && p.cliente._id === clienteId &&
+        p.status === 'em-progresso'
+      );
+      
+      if (matchingProcess) {
+        // Atualizar processo para smart-whisper
+        progressService.updateGlobalProcess(matchingProcess.id, {
+          progresso: 10,
+          mensagem: 'Usando smart-whisper como fallback'
+        });
+      }
       
       // Fallback para smart-whisper
       const resultado = await transcricaoService.transcribeFile(filePath, clienteId, {
@@ -353,12 +359,14 @@ async function processTranscricaoAsync(filePath, transcricaoId, clienteId, idiom
         provider: 'smart-whisper'
       });
       
-      // Marcar processo como concluído
-      progressService.completeGlobalProcess(processId, {
-        progresso: 100,
-        resultado: 'Transcrição concluída com smart-whisper',
-        resourceId: transcricaoId
-      });
+      if (matchingProcess) {
+        // Marcar processo como concluído
+        progressService.completeGlobalProcess(matchingProcess.id, {
+          progresso: 100,
+          resultado: 'Transcrição concluída com smart-whisper',
+          resourceId: transcricaoId
+        });
+      }
       
       console.log(`Transcrição ${transcricaoId} concluída com smart-whisper (fallback)`);
       return;
@@ -367,11 +375,21 @@ async function processTranscricaoAsync(filePath, transcricaoId, clienteId, idiom
     // Usar Replicate como método principal
     console.log('Usando Replicate para transcrição...');
     
-    // Atualizar progresso para Replicate
-    progressService.updateGlobalProcess(processId, {
-      progresso: 15,
-      mensagem: 'Usando Replicate para transcrição'
-    });
+    // Encontrar o processo correto no Map global
+    const allProcesses = progressService.getAllGlobalProcesses();
+    const matchingProcess = allProcesses.find(p => 
+      p.tipo === 'transcricao' && 
+      p.cliente && p.cliente._id === clienteId &&
+      p.status === 'em-progresso'
+    );
+    
+    if (matchingProcess) {
+      // Atualizar progresso para Replicate
+      progressService.updateGlobalProcess(matchingProcess.id, {
+        progresso: 15,
+        mensagem: 'Usando Replicate para transcrição'
+      });
+    }
     
     const resultado = await replicateTranscricaoService.transcribeFile(filePath, clienteId, {
       language: idioma === 'pt' ? 'portuguese' : idioma,
@@ -390,12 +408,14 @@ async function processTranscricaoAsync(filePath, transcricaoId, clienteId, idiom
       processingTime: resultado.processingTime
     });
     
-    // Marcar processo como concluído
-    progressService.completeGlobalProcess(processId, {
-      progresso: 100,
-      resultado: 'Transcrição concluída com Replicate',
-      resourceId: transcricaoId
-    });
+    if (matchingProcess) {
+      // Marcar processo como concluído
+      progressService.completeGlobalProcess(matchingProcess.id, {
+        progresso: 100,
+        resultado: 'Transcrição concluída com Replicate',
+        resourceId: transcricaoId
+      });
+    }
     
     console.log(`Transcrição ${transcricaoId} concluída com sucesso via Replicate`);
     console.log(`Tempo de processamento: ${resultado.processingTime}s`);

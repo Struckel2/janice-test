@@ -202,9 +202,6 @@ async function realizarAnaliseComProgresso(clienteId, cnpj, res, userId) {
     
     await analiseTemp.save();
     
-    // O processo será registrado pelo frontend, não duplicar aqui
-    const processId = analiseTemp._id.toString(); // Usar o ID da análise como processId
-    
     // Enviamos a análise temporária como resposta imediata
     res.status(201).json(analiseTemp);
     
@@ -234,12 +231,32 @@ async function realizarAnaliseComProgresso(clienteId, cnpj, res, userId) {
       
       console.log(`Análise finalizada com sucesso. PDF disponível em: ${result.pdfUrl}`);
       
-      // Marcar processo como concluído
-      progressService.completeGlobalProcess(processId, {
-        progresso: 100,
-        resultado: 'Análise CNPJ concluída com sucesso',
-        resourceId: analiseTemp._id
-      });
+      // Encontrar o processo correto no Map global que corresponde a esta análise
+      const allProcesses = progressService.getAllGlobalProcesses();
+      const matchingProcess = allProcesses.find(p => 
+        p.tipo === 'analise' && 
+        p.cliente && p.cliente._id === clienteId &&
+        p.status === 'em-progresso'
+      );
+      
+      if (matchingProcess) {
+        console.log(`🔍 [ANALISE] Processo encontrado para finalização: ${matchingProcess.id}`);
+        
+        // Marcar processo como concluído usando o ID correto do processo
+        progressService.completeGlobalProcess(matchingProcess.id, {
+          progresso: 100,
+          resultado: 'Análise CNPJ concluída com sucesso',
+          resourceId: analiseTemp._id
+        });
+      } else {
+        console.log(`⚠️ [ANALISE] Processo não encontrado no Map global para análise: ${analiseTemp._id}`);
+        console.log(`🔍 [ANALISE] Processos disponíveis:`, allProcesses.map(p => ({
+          id: p.id,
+          tipo: p.tipo,
+          clienteId: p.cliente ? p.cliente._id : 'N/A',
+          status: p.status
+        })));
+      }
       
       // Enviar evento de conclusão via SSE
       // Isso informará ao frontend que a análise está pronta e o PDF está disponível
@@ -260,8 +277,20 @@ async function realizarAnaliseComProgresso(clienteId, cnpj, res, userId) {
       analiseTemp.emProgresso = false;
       await analiseTemp.save();
       
-      // Marcar processo como erro
-      progressService.errorGlobalProcess(processId, error.message);
+      // Encontrar o processo correto no Map global para marcar erro
+      const allProcesses = progressService.getAllGlobalProcesses();
+      const matchingProcess = allProcesses.find(p => 
+        p.tipo === 'analise' && 
+        p.cliente && p.cliente._id === clienteId &&
+        p.status === 'em-progresso'
+      );
+      
+      if (matchingProcess) {
+        console.log(`🔍 [ANALISE] Processo encontrado para marcar erro: ${matchingProcess.id}`);
+        progressService.errorGlobalProcess(matchingProcess.id, error.message);
+      } else {
+        console.log(`⚠️ [ANALISE] Processo não encontrado no Map global para marcar erro da análise: ${analiseTemp._id}`);
+      }
       
       // Enviar uma atualização final pelo SSE indicando erro
       progressService.sendProgressUpdate(clienteId, {
