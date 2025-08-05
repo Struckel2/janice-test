@@ -3310,6 +3310,43 @@ ${currentAnalysisData.analysis}`;
       // Exibir conteúdo do plano
       actionPlanText.innerHTML = `<div class="markdown-content">${formatMarkdownForActionPlan(plan.conteudo)}</div>`;
       
+      // Configurar botões baseado na disponibilidade do PDF
+      if (plan.pdfUrl) {
+        exportActionPlanPdfBtn.disabled = false;
+        exportActionPlanPdfBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Abrir Relatório PDF';
+        
+        // Criar preview do PDF similar às análises
+        const pdfPreview = document.createElement('div');
+        pdfPreview.className = 'pdf-preview-section';
+        pdfPreview.innerHTML = `
+          <div class="pdf-ready">
+            <div class="pdf-icon">
+              <i class="fas fa-file-pdf"></i>
+            </div>
+            <h3>Relatório PDF Pronto</h3>
+            <p>Seu plano de ação estratégico foi gerado com sucesso e está pronto para visualização.</p>
+            <button class="open-pdf-btn" onclick="window.open('/api/planos-acao/pdf/${plan._id}', '_blank')">
+              <i class="fas fa-external-link-alt"></i> Abrir Relatório PDF
+            </button>
+            <div class="pdf-info">
+              <small><i class="fas fa-info-circle"></i> O PDF será aberto em uma nova aba do navegador</small>
+            </div>
+          </div>
+        `;
+        
+        // Inserir preview após o conteúdo do plano
+        actionPlanText.parentNode.insertBefore(pdfPreview, actionPlanText.nextSibling);
+      } else {
+        exportActionPlanPdfBtn.disabled = true;
+        exportActionPlanPdfBtn.innerHTML = '<i class="fas fa-file-pdf"></i> PDF Indisponível';
+        
+        // Remover preview anterior se existir
+        const existingPreview = document.querySelector('.pdf-preview-section');
+        if (existingPreview) {
+          existingPreview.remove();
+        }
+      }
+      
       // Mostrar apenas a seção de resultado do plano de ação
       showOnlySection('action-plan-result-container');
       
@@ -3697,7 +3734,28 @@ ${currentAnalysisData.analysis}`;
       copyActionPlanBtn.addEventListener('click', () => {
         if (!currentActionPlanData) return;
         
-        const planContent = `${currentActionPlanData.titulo}\n\nCriado em: ${new Date(currentActionPlanData.dataCriacao).toLocaleString('pt-BR')}\nBaseado em: ${currentActionPlanData.documentos.length} documento(s)\n\n${currentActionPlanData.conteudo}`;
+        // Calcular total de documentos de forma segura
+        const documentosBase = currentActionPlanData.documentosBase || { transcricoes: [], analises: [] };
+        const totalDocumentos = (documentosBase.transcricoes?.length || 0) + (documentosBase.analises?.length || 0);
+        
+        // Criar lista detalhada dos documentos utilizados
+        let documentosInfo = '';
+        if (documentosBase.transcricoes?.length > 0) {
+          documentosInfo += `\nTranscrições utilizadas: ${documentosBase.transcricoes.length}`;
+        }
+        if (documentosBase.analises?.length > 0) {
+          documentosInfo += `\nAnálises utilizadas: ${documentosBase.analises.length}`;
+        }
+        
+        const planContent = `PLANO DE AÇÃO ESTRATÉGICO
+${currentActionPlanData.titulo}
+
+Criado em: ${new Date(currentActionPlanData.dataCriacao).toLocaleString('pt-BR')}
+Total de documentos base: ${totalDocumentos}${documentosInfo}
+
+${'-'.repeat(50)}
+
+${currentActionPlanData.conteudo}`;
         
         navigator.clipboard.writeText(planContent)
           .then(() => {
@@ -3719,9 +3777,13 @@ ${currentAnalysisData.analysis}`;
       exportActionPlanPdfBtn.addEventListener('click', () => {
         if (!currentActionPlanData) return;
         
-        // Por enquanto, apenas copiar o conteúdo
-        // No futuro, implementar geração de PDF
-        alert('Funcionalidade de exportação PDF será implementada em breve. Por enquanto, use o botão "Copiar Plano".');
+        // Verificar se o PDF está disponível
+        if (currentActionPlanData.pdfUrl) {
+          // Abrir PDF em nova aba usando a rota proxy
+          window.open(`/api/planos-acao/pdf/${currentActionPlanData._id}`, '_blank');
+        } else {
+          alert('PDF não disponível para este plano de ação. Por favor, tente novamente ou use o botão "Copiar Plano".');
+        }
       });
     }
   }
