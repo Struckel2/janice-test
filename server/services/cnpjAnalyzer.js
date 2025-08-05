@@ -39,7 +39,7 @@ async function analyzeCNPJ(cnpj, clientId = null) {
     if (clientId) {
       progressService.sendProgressUpdate(clientId, {
         percentage: 5,
-        message: 'Iniciando consulta de dados do CNPJ...',
+        message: 'Os Minions estão investigando a empresa...',
         step: 1,
         stepStatus: 'active'
       });
@@ -56,7 +56,7 @@ async function analyzeCNPJ(cnpj, clientId = null) {
     if (clientId) {
       progressService.sendProgressUpdate(clientId, {
         percentage: 15,
-        message: 'Dados básicos da empresa obtidos',
+        message: 'Kevin encontrou os dados básicos da empresa!',
         step: 1,
         stepStatus: 'completed'
       });
@@ -66,7 +66,7 @@ async function analyzeCNPJ(cnpj, clientId = null) {
     if (clientId) {
       progressService.sendProgressUpdate(clientId, {
         percentage: 20,
-        message: 'Preparando análise estratégica...',
+        message: 'Stuart está planejando a estratégia de análise...',
         step: 2,
         stepStatus: 'active'
       });
@@ -81,7 +81,7 @@ async function analyzeCNPJ(cnpj, clientId = null) {
     if (clientId) {
       progressService.sendProgressUpdate(clientId, {
         percentage: 40,
-        message: 'Estrutura de análise definida...',
+        message: 'Bob está organizando o plano de investigação...',
         step: 2,
         stepStatus: 'active'
       });
@@ -93,7 +93,7 @@ async function analyzeCNPJ(cnpj, clientId = null) {
     if (clientId) {
       progressService.sendProgressUpdate(clientId, {
         percentage: 50,
-        message: 'Preparação concluída - iniciando pesquisa',
+        message: 'Plano pronto! Minions partindo para a pesquisa!',
         step: 2,
         stepStatus: 'completed'
       });
@@ -103,7 +103,7 @@ async function analyzeCNPJ(cnpj, clientId = null) {
     if (clientId) {
       progressService.sendProgressUpdate(clientId, {
         percentage: 55,
-        message: 'Iniciando análise de mercado...',
+        message: 'Dave está vasculhando o mercado...',
         step: 3,
         stepStatus: 'active'
       });
@@ -119,7 +119,7 @@ async function analyzeCNPJ(cnpj, clientId = null) {
     if (clientId) {
       progressService.sendProgressUpdate(clientId, {
         percentage: 65,
-        message: 'Identificando concorrentes...',
+        message: 'Phil está espionando os concorrentes...',
         step: 3,
         stepStatus: 'active'
       });
@@ -131,7 +131,7 @@ async function analyzeCNPJ(cnpj, clientId = null) {
     if (clientId) {
       progressService.sendProgressUpdate(clientId, {
         percentage: 75,
-        message: 'Avaliando oportunidades e ameaças...',
+        message: 'Tim está avaliando riscos e oportunidades...',
         step: 3,
         stepStatus: 'active'
       });
@@ -143,7 +143,7 @@ async function analyzeCNPJ(cnpj, clientId = null) {
     if (clientId) {
       progressService.sendProgressUpdate(clientId, {
         percentage: 80,
-        message: 'Análise de mercado concluída',
+        message: 'Mark terminou a análise de mercado!',
         step: 3,
         stepStatus: 'completed'
       });
@@ -153,7 +153,7 @@ async function analyzeCNPJ(cnpj, clientId = null) {
     if (clientId) {
       progressService.sendProgressUpdate(clientId, {
         percentage: 85,
-        message: 'Gerando relatório estratégico...',
+        message: 'Gru está compilando o relatório final...',
         step: 4,
         stepStatus: 'active'
       });
@@ -173,7 +173,7 @@ async function analyzeCNPJ(cnpj, clientId = null) {
     if (clientId) {
       progressService.sendProgressUpdate(clientId, {
         percentage: 90,
-        message: 'Compilando dados e insights...',
+        message: 'Dr. Nefario está organizando os insights...',
         step: 4,
         stepStatus: 'active'
       });
@@ -183,7 +183,7 @@ async function analyzeCNPJ(cnpj, clientId = null) {
     if (clientId) {
       progressService.sendProgressUpdate(clientId, {
         percentage: 95,
-        message: 'Finalizando documento...',
+        message: 'Margo está finalizando o documento...',
         step: 4,
         stepStatus: 'active'
       });
@@ -200,7 +200,7 @@ async function analyzeCNPJ(cnpj, clientId = null) {
       // quando o usuário visualizar a análise.
       progressService.sendProgressUpdate(clientId, {
         percentage: 99,
-        message: 'Análise pronta para visualização',
+        message: 'Análise completa! Os Minions fizeram um ótimo trabalho!',
         step: 4,
         stepStatus: 'completed'
       });

@@ -260,7 +260,7 @@ async function realizarAnaliseComProgresso(clienteId, cnpj, res, userId) {
       
       // Enviar evento de conclusão via SSE
       // Isso informará ao frontend que a análise está pronta e o PDF está disponível
-      progressService.sendCompletionEvent(clientId, {
+      progressService.sendCompletionEvent(clienteId, {
         percentage: 100,
         message: 'Análise concluída com sucesso!',
         step: 4,

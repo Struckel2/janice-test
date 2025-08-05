@@ -111,7 +111,7 @@ async function transcribeFile(filePath, clientId = null, options = {}) {
     if (clientId) {
     progressService.sendProgressUpdate(clientId, {
       percentage: 5,
-      message: 'Iniciando transcrição com Replicate...',
+      message: 'Mandando para os Minions traduzirem...',
       step: 1,
       stepStatus: 'active'
     }, 'transcription', 'replicate');
@@ -141,7 +141,7 @@ async function transcribeFile(filePath, clientId = null, options = {}) {
       if (clientId) {
         progressService.sendProgressUpdate(clientId, {
           percentage: 10,
-          message: 'Fazendo upload temporário para Cloudinary...',
+          message: 'Preparando arquivo para Jerry...',
           step: 1,
           stepStatus: 'active'
         }, 'transcription');
@@ -180,7 +180,7 @@ async function transcribeFile(filePath, clientId = null, options = {}) {
       if (clientId) {
         progressService.sendProgressUpdate(clientId, {
           percentage: 20,
-          message: 'Processando com GPU Replicate...',
+          message: 'Jerry está ouvindo atentamente para transcrever...',
           step: 2,
           stepStatus: 'active'
         }, 'transcription');
@@ -200,9 +200,13 @@ async function transcribeFile(filePath, clientId = null, options = {}) {
         console.log(`🔍 [REPLICATE] Progresso estimado: ${Math.round(estimatedProgress)}% (${Math.round(elapsed)}s)`);
         
         if (clientId) {
+          const jerryMessage = Math.round(estimatedProgress) >= 90 
+            ? `Jerry demora mais nos últimos 10%... achamos que ele mente que já leu 90%! (${Math.round(elapsed)}s)`
+            : `Jerry está concentrado transcrevendo... ${Math.round(elapsed)}s`;
+          
           progressService.sendProgressUpdate(clientId, {
             percentage: Math.round(estimatedProgress),
-            message: `Transcrevendo... ${Math.round(elapsed)}s`,
+            message: jerryMessage,
             step: 2,
             stepStatus: 'active'
           }, 'transcription');
@@ -279,7 +283,7 @@ async function transcribeFile(filePath, clientId = null, options = {}) {
       if (clientId) {
         progressService.sendProgressUpdate(clientId, {
           percentage: 95,
-          message: 'Formatando resultado...',
+          message: 'Jerry está organizando as palavras...',
           step: 3,
           stepStatus: 'active'
         }, 'transcription');
@@ -358,7 +362,7 @@ async function transcribeFile(filePath, clientId = null, options = {}) {
       if (clientId) {
         progressService.sendCompletionEvent(clientId, {
           percentage: 100,
-          message: 'Transcrição concluída com sucesso!',
+          message: 'Jerry terminou! Transcrição pronta!',
           step: 4,
           stepStatus: 'completed'
         }, 'transcription');
