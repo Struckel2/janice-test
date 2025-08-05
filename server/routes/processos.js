@@ -5,29 +5,30 @@ const progressService = require('../services/progressService');
 
 /**
  * GET /api/processos/ativos
- * Retorna todos os processos ativos do usuário logado
+ * Retorna todos os processos ativos globalmente (visíveis para todos os usuários)
  */
 router.get('/ativos', requireAuth, async (req, res) => {
   try {
     const userId = req.user._id.toString();
-    const activeProcesses = progressService.getActiveProcesses(userId);
+    const allGlobalProcesses = progressService.getAllGlobalProcesses();
     
-    console.log(`🔍 [DEBUG-ATIVOS] ===== GET /api/processos/ativos =====`);
-    console.log(`🔍 [DEBUG-ATIVOS] User ID: ${userId}`);
-    console.log(`🔍 [DEBUG-ATIVOS] Processos encontrados: ${activeProcesses.length}`);
-    console.log(`🔍 [DEBUG-ATIVOS] Processos:`, activeProcesses.map(p => ({
+    console.log(`🔍 [DEBUG-ATIVOS-GLOBAL] ===== GET /api/processos/ativos =====`);
+    console.log(`🔍 [DEBUG-ATIVOS-GLOBAL] User ID: ${userId}`);
+    console.log(`🔍 [DEBUG-ATIVOS-GLOBAL] Processos globais encontrados: ${allGlobalProcesses.length}`);
+    console.log(`🔍 [DEBUG-ATIVOS-GLOBAL] Processos:`, allGlobalProcesses.map(p => ({
       id: p.id,
       tipo: p.tipo,
       status: p.status,
-      progresso: p.progresso
+      progresso: p.progresso,
+      initiatedBy: p.initiatedBy,
+      userName: p.userName
     })));
     
-    // CORREÇÃO: Retornar array direto em vez de objeto
-    // Isso resolve o erro "processes.forEach is not a function"
-    res.json(activeProcesses);
+    // Retornar TODOS os processos globais (visíveis para todos os usuários)
+    res.json(allGlobalProcesses);
     
   } catch (error) {
-    console.error('❌ [DEBUG-ATIVOS] Erro ao buscar processos ativos:', error);
+    console.error('❌ [DEBUG-ATIVOS-GLOBAL] Erro ao buscar processos ativos globais:', error);
     res.status(500).json({
       success: false,
       message: 'Erro interno do servidor'
@@ -37,21 +38,24 @@ router.get('/ativos', requireAuth, async (req, res) => {
 
 /**
  * DELETE /api/processos/:processId
- * Remove um processo ativo (quando usuário clica para ver resultado)
+ * Remove um processo ativo global (quando usuário clica para ver resultado)
  */
 router.delete('/:processId', requireAuth, async (req, res) => {
   try {
     const userId = req.user._id.toString();
     const { processId } = req.params;
     
-    progressService.removeActiveProcess(userId, processId);
+    console.log(`🗑️ [DELETE-PROCESSO-GLOBAL] User: ${userId}, ProcessId: ${processId}`);
+    
+    // Usar a nova função global para remover processo
+    progressService.removeActiveProcess(processId);
     
     res.json({
       success: true,
       message: 'Processo removido com sucesso'
     });
   } catch (error) {
-    console.error('Erro ao remover processo:', error);
+    console.error('❌ [DELETE-PROCESSO-GLOBAL] Erro ao remover processo:', error);
     res.status(500).json({
       success: false,
       message: 'Erro interno do servidor'
@@ -61,22 +65,23 @@ router.delete('/:processId', requireAuth, async (req, res) => {
 
 /**
  * POST /api/processos/ativos
- * Registra um novo processo ativo
+ * Registra um novo processo ativo globalmente
  */
 router.post('/ativos', requireAuth, async (req, res) => {
   try {
     const userId = req.user._id.toString();
     const processData = req.body;
     
-    console.log(`📝 [PROCESSOS-POST] ===== REGISTRANDO NOVO PROCESSO =====`);
-    console.log(`📝 [PROCESSOS-POST] User ID: ${userId}`);
-    console.log(`📝 [PROCESSOS-POST] Process ID: ${processData.id}`);
-    console.log(`📝 [PROCESSOS-POST] Tipo: ${processData.tipo}`);
-    console.log(`📝 [PROCESSOS-POST] Título: ${processData.titulo}`);
+    console.log(`📝 [PROCESSOS-POST-GLOBAL] ===== REGISTRANDO NOVO PROCESSO GLOBAL =====`);
+    console.log(`📝 [PROCESSOS-POST-GLOBAL] User ID: ${userId}`);
+    console.log(`📝 [PROCESSOS-POST-GLOBAL] User Name: ${req.user.nome}`);
+    console.log(`📝 [PROCESSOS-POST-GLOBAL] Process ID: ${processData.id}`);
+    console.log(`📝 [PROCESSOS-POST-GLOBAL] Tipo: ${processData.tipo}`);
+    console.log(`📝 [PROCESSOS-POST-GLOBAL] Título: ${processData.titulo}`);
     
     // Validar dados obrigatórios
     if (!processData.id || !processData.tipo || !processData.titulo) {
-      console.error(`❌ [PROCESSOS-POST] Dados obrigatórios faltando:`, {
+      console.error(`❌ [PROCESSOS-POST-GLOBAL] Dados obrigatórios faltando:`, {
         id: !!processData.id,
         tipo: !!processData.tipo,
         titulo: !!processData.titulo
@@ -87,10 +92,16 @@ router.post('/ativos', requireAuth, async (req, res) => {
       });
     }
     
-    // Registrar processo no progressService
-    console.log(`📝 [PROCESSOS-POST] Chamando progressService.registerActiveProcess...`);
-    progressService.registerActiveProcess(userId, processData);
-    console.log(`📝 [PROCESSOS-POST] Processo registrado com sucesso no progressService`);
+    // Preparar informações do usuário
+    const userInfo = {
+      nome: req.user.nome || 'Usuário',
+      email: req.user.email || ''
+    };
+    
+    // Registrar processo no progressService com informações do usuário
+    console.log(`📝 [PROCESSOS-POST-GLOBAL] Chamando progressService.registerActiveProcess...`);
+    progressService.registerActiveProcess(userId, processData, userInfo);
+    console.log(`📝 [PROCESSOS-POST-GLOBAL] Processo registrado com sucesso no progressService`);
     
     res.json({
       success: true,
@@ -99,7 +110,7 @@ router.post('/ativos', requireAuth, async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ [PROCESSOS-POST] Erro ao registrar processo:', error);
+    console.error('❌ [PROCESSOS-POST-GLOBAL] Erro ao registrar processo:', error);
     res.status(500).json({
       success: false,
       error: 'Erro interno do servidor',

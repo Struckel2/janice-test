@@ -15,10 +15,10 @@
 const sseConnections = new Map();
 
 /**
- * Mapa para armazenar processos ativos por userId
- * Estrutura: userId -> Map(processId -> processData)
+ * Mapa para armazenar processos ativos globalmente
+ * Estrutura: processId -> processData (com informações do usuário que iniciou)
  */
-const activeProcesses = new Map();
+const globalProcesses = new Map();
 
 /**
  * Timeout para processos órfãos (10 minutos)
@@ -38,18 +38,16 @@ setInterval(() => {
 function checkOrphanedProcesses() {
   const now = new Date();
   
-  for (const [userId, userProcesses] of activeProcesses.entries()) {
-    for (const [processId, process] of userProcesses.entries()) {
-      // Verificar se o processo está em progresso há mais de 10 minutos
-      if (process.status === 'em-progresso') {
-        const processAge = now - new Date(process.criadoEm);
+  for (const [processId, process] of globalProcesses.entries()) {
+    // Verificar se o processo está em progresso há mais de 10 minutos
+    if (process.status === 'em-progresso') {
+      const processAge = now - new Date(process.criadoEm);
+      
+      if (processAge > PROCESS_TIMEOUT) {
+        console.log(`⚠️ [TIMEOUT] Processo órfão detectado: ${processId} (${processAge/1000}s)`);
         
-        if (processAge > PROCESS_TIMEOUT) {
-          console.log(`⚠️ [TIMEOUT] Processo órfão detectado: ${processId} (${processAge/1000}s)`);
-          
-          // Marcar como erro por timeout
-          errorActiveProcess(userId, processId, 'Timeout: Processo demorou mais que o esperado');
-        }
+        // Marcar como erro por timeout
+        errorGlobalProcess(processId, 'Timeout: Processo demorou mais que o esperado');
       }
     }
   }
@@ -132,41 +130,31 @@ function registerConnection(clientId, res, type = 'progress') {
       });
     } else if (type === 'processes') {
       // LIMPEZA: Remover processos concluídos há mais de 1 minuto antes de enviar lista
-      const userProcesses = activeProcesses.get(clientId);
-      if (userProcesses) {
-        console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Limpando processos antigos antes de enviar lista...`);
-        const now = new Date();
-        const processesToRemove = [];
-        
-        for (const [processId, process] of userProcesses.entries()) {
-          if (process.status === 'concluido' && process.concluidoEm) {
-            const timeSinceCompletion = now - new Date(process.concluidoEm);
-            const minutesSinceCompletion = timeSinceCompletion / (1000 * 60);
-            
-            if (minutesSinceCompletion > 1) {
-              console.log(`🗑️ [DEBUG-REGISTER-CONNECTION] Removendo processo concluído há ${minutesSinceCompletion.toFixed(1)} minutos: ${processId}`);
-              processesToRemove.push(processId);
-            }
+      console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Limpando processos antigos do Map global antes de enviar lista...`);
+      const now = new Date();
+      const processesToRemove = [];
+      
+      for (const [processId, process] of globalProcesses.entries()) {
+        if (process.status === 'concluido' && process.concluidoEm) {
+          const timeSinceCompletion = now - new Date(process.concluidoEm);
+          const minutesSinceCompletion = timeSinceCompletion / (1000 * 60);
+          
+          if (minutesSinceCompletion > 1) {
+            console.log(`🗑️ [DEBUG-REGISTER-CONNECTION] Removendo processo concluído há ${minutesSinceCompletion.toFixed(1)} minutos: ${processId}`);
+            processesToRemove.push(processId);
           }
-        }
-        
-        // Remover processos antigos
-        processesToRemove.forEach(processId => {
-          userProcesses.delete(processId);
-        });
-        
-        // Se não há mais processos, remover o usuário do mapa
-        if (userProcesses.size === 0) {
-          activeProcesses.delete(clientId);
-          console.log(`🔍 [DEBUG-REGISTER-CONNECTION] UserId ${clientId} removido do activeProcesses (sem mais processos após limpeza)`);
         }
       }
       
-      // Enviar processos ativos existentes (após limpeza)
-      const cleanedUserProcesses = activeProcesses.get(clientId);
-      const processes = cleanedUserProcesses ? Array.from(cleanedUserProcesses.values()) : [];
+      // Remover processos antigos do Map global
+      processesToRemove.forEach(processId => {
+        globalProcesses.delete(processId);
+      });
       
-      console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Enviando ${processes.length} processos ativos existentes (após limpeza)`);
+      // Enviar TODOS os processos ativos existentes (após limpeza)
+      const processes = Array.from(globalProcesses.values());
+      
+      console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Enviando ${processes.length} processos ativos globais existentes (após limpeza)`);
       sendSSEEvent(res, 'processes-list', {
         processes: processes,
         totalProcesses: processes.length
@@ -349,105 +337,99 @@ function calculateTimeEstimate(tipo, metadata = {}) {
 }
 
 /**
- * Registra um novo processo ativo
- * @param {String} userId - ID do usuário
+ * Registra um novo processo ativo globalmente
+ * @param {String} userId - ID do usuário que iniciou o processo
  * @param {Object} processData - Dados do processo
+ * @param {Object} userInfo - Informações do usuário (nome, email)
  */
-function registerActiveProcess(userId, processData) {
-  console.log(`🔍 [DEBUG-REGISTER] Iniciando registro de processo:`, {
+function registerActiveProcess(userId, processData, userInfo = {}) {
+  console.log(`🔍 [DEBUG-REGISTER] Iniciando registro de processo global:`, {
     userId,
     processId: processData.id,
     tipo: processData.tipo,
-    titulo: processData.titulo
+    titulo: processData.titulo,
+    userInfo
   });
-  
-  if (!activeProcesses.has(userId)) {
-    activeProcesses.set(userId, new Map());
-    console.log(`🔍 [DEBUG-REGISTER] Criado novo Map para userId: ${userId}`);
-  }
   
   // Calcular estimativa de tempo
   const tempoEstimado = calculateTimeEstimate(processData.tipo, processData.metadata || {});
   
-  const userProcesses = activeProcesses.get(userId);
   const processWithEstimate = {
     ...processData,
     criadoEm: new Date(),
     status: 'em-progresso',
     tempoEstimadoMinutos: tempoEstimado,
-    progresso: 0
+    progresso: 0,
+    initiatedBy: userId,
+    userName: userInfo.nome || 'Usuário',
+    userEmail: userInfo.email || ''
   };
   
-  userProcesses.set(processData.id, processWithEstimate);
-  console.log(`🔍 [DEBUG-REGISTER] Processo adicionado ao Map. Total processos para user ${userId}: ${userProcesses.size}`);
+  globalProcesses.set(processData.id, processWithEstimate);
+  console.log(`🔍 [DEBUG-REGISTER] Processo adicionado ao Map global. Total processos: ${globalProcesses.size}`);
   
-  // Enviar atualização para o painel se houver conexão SSE de processos
-  const processConnection = sseConnections.get(`${userId}_processes`);
-  if (processConnection) {
-    console.log(`🔍 [DEBUG-REGISTER] Enviando evento process-registered via SSE para ${userId}`);
-    sendSSEEvent(processConnection, 'process-registered', {
-      process: processWithEstimate,
-      totalProcesses: userProcesses.size
-    });
-  } else {
-    console.log(`⚠️ [DEBUG-REGISTER] NENHUMA conexão SSE encontrada para ${userId}_processes`);
+  // Enviar atualização para TODAS as conexões SSE de processos
+  for (const [connectionKey, connection] of sseConnections.entries()) {
+    if (connectionKey.endsWith('_processes') && isConnectionActive(connection)) {
+      console.log(`🔍 [DEBUG-REGISTER] Enviando evento process-registered via SSE para ${connectionKey}`);
+      sendSSEEvent(connection, 'process-registered', {
+        process: processWithEstimate,
+        totalProcesses: globalProcesses.size
+      });
+    }
   }
   
-  console.log(`📊 [PROCESSO-REGISTRADO] ${processData.tipo} - Estimativa: ${tempoEstimado}min - ID: ${processData.id}`);
+  console.log(`📊 [PROCESSO-REGISTRADO-GLOBAL] ${processData.tipo} - Estimativa: ${tempoEstimado}min - ID: ${processData.id} - Por: ${userInfo.nome || userId}`);
 }
 
 /**
- * Atualiza um processo ativo
- * @param {String} userId - ID do usuário
+ * Atualiza um processo ativo global
  * @param {String} processId - ID do processo
  * @param {Object} progressData - Dados de progresso
  */
-function updateActiveProcess(userId, processId, progressData) {
-  const userProcesses = activeProcesses.get(userId);
-  if (userProcesses && userProcesses.has(processId)) {
-    const process = userProcesses.get(processId);
+function updateGlobalProcess(processId, progressData) {
+  if (globalProcesses.has(processId)) {
+    const process = globalProcesses.get(processId);
     const updatedProcess = {
       ...process,
       ...progressData,
       ultimaAtualizacao: new Date()
     };
     
-    userProcesses.set(processId, updatedProcess);
+    globalProcesses.set(processId, updatedProcess);
     
-    // Enviar atualização para o painel de processos se houver conexão SSE
-    const processConnection = sseConnections.get(`${userId}_processes`);
-    if (processConnection) {
-      sendSSEEvent(processConnection, 'process-update', {
-        processId,
-        progresso: progressData.progresso || process.progresso || 0,
-        mensagem: progressData.mensagem || progressData.message || process.mensagem,
-        process: updatedProcess
-      });
+    // Enviar atualização para TODAS as conexões SSE de processos
+    for (const [connectionKey, connection] of sseConnections.entries()) {
+      if (connectionKey.endsWith('_processes') && isConnectionActive(connection)) {
+        sendSSEEvent(connection, 'process-update', {
+          processId,
+          progresso: progressData.progresso || process.progresso || 0,
+          mensagem: progressData.mensagem || progressData.message || process.mensagem,
+          process: updatedProcess
+        });
+      }
     }
     
-    console.log(`🔄 [PROCESSO-ATUALIZADO] ${processId} - Progresso: ${progressData.progresso || 0}%`);
+    console.log(`🔄 [PROCESSO-ATUALIZADO-GLOBAL] ${processId} - Progresso: ${progressData.progresso || 0}%`);
   }
 }
 
 /**
- * Marca um processo como concluído
- * @param {String} userId - ID do usuário
+ * Marca um processo como concluído globalmente
  * @param {String} processId - ID do processo
  * @param {Object} resultData - Dados do resultado
  */
-function completeActiveProcess(userId, processId, resultData = {}) {
-  console.log(`🔍 [DEBUG-COMPLETE] Iniciando conclusão de processo:`, {
-    userId,
+function completeGlobalProcess(processId, resultData = {}) {
+  console.log(`🔍 [DEBUG-COMPLETE-GLOBAL] Iniciando conclusão de processo global:`, {
     processId,
     resourceId: resultData.resourceId,
     resultData
   });
   
-  const userProcesses = activeProcesses.get(userId);
-  if (userProcesses && userProcesses.has(processId)) {
-    console.log(`🔍 [DEBUG-COMPLETE] Processo encontrado no Map para userId: ${userId}`);
+  if (globalProcesses.has(processId)) {
+    console.log(`🔍 [DEBUG-COMPLETE-GLOBAL] Processo encontrado no Map global: ${processId}`);
     
-    const process = userProcesses.get(processId);
+    const process = globalProcesses.get(processId);
     const completedProcess = {
       ...process,
       status: 'concluido',
@@ -457,132 +439,109 @@ function completeActiveProcess(userId, processId, resultData = {}) {
       ...resultData
     };
     
-    userProcesses.set(processId, completedProcess);
-    console.log(`🔍 [DEBUG-COMPLETE] Processo marcado como concluído no Map`);
+    globalProcesses.set(processId, completedProcess);
+    console.log(`🔍 [DEBUG-COMPLETE-GLOBAL] Processo marcado como concluído no Map global`);
     
-    // Verificar e enviar atualização para o painel de processos
-    const processConnection = sseConnections.get(`${userId}_processes`);
-    console.log(`🔍 [DEBUG-COMPLETE] Verificando conexão SSE para ${userId}_processes:`, {
-      conexaoEncontrada: !!processConnection,
-      conexaoAtiva: processConnection ? isConnectionActive(processConnection) : false,
-      totalConexoes: sseConnections.size,
-      chaves: Array.from(sseConnections.keys())
-    });
-    
-    if (processConnection && isConnectionActive(processConnection)) {
-      console.log(`✅ [DEBUG-COMPLETE] Conexão SSE ativa encontrada - enviando notificação`);
-      
-      const eventSent = sendSSEEvent(processConnection, 'process-complete', {
-        processId,
-        resourceId: resultData.resourceId,
-        process: completedProcess
-      });
-      
-      if (eventSent) {
-        console.log(`✅ [DEBUG-COMPLETE] Evento process-complete enviado com sucesso`);
-      } else {
-        console.log(`❌ [DEBUG-COMPLETE] Falha ao enviar evento process-complete`);
-      }
-      
-      // Agendar remoção automática do processo após 10 segundos
-      setTimeout(() => {
-        if (userProcesses.has(processId)) {
-          userProcesses.delete(processId);
-          console.log(`🔍 [DEBUG-COMPLETE] Processo ${processId} removido do Map após timeout`);
-          
-          // Se não há mais processos, remover o usuário do mapa
-          if (userProcesses.size === 0) {
-            activeProcesses.delete(userId);
-            console.log(`🔍 [DEBUG-COMPLETE] UserId ${userId} removido do activeProcesses (sem mais processos)`);
-          }
-          
-          // Enviar evento de remoção automática se conexão ainda estiver ativa
-          const currentConnection = sseConnections.get(`${userId}_processes`);
-          if (currentConnection && isConnectionActive(currentConnection)) {
-            console.log(`🔍 [DEBUG-COMPLETE] Enviando evento process-auto-removed via SSE`);
-            sendSSEEvent(currentConnection, 'process-auto-removed', {
-              processId,
-              totalProcesses: userProcesses.size
-            });
-          } else {
-            console.log(`⚠️ [DEBUG-COMPLETE] Conexão SSE não disponível para enviar process-auto-removed`);
-          }
-          
-          console.log(`🗑️ [PROCESSO-AUTO-REMOVIDO] ${processId} - Removido automaticamente após conclusão`);
+    // Enviar atualização para TODAS as conexões SSE de processos
+    for (const [connectionKey, connection] of sseConnections.entries()) {
+      if (connectionKey.endsWith('_processes') && isConnectionActive(connection)) {
+        console.log(`✅ [DEBUG-COMPLETE-GLOBAL] Enviando notificação para ${connectionKey}`);
+        
+        const eventSent = sendSSEEvent(connection, 'process-complete', {
+          processId,
+          resourceId: resultData.resourceId,
+          process: completedProcess
+        });
+        
+        if (eventSent) {
+          console.log(`✅ [DEBUG-COMPLETE-GLOBAL] Evento process-complete enviado para ${connectionKey}`);
         } else {
-          console.log(`⚠️ [DEBUG-COMPLETE] Processo ${processId} já foi removido do Map`);
+          console.log(`❌ [DEBUG-COMPLETE-GLOBAL] Falha ao enviar evento para ${connectionKey}`);
         }
-      }, 10000); // 10 segundos
-      
-    } else if (processConnection && !isConnectionActive(processConnection)) {
-      console.log(`⚠️ [DEBUG-COMPLETE] Conexão SSE encontrada mas INATIVA - removendo conexão morta`);
-      
-      // Remover conexão morta
-      sseConnections.delete(`${userId}_processes`);
-      
-      // Implementar fallback: marcar processo como concluído para próxima conexão
-      console.log(`🔄 [DEBUG-COMPLETE] FALLBACK: Processo marcado como concluído, será notificado na próxima conexão`);
-      
-    } else {
-      console.log(`⚠️ [DEBUG-COMPLETE] NENHUMA conexão SSE encontrada para ${userId}_processes`);
-      console.log(`🔄 [DEBUG-COMPLETE] FALLBACK: Processo marcado como concluído, será notificado quando cliente reconectar`);
+      }
     }
     
-    console.log(`✅ [PROCESSO-CONCLUÍDO] ${processId} - Tipo: ${process.tipo}`);
+    // Agendar remoção automática do processo após 10 segundos
+    setTimeout(() => {
+      if (globalProcesses.has(processId)) {
+        globalProcesses.delete(processId);
+        console.log(`🔍 [DEBUG-COMPLETE-GLOBAL] Processo ${processId} removido do Map global após timeout`);
+        
+        // Enviar evento de remoção automática para todas as conexões ativas
+        for (const [connectionKey, connection] of sseConnections.entries()) {
+          if (connectionKey.endsWith('_processes') && isConnectionActive(connection)) {
+            console.log(`🔍 [DEBUG-COMPLETE-GLOBAL] Enviando evento process-auto-removed para ${connectionKey}`);
+            sendSSEEvent(connection, 'process-auto-removed', {
+              processId,
+              totalProcesses: globalProcesses.size
+            });
+          }
+        }
+        
+        console.log(`🗑️ [PROCESSO-AUTO-REMOVIDO-GLOBAL] ${processId} - Removido automaticamente após conclusão`);
+      } else {
+        console.log(`⚠️ [DEBUG-COMPLETE-GLOBAL] Processo ${processId} já foi removido do Map global`);
+      }
+    }, 10000); // 10 segundos
+    
+    console.log(`✅ [PROCESSO-CONCLUÍDO-GLOBAL] ${processId} - Tipo: ${process.tipo}`);
   } else {
-    console.log(`❌ [DEBUG-COMPLETE] Processo ${processId} NÃO encontrado para userId: ${userId}`);
-    console.log(`🔍 [DEBUG-COMPLETE] Processos disponíveis para ${userId}:`, userProcesses ? Array.from(userProcesses.keys()) : 'NENHUM');
+    console.log(`❌ [DEBUG-COMPLETE-GLOBAL] Processo ${processId} NÃO encontrado no Map global`);
+    console.log(`🔍 [DEBUG-COMPLETE-GLOBAL] Processos disponíveis:`, Array.from(globalProcesses.keys()));
   }
 }
 
 /**
- * Remove um processo ativo (quando usuário clica para ver resultado)
- * @param {String} userId - ID do usuário
+ * Remove um processo ativo global (quando usuário clica para ver resultado)
  * @param {String} processId - ID do processo
  */
-function removeActiveProcess(userId, processId) {
-  const userProcesses = activeProcesses.get(userId);
-  if (userProcesses && userProcesses.has(processId)) {
-    userProcesses.delete(processId);
+function removeGlobalProcess(processId) {
+  if (globalProcesses.has(processId)) {
+    globalProcesses.delete(processId);
     
-    // Se não há mais processos, remover o usuário do mapa
-    if (userProcesses.size === 0) {
-      activeProcesses.delete(userId);
-    }
-    
-    // Enviar atualização para o painel se houver conexão SSE
-    const connection = sseConnections.get(userId);
-    if (connection) {
-      sendSSEEvent(connection, 'process-removed', {
-        processId,
-        totalProcesses: userProcesses.size
-      });
+    // Enviar atualização para TODAS as conexões SSE de processos
+    for (const [connectionKey, connection] of sseConnections.entries()) {
+      if (connectionKey.endsWith('_processes') && isConnectionActive(connection)) {
+        sendSSEEvent(connection, 'process-removed', {
+          processId,
+          totalProcesses: globalProcesses.size
+        });
+      }
     }
   }
 }
 
 /**
- * Obtém todos os processos ativos de um usuário
- * @param {String} userId - ID do usuário
+ * Obtém todos os processos ativos globalmente
  * @returns {Array} Array de processos ativos
  */
-function getActiveProcesses(userId) {
-  const userProcesses = activeProcesses.get(userId);
-  if (!userProcesses) return [];
-  
-  return Array.from(userProcesses.values());
+function getAllGlobalProcesses() {
+  return Array.from(globalProcesses.values());
 }
 
 /**
- * Marca um processo como erro
+ * Obtém todos os processos ativos de um usuário específico
  * @param {String} userId - ID do usuário
+ * @returns {Array} Array de processos ativos do usuário
+ */
+function getActiveProcesses(userId) {
+  const userProcesses = [];
+  for (const process of globalProcesses.values()) {
+    if (process.initiatedBy === userId) {
+      userProcesses.push(process);
+    }
+  }
+  return userProcesses;
+}
+
+/**
+ * Marca um processo como erro globalmente
  * @param {String} processId - ID do processo
  * @param {String} errorMessage - Mensagem de erro
  */
-function errorActiveProcess(userId, processId, errorMessage) {
-  const userProcesses = activeProcesses.get(userId);
-  if (userProcesses && userProcesses.has(processId)) {
-    const process = userProcesses.get(processId);
+function errorGlobalProcess(processId, errorMessage) {
+  if (globalProcesses.has(processId)) {
+    const process = globalProcesses.get(processId);
     const errorProcess = {
       ...process,
       status: 'erro',
@@ -592,19 +551,20 @@ function errorActiveProcess(userId, processId, errorMessage) {
       erroEm: new Date()
     };
     
-    userProcesses.set(processId, errorProcess);
+    globalProcesses.set(processId, errorProcess);
     
-    // Enviar atualização para o painel de processos se houver conexão SSE
-    const processConnection = sseConnections.get(`${userId}_processes`);
-    if (processConnection) {
-      sendSSEEvent(processConnection, 'process-error', {
-        processId,
-        erro: errorMessage,
-        process: errorProcess
-      });
+    // Enviar atualização para TODAS as conexões SSE de processos
+    for (const [connectionKey, connection] of sseConnections.entries()) {
+      if (connectionKey.endsWith('_processes') && isConnectionActive(connection)) {
+        sendSSEEvent(connection, 'process-error', {
+          processId,
+          erro: errorMessage,
+          process: errorProcess
+        });
+      }
     }
     
-    console.log(`❌ [PROCESSO-ERRO] ${processId} - Erro: ${errorMessage}`);
+    console.log(`❌ [PROCESSO-ERRO-GLOBAL] ${processId} - Erro: ${errorMessage}`);
   }
 }
 
@@ -615,9 +575,10 @@ module.exports = {
   sendCompletionEvent,
   initProgress,
   registerActiveProcess,
-  updateActiveProcess,
-  completeActiveProcess,
-  removeActiveProcess,
+  updateActiveProcess: updateGlobalProcess,
+  completeActiveProcess: completeGlobalProcess,
+  removeActiveProcess: removeGlobalProcess,
   getActiveProcesses,
-  errorActiveProcess
+  getAllGlobalProcesses,
+  errorActiveProcess: errorGlobalProcess
 };
