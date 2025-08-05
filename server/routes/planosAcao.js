@@ -256,7 +256,7 @@ Por favor, aguarde a conclusão do processamento. O conteúdo será atualizado a
           console.log(`🔍 [PLANO-ACAO] Processo encontrado para finalização: ${matchingProcess.id}`);
           
           // Marcar processo como concluído usando o ID correto do processo
-          progressService.completeGlobalProcess(matchingProcess.id, {
+          progressService.completeActiveProcess(matchingProcess.id, {
             progresso: 100,
             resultado: 'Plano de ação gerado com sucesso',
             resourceId: novoPlano._id
@@ -293,7 +293,7 @@ Por favor, aguarde a conclusão do processamento. O conteúdo será atualizado a
           console.log(`🔍 [PLANO-ACAO] Processo encontrado para marcar erro: ${matchingProcess.id}`);
           
           // Marcar processo como erro usando o ID correto do processo
-          progressService.errorGlobalProcess(matchingProcess.id, error.message);
+          progressService.errorActiveProcess(matchingProcess.id, error.message);
         } else {
           console.log(`⚠️ [PLANO-ACAO] Processo não encontrado no Map global para marcar erro do plano: ${novoPlano._id}`);
         }

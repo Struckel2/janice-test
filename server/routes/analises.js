@@ -242,8 +242,8 @@ async function realizarAnaliseComProgresso(clienteId, cnpj, res, userId) {
       if (matchingProcess) {
         console.log(`🔍 [ANALISE] Processo encontrado para finalização: ${matchingProcess.id}`);
         
-        // Marcar processo como concluído usando o ID correto do processo
-        progressService.completeGlobalProcess(matchingProcess.id, {
+          // Marcar processo como concluído usando o ID correto do processo
+          progressService.completeActiveProcess(matchingProcess.id, {
           progresso: 100,
           resultado: 'Análise CNPJ concluída com sucesso',
           resourceId: analiseTemp._id
@@ -287,7 +287,7 @@ async function realizarAnaliseComProgresso(clienteId, cnpj, res, userId) {
       
       if (matchingProcess) {
         console.log(`🔍 [ANALISE] Processo encontrado para marcar erro: ${matchingProcess.id}`);
-        progressService.errorGlobalProcess(matchingProcess.id, error.message);
+        progressService.errorActiveProcess(matchingProcess.id, error.message);
       } else {
         console.log(`⚠️ [ANALISE] Processo não encontrado no Map global para marcar erro da análise: ${analiseTemp._id}`);
       }

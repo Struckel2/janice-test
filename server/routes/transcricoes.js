@@ -361,7 +361,7 @@ async function processTranscricaoAsync(filePath, transcricaoId, clienteId, idiom
       
       if (matchingProcess) {
         // Marcar processo como concluído
-        progressService.completeGlobalProcess(matchingProcess.id, {
+        progressService.completeActiveProcess(matchingProcess.id, {
           progresso: 100,
           resultado: 'Transcrição concluída com smart-whisper',
           resourceId: transcricaoId
@@ -410,7 +410,7 @@ async function processTranscricaoAsync(filePath, transcricaoId, clienteId, idiom
     
     if (matchingProcess) {
       // Marcar processo como concluído
-      progressService.completeGlobalProcess(matchingProcess.id, {
+      progressService.completeActiveProcess(matchingProcess.id, {
         progresso: 100,
         resultado: 'Transcrição concluída com Replicate',
         resourceId: transcricaoId
