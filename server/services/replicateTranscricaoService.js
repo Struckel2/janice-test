@@ -10,7 +10,6 @@ const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const Replicate = require('replicate');
 const progressService = require('./progressService');
-const { cloudinary } = require('../config/cloudinary');
 
 // Inicializar cliente Replicate
 const replicate = new Replicate({
@@ -21,66 +20,6 @@ const replicate = new Replicate({
 const WHISPER_MODEL = "openai/whisper:8099696689d249cf8b122d833c36ac3f75505c666a395ca40ef26f68e7d3d16e";
 const DEFAULT_MODEL_SIZE = "medium"; // tiny, base, small, medium, large
 
-/**
- * Faz upload temporário de áudio para Cloudinary
- * @param {String} filePath - Caminho do arquivo local
- * @param {String} transcriptionId - ID único da transcrição
- * @returns {Promise<Object>} - Resultado do upload com URL
- */
-async function uploadTemporaryAudio(filePath, transcriptionId) {
-  console.log('📤 [CLOUDINARY] Iniciando upload temporário...');
-  console.log('📤 [CLOUDINARY] Arquivo:', filePath);
-  console.log('📤 [CLOUDINARY] ID transcrição:', transcriptionId);
-  
-  try {
-    const uploadResult = await cloudinary.uploader.upload(filePath, {
-      resource_type: "video", // Suporta áudio também
-      public_id: `temp_audio_${transcriptionId}`,
-      folder: "temp_transcriptions",
-      expires_at: Math.floor(Date.now() / 1000) + 7200, // 2 horas de segurança
-      tags: ["temporary", "transcription", "replicate"]
-    });
-    
-    console.log('✅ [CLOUDINARY] Upload concluído com sucesso!');
-    console.log('✅ [CLOUDINARY] URL:', uploadResult.secure_url);
-    console.log('✅ [CLOUDINARY] Public ID:', uploadResult.public_id);
-    console.log('✅ [CLOUDINARY] Tamanho:', Math.round(uploadResult.bytes / 1024 / 1024 * 100) / 100, 'MB');
-    
-    return uploadResult;
-    
-  } catch (error) {
-    console.error('❌ [CLOUDINARY] Erro no upload:', error.message);
-    console.error('❌ [CLOUDINARY] Stack trace:', error.stack);
-    throw new Error(`Falha no upload temporário: ${error.message}`);
-  }
-}
-
-/**
- * Remove arquivo temporário do Cloudinary
- * @param {String} publicId - ID público do arquivo
- * @returns {Promise<void>}
- */
-async function cleanupTemporaryAudio(publicId) {
-  if (!publicId) {
-    console.warn('🗑️ [CLOUDINARY] Public ID não fornecido para limpeza');
-    return;
-  }
-  
-  try {
-    console.log('🗑️ [CLOUDINARY] Removendo arquivo temporário:', publicId);
-    const result = await cloudinary.uploader.destroy(publicId);
-    
-    if (result.result === 'ok') {
-      console.log('✅ [CLOUDINARY] Arquivo temporário removido com sucesso');
-    } else {
-      console.warn('⚠️ [CLOUDINARY] Resultado da remoção:', result);
-    }
-    
-  } catch (error) {
-    console.error('❌ [CLOUDINARY] Erro na limpeza (não crítico):', error.message);
-    // Não propagar erro de limpeza para não quebrar o fluxo principal
-  }
-}
 
 /**
  * Transcreve um arquivo de áudio usando Replicate Whisper
@@ -132,27 +71,23 @@ async function transcribeFile(filePath, clientId = null, options = {}) {
       throw new Error(`Arquivo muito grande (${fileSizeMB.toFixed(2)}MB). O limite é 1GB.`);
     }
 
-    // NOVA IMPLEMENTAÇÃO: Upload temporário para Cloudinary
-    let uploadResult = null;
+    // NOVA IMPLEMENTAÇÃO: Upload direto para Replicate (sem Cloudinary)
     const startTime = Date.now();
     
     try {
-      // Atualizar progresso - Upload
+      // Atualizar progresso - Preparação
       if (clientId) {
         progressService.sendProgressUpdate(clientId, {
           percentage: 10,
-          message: 'Preparando arquivo para Jerry...',
+          message: 'Preparando arquivo para envio direto ao Jerry...',
           step: 1,
           stepStatus: 'active'
         }, 'transcription');
       }
 
-      // Upload temporário para Cloudinary
-      uploadResult = await uploadTemporaryAudio(filePath, transcriptionId);
-
-      // Preparar input para Replicate com URL (não ReadStream)
+      // Preparar input para Replicate com ReadStream (upload direto)
       const input = {
-        audio: uploadResult.secure_url  // ✅ STRING (URL) - resolve erro 422
+        audio: fs.createReadStream(filePath)  // ✅ UPLOAD DIRETO - sem Cloudinary
       };
 
       // Adicionar parâmetros opcionais apenas se suportados
@@ -168,29 +103,30 @@ async function transcribeFile(filePath, clientId = null, options = {}) {
         input.temperature = temperature;
       }
 
-      console.log('🔍 [REPLICATE] Configuração corrigida:', JSON.stringify({
+      console.log('🔍 [REPLICATE] Configuração de upload direto:', JSON.stringify({
         model: WHISPER_MODEL,
         input: {
           ...input,
-          audio: uploadResult.secure_url + ' (URL Cloudinary)'
+          audio: `ReadStream(${filePath}) - Upload direto`
         }
       }, null, 2));
 
-      // Atualizar progresso - Transcrição
+      // Atualizar progresso - Upload e Transcrição
       if (clientId) {
         progressService.sendProgressUpdate(clientId, {
           percentage: 20,
-          message: 'Jerry está ouvindo atentamente para transcrever...',
+          message: 'Enviando arquivo diretamente para Jerry transcrever...',
           step: 2,
           stepStatus: 'active'
         }, 'transcription');
       }
 
       // Executar transcrição
-      console.log('🚀 [REPLICATE] Iniciando transcrição...');
+      console.log('🚀 [REPLICATE] Iniciando transcrição com upload direto...');
       console.log('🔍 [REPLICATE] Token (primeiros 10 chars):', process.env.REPLICATE_API_TOKEN?.substring(0, 10) + '...');
       console.log('🔍 [REPLICATE] Modelo:', WHISPER_MODEL);
-      console.log('🔍 [REPLICATE] Input URL:', uploadResult.secure_url);
+      console.log('🔍 [REPLICATE] Arquivo local:', filePath);
+      console.log('� [REPLICATE] Tamanho:', fileSizeMB.toFixed(2) + 'MB');
 
       // Simular progresso durante processamento
       const progressInterval = setInterval(() => {
@@ -394,13 +330,8 @@ async function transcribeFile(filePath, clientId = null, options = {}) {
       }
 
       throw new Error(`Falha na transcrição Replicate: ${error.message}`);
-      
-    } finally {
-      // LIMPEZA GARANTIDA DO CLOUDINARY (sempre executa)
-      if (uploadResult && uploadResult.public_id) {
-        await cleanupTemporaryAudio(uploadResult.public_id);
-      }
     }
+    // Não há mais necessidade de limpeza - upload direto para Replicate
 
   } catch (error) {
     console.error('Erro geral na transcrição:', error);
