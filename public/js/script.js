@@ -410,13 +410,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Só permitir clique em processos concluídos
         if (processItem.classList.contains('completed') && resourceId) {
-          this.navigateToResult(processType, resourceId);
-          this.removeProcess(processId);
+          this.navigateToResult(processType, resourceId, processId);
         }
       });
     }
     
-    navigateToResult(type, resourceId) {
+    navigateToResult(type, resourceId, processId) {
       switch (type) {
         case 'analise':
           viewAnalysis(resourceId);
@@ -427,6 +426,11 @@ document.addEventListener('DOMContentLoaded', () => {
         case 'plano-acao':
           viewActionPlan(resourceId);
           break;
+      }
+      
+      // Remover o processo do painel imediatamente após navegar para o resultado
+      if (processId) {
+        this.removeProcess(processId);
       }
     }
     
