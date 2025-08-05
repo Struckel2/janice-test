@@ -214,8 +214,8 @@ async function realizarAnaliseComProgresso(clienteId, cnpj, res, userId) {
       // Aqui, usaremos a simulação que já implementamos
       
       // Executar a análise real (esta função pode demorar)
-      // Passamos o clientId para permitir atualizações de progresso em tempo real
-      const result = await analyzeCNPJ(cnpj, clientId);
+      // Passamos o clienteId para permitir atualizações de progresso em tempo real
+      const result = await analyzeCNPJ(cnpj, clienteId);
       
       // Calcular data de expiração (30 dias a partir de hoje)
       const dataExpiracao = new Date();
