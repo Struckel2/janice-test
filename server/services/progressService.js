@@ -237,8 +237,16 @@ function calculateTimeEstimate(tipo, metadata = {}) {
  * @param {Object} processData - Dados do processo
  */
 function registerActiveProcess(userId, processData) {
+  console.log(`🔍 [DEBUG-REGISTER] Iniciando registro de processo:`, {
+    userId,
+    processId: processData.id,
+    tipo: processData.tipo,
+    titulo: processData.titulo
+  });
+  
   if (!activeProcesses.has(userId)) {
     activeProcesses.set(userId, new Map());
+    console.log(`🔍 [DEBUG-REGISTER] Criado novo Map para userId: ${userId}`);
   }
   
   // Calcular estimativa de tempo
@@ -254,14 +262,18 @@ function registerActiveProcess(userId, processData) {
   };
   
   userProcesses.set(processData.id, processWithEstimate);
+  console.log(`🔍 [DEBUG-REGISTER] Processo adicionado ao Map. Total processos para user ${userId}: ${userProcesses.size}`);
   
   // Enviar atualização para o painel se houver conexão SSE de processos
   const processConnection = sseConnections.get(`${userId}_processes`);
   if (processConnection) {
+    console.log(`🔍 [DEBUG-REGISTER] Enviando evento process-registered via SSE para ${userId}`);
     sendSSEEvent(processConnection, 'process-registered', {
       process: processWithEstimate,
       totalProcesses: userProcesses.size
     });
+  } else {
+    console.log(`⚠️ [DEBUG-REGISTER] NENHUMA conexão SSE encontrada para ${userId}_processes`);
   }
   
   console.log(`📊 [PROCESSO-REGISTRADO] ${processData.tipo} - Estimativa: ${tempoEstimado}min - ID: ${processData.id}`);
@@ -307,8 +319,17 @@ function updateActiveProcess(userId, processId, progressData) {
  * @param {Object} resultData - Dados do resultado
  */
 function completeActiveProcess(userId, processId, resultData = {}) {
+  console.log(`🔍 [DEBUG-COMPLETE] Iniciando conclusão de processo:`, {
+    userId,
+    processId,
+    resourceId: resultData.resourceId,
+    resultData
+  });
+  
   const userProcesses = activeProcesses.get(userId);
   if (userProcesses && userProcesses.has(processId)) {
+    console.log(`🔍 [DEBUG-COMPLETE] Processo encontrado no Map para userId: ${userId}`);
+    
     const process = userProcesses.get(processId);
     const completedProcess = {
       ...process,
@@ -320,10 +341,12 @@ function completeActiveProcess(userId, processId, resultData = {}) {
     };
     
     userProcesses.set(processId, completedProcess);
+    console.log(`🔍 [DEBUG-COMPLETE] Processo marcado como concluído no Map`);
     
     // Enviar atualização para o painel de processos se houver conexão SSE
     const processConnection = sseConnections.get(`${userId}_processes`);
     if (processConnection) {
+      console.log(`🔍 [DEBUG-COMPLETE] Enviando evento process-complete via SSE para ${userId}`);
       sendSSEEvent(processConnection, 'process-complete', {
         processId,
         resourceId: resultData.resourceId,
@@ -334,27 +357,39 @@ function completeActiveProcess(userId, processId, resultData = {}) {
       setTimeout(() => {
         if (userProcesses.has(processId)) {
           userProcesses.delete(processId);
+          console.log(`🔍 [DEBUG-COMPLETE] Processo ${processId} removido do Map após timeout`);
           
           // Se não há mais processos, remover o usuário do mapa
           if (userProcesses.size === 0) {
             activeProcesses.delete(userId);
+            console.log(`🔍 [DEBUG-COMPLETE] UserId ${userId} removido do activeProcesses (sem mais processos)`);
           }
           
           // Enviar evento de remoção automática
           const currentConnection = sseConnections.get(`${userId}_processes`);
           if (currentConnection) {
+            console.log(`🔍 [DEBUG-COMPLETE] Enviando evento process-auto-removed via SSE`);
             sendSSEEvent(currentConnection, 'process-auto-removed', {
               processId,
               totalProcesses: userProcesses.size
             });
+          } else {
+            console.log(`⚠️ [DEBUG-COMPLETE] NENHUMA conexão SSE encontrada para enviar process-auto-removed`);
           }
           
           console.log(`🗑️ [PROCESSO-AUTO-REMOVIDO] ${processId} - Removido automaticamente após conclusão`);
+        } else {
+          console.log(`⚠️ [DEBUG-COMPLETE] Processo ${processId} já foi removido do Map`);
         }
       }, 10000); // 10 segundos
+    } else {
+      console.log(`⚠️ [DEBUG-COMPLETE] NENHUMA conexão SSE encontrada para ${userId}_processes - processo NÃO será notificado como concluído!`);
     }
     
     console.log(`✅ [PROCESSO-CONCLUÍDO] ${processId} - Tipo: ${process.tipo}`);
+  } else {
+    console.log(`❌ [DEBUG-COMPLETE] Processo ${processId} NÃO encontrado para userId: ${userId}`);
+    console.log(`🔍 [DEBUG-COMPLETE] Processos disponíveis para ${userId}:`, userProcesses ? Array.from(userProcesses.keys()) : 'NENHUM');
   }
 }
 

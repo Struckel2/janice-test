@@ -142,34 +142,46 @@ document.addEventListener('DOMContentLoaded', () => {
     startSSEConnection() {
       // Fechar conexão anterior se existir
       if (this.eventSource) {
+        console.log('🔍 [DEBUG-SSE] Fechando conexão SSE anterior');
         this.eventSource.close();
       }
       
       // Abrir nova conexão SSE
+      console.log('🔍 [DEBUG-SSE] Abrindo nova conexão SSE para /api/processos/sse');
       this.eventSource = new EventSource('/api/processos/sse');
       
+      this.eventSource.addEventListener('open', () => {
+        console.log('✅ [DEBUG-SSE] Conexão SSE estabelecida com sucesso');
+      });
+      
       this.eventSource.addEventListener('process-update', (event) => {
+        console.log('🔍 [DEBUG-SSE] Evento process-update recebido:', event.data);
         const data = JSON.parse(event.data);
         this.handleProcessUpdate(data);
       });
       
       this.eventSource.addEventListener('process-complete', (event) => {
+        console.log('🔍 [DEBUG-SSE] Evento process-complete recebido:', event.data);
         const data = JSON.parse(event.data);
         this.handleProcessComplete(data);
       });
       
       this.eventSource.addEventListener('process-error', (event) => {
+        console.log('🔍 [DEBUG-SSE] Evento process-error recebido:', event.data);
         const data = JSON.parse(event.data);
         this.handleProcessError(data);
       });
       
       this.eventSource.addEventListener('process-auto-removed', (event) => {
+        console.log('🔍 [DEBUG-SSE] Evento process-auto-removed recebido:', event.data);
         const data = JSON.parse(event.data);
         this.handleProcessAutoRemoved(data);
       });
       
-      this.eventSource.addEventListener('error', () => {
-        console.log('Conexão SSE perdida, tentando reconectar...');
+      this.eventSource.addEventListener('error', (event) => {
+        console.log('❌ [DEBUG-SSE] Erro na conexão SSE:', event);
+        console.log('🔍 [DEBUG-SSE] ReadyState:', this.eventSource.readyState);
+        console.log('🔄 [DEBUG-SSE] Tentando reconectar em 5 segundos...');
         setTimeout(() => this.startSSEConnection(), 5000);
       });
     }
@@ -185,18 +197,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     handleProcessComplete(data) {
+      console.log('🔍 [DEBUG-FRONTEND] Evento process-complete recebido:', data);
+      
       const process = this.processes.get(data.processId);
       if (process) {
+        console.log('🔍 [DEBUG-FRONTEND] Processo encontrado no Map local:', process);
+        
         process.progresso = 100;
         process.status = 'concluido';
         process.mensagem = 'Processo concluído!';
         process.resourceId = data.resourceId;
+        
+        console.log('🔍 [DEBUG-FRONTEND] Processo atualizado para concluído:', process);
+        
         this.updateUI();
+        console.log('🔍 [DEBUG-FRONTEND] UI atualizada após conclusão');
         
         // Agendar remoção automática após 8 segundos (um pouco antes do backend)
         setTimeout(() => {
+          console.log('🔍 [DEBUG-FRONTEND] Removendo processo automaticamente após 8 segundos:', data.processId);
           this.removeProcess(data.processId);
         }, 8000);
+      } else {
+        console.log('❌ [DEBUG-FRONTEND] Processo NÃO encontrado no Map local para processId:', data.processId);
+        console.log('🔍 [DEBUG-FRONTEND] Processos disponíveis no Map:', Array.from(this.processes.keys()));
       }
     }
     
@@ -438,6 +462,14 @@ document.addEventListener('DOMContentLoaded', () => {
     registerProcess(type, clientId, titulo, resourceId = null) {
       const processId = `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
+      console.log('🔍 [DEBUG-FRONTEND] Registrando novo processo:', {
+        processId,
+        type,
+        clientId,
+        titulo,
+        resourceId
+      });
+      
       const processData = {
         id: processId,
         tipo: type,
@@ -450,14 +482,28 @@ document.addEventListener('DOMContentLoaded', () => {
         resourceId: resourceId
       };
       
+      console.log('🔍 [DEBUG-FRONTEND] Dados do processo criado:', processData);
+      
       this.addProcess(processData);
+      console.log('🔍 [DEBUG-FRONTEND] Processo adicionado ao Map local. Total processos:', this.processes.size);
       
       // Registrar no servidor
+      console.log('🔍 [DEBUG-FRONTEND] Enviando processo para servidor via POST /api/processos/ativos');
       fetch('/api/processos/ativos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(processData)
-      }).catch(error => console.error('Erro ao registrar processo:', error));
+      })
+      .then(response => {
+        console.log('🔍 [DEBUG-FRONTEND] Resposta do servidor ao registrar processo:', response.status);
+        return response.json();
+      })
+      .then(data => {
+        console.log('🔍 [DEBUG-FRONTEND] Processo registrado no servidor com sucesso:', data);
+      })
+      .catch(error => {
+        console.error('❌ [DEBUG-FRONTEND] Erro ao registrar processo no servidor:', error);
+      });
       
       return processId;
     }
