@@ -185,11 +185,6 @@ router.post('/cliente/:clienteId', validateObjectId, async (req, res) => {
  * Esta função é assíncrona e não bloqueia a resposta HTTP
  */
 async function realizarAnaliseComProgresso(clienteId, cnpj, res, userId) {
-  // O ID do cliente será usado para atualizar o progresso via SSE
-  // E também será passado como clientId para o analizador CNPJ
-  const clientId = clienteId; // Explicitar que estamos usando o mesmo ID
-  const processId = uuidv4();
-  
   try {
     // Obter usuário sistema para o campo criadoPor se userId não estiver disponível
     const criadoPorId = userId || await getUsuarioSistema();
@@ -207,19 +202,8 @@ async function realizarAnaliseComProgresso(clienteId, cnpj, res, userId) {
     
     await analiseTemp.save();
     
-    // Registrar processo ativo
-    progressService.registerActiveProcess(clientId, {
-      id: processId,
-      tipo: 'analise',
-      titulo: `Análise CNPJ: ${cnpj}`,
-      status: 'em-progresso',
-      progresso: 0,
-      detalhes: {
-        analiseId: analiseTemp._id,
-        cnpj,
-        cliente: clienteId
-      }
-    });
+    // O processo será registrado pelo frontend, não duplicar aqui
+    const processId = analiseTemp._id.toString(); // Usar o ID da análise como processId
     
     // Enviamos a análise temporária como resposta imediata
     res.status(201).json(analiseTemp);
@@ -251,14 +235,10 @@ async function realizarAnaliseComProgresso(clienteId, cnpj, res, userId) {
       console.log(`Análise finalizada com sucesso. PDF disponível em: ${result.pdfUrl}`);
       
       // Marcar processo como concluído
-      progressService.completeActiveProcess(clientId, processId, {
+      progressService.completeGlobalProcess(processId, {
         progresso: 100,
         resultado: 'Análise CNPJ concluída com sucesso',
-        detalhes: {
-          analiseId: analiseTemp._id,
-          pdfUrl: result.pdfUrl,
-          cnpj
-        }
+        resourceId: analiseTemp._id
       });
       
       // Enviar evento de conclusão via SSE
@@ -281,7 +261,7 @@ async function realizarAnaliseComProgresso(clienteId, cnpj, res, userId) {
       await analiseTemp.save();
       
       // Marcar processo como erro
-      progressService.errorActiveProcess(clientId, processId, error.message);
+      progressService.errorGlobalProcess(processId, error.message);
       
       // Enviar uma atualização final pelo SSE indicando erro
       progressService.sendProgressUpdate(clienteId, {

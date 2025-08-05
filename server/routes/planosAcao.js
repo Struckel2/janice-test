@@ -231,24 +231,8 @@ Por favor, aguarde a conclusão do processamento. O conteúdo será atualizado a
     
     await novoPlano.save();
     
-    // Gerar processo ativo para o plano de ação
-    const processId = uuidv4();
-    const userId = clienteId; // Usando clienteId como userId para compatibilidade
-    
-    // Registrar processo ativo
-    progressService.registerActiveProcess(userId, {
-      id: processId,
-      tipo: 'plano-acao',
-      titulo: `Plano de Ação: ${titulo.trim()}`,
-      status: 'em-progresso',
-      progresso: 0,
-      detalhes: {
-        planoId: novoPlano._id,
-        totalDocumentos,
-        transcricoes: transcricaoIds.length,
-        analises: analiseIds.length
-      }
-    });
+    // O processo será registrado pelo frontend, não duplicar aqui
+    const processId = novoPlano._id.toString(); // Usar o ID do plano como processId
     
     // Iniciar geração do plano de ação em background
     generateActionPlan(transcricaoIds, analiseIds, clienteId, titulo.trim())
@@ -263,10 +247,11 @@ Por favor, aguarde a conclusão do processamento. O conteúdo será atualizado a
         
         await novoPlano.save();
         
-        // Marcar processo como concluído
-        progressService.completeActiveProcess(userId, processId, {
+        // Marcar processo como concluído usando o ID do plano
+        progressService.completeActiveProcess(processId, {
           progresso: 100,
           resultado: 'Plano de ação gerado com sucesso',
+          resourceId: novoPlano._id,
           detalhes: {
             planoId: novoPlano._id,
             pdfUrl: resultado.pdfUrl,
@@ -284,8 +269,8 @@ Por favor, aguarde a conclusão do processamento. O conteúdo será atualizado a
         
         await novoPlano.save();
         
-        // Marcar processo como erro
-        progressService.errorActiveProcess(userId, processId, error.message);
+        // Marcar processo como erro usando o ID do plano
+        progressService.errorActiveProcess(processId, error.message);
         
         console.error(`Erro na geração do plano de ação ${novoPlano._id}:`, error);
       });
