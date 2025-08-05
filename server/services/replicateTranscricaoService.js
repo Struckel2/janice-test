@@ -85,6 +85,89 @@ async function checkFFmpegAvailability() {
 }
 
 /**
+ * Detecta a duração de um arquivo de áudio/vídeo usando FFmpeg
+ * @param {String} filePath - Caminho do arquivo
+ * @returns {Promise<number>} - Duração em segundos
+ */
+async function getAudioDuration(filePath) {
+  try {
+    console.log('🕐 [DURATION] Detectando duração do arquivo:', filePath);
+    
+    const command = `ffprobe -v quiet -show_entries format=duration -of csv=p=0 "${filePath}"`;
+    const { stdout } = await execAsync(command);
+    
+    const durationSeconds = parseFloat(stdout.trim());
+    const durationMinutes = durationSeconds / 60;
+    
+    console.log('✅ [DURATION] Duração detectada:', durationSeconds.toFixed(1) + 's', '(' + durationMinutes.toFixed(1) + 'min)');
+    
+    return durationSeconds;
+    
+  } catch (error) {
+    console.warn('⚠️ [DURATION] Erro ao detectar duração, usando estimativa baseada no tamanho:', error.message);
+    
+    // Fallback: estimar baseado no tamanho do arquivo
+    try {
+      const stats = fs.statSync(filePath);
+      const fileSizeMB = stats.size / (1024 * 1024);
+      // Estimativa grosseira: ~1MB por minuto para áudio comprimido
+      const estimatedMinutes = fileSizeMB * 1.5;
+      const estimatedSeconds = estimatedMinutes * 60;
+      
+      console.log('📊 [DURATION] Estimativa por tamanho:', estimatedSeconds.toFixed(1) + 's', '(' + estimatedMinutes.toFixed(1) + 'min)');
+      return estimatedSeconds;
+      
+    } catch (fallbackError) {
+      console.warn('⚠️ [DURATION] Fallback também falhou, usando duração padrão');
+      return 300; // 5 minutos como padrão
+    }
+  }
+}
+
+/**
+ * Calcula estimativa de tempo de transcrição baseada na duração do áudio
+ * @param {number} audioDurationSeconds - Duração do áudio em segundos
+ * @returns {Object} - Estimativas de tempo
+ */
+function calculateTranscriptionEstimate(audioDurationSeconds) {
+  const audioDurationMinutes = audioDurationSeconds / 60;
+  
+  // Whisper medium: aproximadamente 0.15x a 0.25x da duração do áudio
+  const minEstimateMinutes = audioDurationMinutes * 0.15;
+  const maxEstimateMinutes = audioDurationMinutes * 0.25;
+  const avgEstimateMinutes = audioDurationMinutes * 0.2;
+  
+  console.log('📊 [ESTIMATE] Áudio:', audioDurationMinutes.toFixed(1) + 'min');
+  console.log('📊 [ESTIMATE] Transcrição estimada:', minEstimateMinutes.toFixed(1) + '-' + maxEstimateMinutes.toFixed(1) + 'min');
+  console.log('📊 [ESTIMATE] Média:', avgEstimateMinutes.toFixed(1) + 'min');
+  
+  return {
+    audioDurationMinutes: audioDurationMinutes,
+    minEstimateMinutes: minEstimateMinutes,
+    maxEstimateMinutes: maxEstimateMinutes,
+    avgEstimateMinutes: avgEstimateMinutes,
+    avgEstimateSeconds: avgEstimateMinutes * 60
+  };
+}
+
+/**
+ * Formata tempo em minutos para exibição amigável
+ * @param {number} minutes - Tempo em minutos
+ * @returns {String} - Tempo formatado
+ */
+function formatEstimatedTime(minutes) {
+  if (minutes < 1) {
+    return 'menos de 1 minuto';
+  } else if (minutes < 60) {
+    return Math.round(minutes) + ' minutos';
+  } else {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = Math.round(minutes % 60);
+    return hours + 'h' + (remainingMinutes > 0 ? remainingMinutes + 'min' : '');
+  }
+}
+
+/**
  * Comprime arquivo de áudio/vídeo usando FFmpeg
  * @param {String} inputPath - Caminho do arquivo original
  * @param {String} outputPath - Caminho do arquivo comprimido
@@ -288,14 +371,33 @@ async function transcribeFile(filePath, clientId = null, options = {}) {
       throw new Error(`Arquivo muito grande (${fileSizeMB.toFixed(2)}MB). O limite é 1GB.`);
     }
 
-    // Progresso - análise de tamanho
-    if (clientId) {
-      progressService.sendProgressUpdate(clientId, {
-        percentage: 10,
-        message: `Analisando arquivo (${fileSizeMB.toFixed(1)}MB)...`,
-        step: 1,
-        stepStatus: 'active'
-      }, 'transcription');
+    // DETECTAR DURAÇÃO DO ÁUDIO
+    let audioDuration = 0;
+    let transcriptionEstimate = null;
+    
+    try {
+      audioDuration = await getAudioDuration(filePath);
+      transcriptionEstimate = calculateTranscriptionEstimate(audioDuration);
+      
+      if (clientId) {
+        progressService.sendProgressUpdate(clientId, {
+          percentage: 10,
+          message: `Áudio de ${formatEstimatedTime(transcriptionEstimate.audioDurationMinutes)} detectado - estimativa: ${formatEstimatedTime(transcriptionEstimate.avgEstimateMinutes)}`,
+          step: 1,
+          stepStatus: 'active'
+        }, 'transcription');
+      }
+    } catch (durationError) {
+      console.warn('⚠️ [DURATION] Erro ao detectar duração, continuando sem estimativa:', durationError.message);
+      
+      if (clientId) {
+        progressService.sendProgressUpdate(clientId, {
+          percentage: 10,
+          message: `Analisando arquivo (${fileSizeMB.toFixed(1)}MB)...`,
+          step: 1,
+          stepStatus: 'active'
+        }, 'transcription');
+      }
     }
 
     const startTime = Date.now();
@@ -449,16 +551,39 @@ async function transcribeFile(filePath, clientId = null, options = {}) {
     console.log('🔍 [REPLICATE] URL Cloudinary:', uploadResult.secure_url);
     console.log('🔍 [REPLICATE] Idioma normalizado:', normalizedLanguage);
 
-    // Progresso durante transcrição
+    // Progresso durante transcrição com estimativas realistas
     const progressInterval = setInterval(() => {
       const elapsed = (Date.now() - startTime) / 1000;
-      const estimatedProgress = Math.min(90, 50 + (elapsed / 60) * 40);
+      const elapsedMinutes = elapsed / 60;
+      
+      let estimatedProgress;
+      let jerryMessage;
+      
+      if (transcriptionEstimate) {
+        // Usar estimativa baseada na duração real do áudio
+        const expectedTotalMinutes = transcriptionEstimate.avgEstimateMinutes;
+        const progressRatio = Math.min(0.4, elapsedMinutes / expectedTotalMinutes); // Máximo 40% baseado no tempo
+        estimatedProgress = Math.min(90, 50 + (progressRatio * 40));
+        
+        const remainingMinutes = Math.max(0, expectedTotalMinutes - elapsedMinutes);
+        
+        if (Math.round(estimatedProgress) >= 90) {
+          jerryMessage = `Jerry está quase terminando... (pode demorar mais alguns minutos)`;
+        } else {
+          jerryMessage = `Jerry está transcrevendo... (${Math.round(elapsedMinutes)} de ~${Math.round(expectedTotalMinutes)} minutos estimados)`;
+        }
+      } else {
+        // Fallback para estimativa genérica
+        estimatedProgress = Math.min(90, 50 + (elapsedMinutes / 10) * 40);
+        
+        if (Math.round(estimatedProgress) >= 90) {
+          jerryMessage = `Jerry está finalizando a transcrição... (${Math.round(elapsedMinutes)} minutos)`;
+        } else {
+          jerryMessage = `Jerry está transcrevendo seu arquivo... (${Math.round(elapsedMinutes)} minutos)`;
+        }
+      }
       
       if (clientId) {
-        const jerryMessage = Math.round(estimatedProgress) >= 90 
-          ? `Jerry demora mais nos últimos 10%... achamos que ele mente que já leu 90%! (${Math.round(elapsed)}s)`
-          : `Jerry está concentrado transcrevendo... ${Math.round(elapsed)}s`;
-        
         progressService.sendProgressUpdate(clientId, {
           percentage: Math.round(estimatedProgress),
           message: jerryMessage,

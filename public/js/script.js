@@ -1692,7 +1692,7 @@ ${currentAnalysisData.analysis}`;
           <strong>Processamento final - Esta etapa pode demorar mais</strong>
         </div>
         <p style="margin: 0; color: #6c757d;">
-          <strong>Normal:</strong> O progresso pode parecer "travado" em 90%+. O Whisper está fazendo o processamento final detalhado para garantir máxima precisão. Esta etapa pode levar a maior parte do tempo total.
+          <strong>Normal:</strong> Suspeitamos que quando Jerry diz que está em 90%, na verdade ele está relendo tudo desde o início para garantir que cada palavra ficou perfeita. Esta etapa de revisão pode levar a maior parte do tempo total.
         </p>
         <div style="margin-top: 10px; padding: 8px; background: #fff3cd; border-radius: 4px; border: 1px solid #ffeaa7;">
           <small style="color: #856404;">
