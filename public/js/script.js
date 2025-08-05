@@ -1757,6 +1757,13 @@ ${currentAnalysisData.analysis}`;
       clientCnpjInput.disabled = false;
       clientForm.dataset.mode = 'new';
       clientForm.dataset.id = '';
+      
+      // Configurar cor padrão para novo cliente
+      const colorInput = document.getElementById('client-color');
+      if (colorInput) {
+        colorInput.value = '#6a5acd';
+        setupColorPicker(); // Atualizar preview
+      }
     } else if (mode === 'edit') {
       clientFormTitle.textContent = 'Editar Cliente';
       clientNameInput.value = clientData.nome;
@@ -1766,6 +1773,13 @@ ${currentAnalysisData.analysis}`;
       if (clientData.logo) {
         logoPreview.innerHTML = `<img src="${clientData.logo}" alt="Logo">`;
         logoPreview.style.display = 'block';
+      }
+      
+      // Carregar cor do cliente
+      const colorInput = document.getElementById('client-color');
+      if (colorInput) {
+        colorInput.value = clientData.cor || '#6a5acd';
+        setupColorPicker(); // Atualizar preview com a cor carregada
       }
       
       clientForm.dataset.mode = 'edit';
@@ -1807,6 +1821,12 @@ ${currentAnalysisData.analysis}`;
       
       if (clientLogoInput.files.length > 0) {
         formData.append('logo', clientLogoInput.files[0]);
+      }
+      
+      // Incluir cor personalizada
+      const colorInput = document.getElementById('client-color');
+      if (colorInput) {
+        formData.append('cor', colorInput.value);
       }
       
       // Configurar requisição
@@ -2662,17 +2682,24 @@ ${currentAnalysisData.analysis}`;
     const colorValue = document.getElementById('color-value');
     
     if (colorInput && colorSample && colorValue) {
-      // Atualizar preview quando a cor mudar
-      colorInput.addEventListener('input', (e) => {
-        const color = e.target.value;
+      // Função para atualizar preview
+      function updateColorPreview(color) {
         colorSample.style.backgroundColor = color;
         colorValue.textContent = color.toUpperCase();
+      }
+      
+      // Atualizar preview quando a cor mudar (input para tempo real)
+      colorInput.addEventListener('input', (e) => {
+        updateColorPreview(e.target.value);
       });
       
-      // Inicializar com cor padrão
-      const defaultColor = colorInput.value;
-      colorSample.style.backgroundColor = defaultColor;
-      colorValue.textContent = defaultColor.toUpperCase();
+      // Atualizar preview quando a cor mudar (change para compatibilidade)
+      colorInput.addEventListener('change', (e) => {
+        updateColorPreview(e.target.value);
+      });
+      
+      // Inicializar com cor atual
+      updateColorPreview(colorInput.value);
     }
   }
   
