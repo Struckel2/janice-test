@@ -144,9 +144,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (response.ok) {
           const processes = await response.json();
           
-          processes.forEach(process => {
-            this.processes.set(process.id, process);
-          });
+          // Validar se processes é um array antes de usar forEach
+          if (Array.isArray(processes)) {
+            processes.forEach(process => {
+              this.processes.set(process.id, process);
+            });
+          } else {
+            console.warn('API retornou dados inválidos para processos ativos:', processes);
+            // Se não for array, assumir que não há processos ativos
+          }
           
           this.updateUI();
         }
