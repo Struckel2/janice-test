@@ -273,6 +273,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const clientName = process.cliente ? process.cliente.nome : 'Cliente';
       const timeAgo = this.getTimeAgo(process.criadoEm);
       
+      // Calcular tempo decorrido e estimativa
+      const timeInfo = this.getTimeInfo(process);
+      
       return `
         <div class="process-item ${statusClass}" data-id="${process.id}" data-type="${process.tipo}" data-resource-id="${process.resourceId || ''}">
           <div class="process-header">
@@ -291,6 +294,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="process-progress-fill" style="width: ${process.progresso || 0}%"></div>
               </div>
               <div class="process-message">${process.mensagem || 'Processando...'}</div>
+              <div class="process-time-estimate">
+                <span class="time-elapsed">⏱️ ${timeInfo.elapsed}</span>
+                <span class="time-estimate">📅 Est: ${timeInfo.estimate}</span>
+              </div>
+            </div>
+          ` : process.status === 'erro' ? `
+            <div class="process-error">
+              <div class="process-error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                ${process.mensagem || process.mensagemErro || 'Erro no processamento'}
+              </div>
             </div>
           ` : ''}
           
@@ -319,6 +333,54 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const diffDays = Math.floor(diffHours / 24);
       return `${diffDays}d atrás`;
+    }
+    
+    getTimeInfo(process) {
+      const now = new Date();
+      const startTime = new Date(process.criadoEm);
+      const elapsedMs = now - startTime;
+      const elapsedMinutes = Math.floor(elapsedMs / 60000);
+      
+      // Calcular tempo decorrido formatado
+      let elapsed;
+      if (elapsedMinutes < 1) {
+        elapsed = 'Agora';
+      } else if (elapsedMinutes < 60) {
+        elapsed = `${elapsedMinutes}min`;
+      } else {
+        const hours = Math.floor(elapsedMinutes / 60);
+        const mins = elapsedMinutes % 60;
+        elapsed = `${hours}h${mins > 0 ? ` ${mins}min` : ''}`;
+      }
+      
+      // Calcular estimativa baseada no tipo e metadados
+      let estimate = '~5min'; // fallback padrão
+      
+      if (process.tempoEstimadoMinutos) {
+        const estimatedMinutes = process.tempoEstimadoMinutos;
+        if (estimatedMinutes < 60) {
+          estimate = `~${estimatedMinutes}min`;
+        } else {
+          const hours = Math.floor(estimatedMinutes / 60);
+          const mins = estimatedMinutes % 60;
+          estimate = `~${hours}h${mins > 0 ? ` ${mins}min` : ''}`;
+        }
+      } else {
+        // Fallback para estimativas baseadas no tipo
+        switch (process.tipo) {
+          case 'transcricao':
+            estimate = '~10-40min';
+            break;
+          case 'analise':
+            estimate = '~3min';
+            break;
+          case 'plano-acao':
+            estimate = '~2-5min';
+            break;
+        }
+      }
+      
+      return { elapsed, estimate };
     }
     
     setupEventListeners() {

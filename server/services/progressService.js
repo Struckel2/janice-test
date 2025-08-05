@@ -201,6 +201,37 @@ function initProgress(clientId, operationType = 'analysis') {
 }
 
 /**
+ * Calcula estimativa de tempo baseada no tipo de processo
+ * @param {String} tipo - Tipo do processo ('transcricao', 'analise', 'plano-acao')
+ * @param {Object} metadata - Metadados adicionais (tamanho do arquivo, etc.)
+ * @returns {Number} Tempo estimado em minutos
+ */
+function calculateTimeEstimate(tipo, metadata = {}) {
+  switch (tipo) {
+    case 'transcricao':
+      // Para transcrições: aproximadamente tempo real do áudio
+      if (metadata.duracao) {
+        return Math.ceil(metadata.duracao / 60); // converter segundos para minutos
+      } else if (metadata.tamanhoArquivo) {
+        // Estimativa baseada no tamanho: ~1MB por minuto de áudio
+        return Math.max(1, Math.ceil(metadata.tamanhoArquivo / (1024 * 1024)));
+      }
+      return 5; // fallback: 5 minutos
+      
+    case 'analise':
+      return 3; // Análises geralmente levam 2-3 minutos
+      
+    case 'plano-acao':
+      // Planos de ação dependem da quantidade de documentos
+      const numDocumentos = (metadata.numTranscricoes || 0) + (metadata.numAnalises || 0);
+      return Math.max(2, Math.ceil(numDocumentos * 1.5)); // 1.5 min por documento
+      
+    default:
+      return 5; // fallback padrão
+  }
+}
+
+/**
  * Registra um novo processo ativo
  * @param {String} userId - ID do usuário
  * @param {Object} processData - Dados do processo
@@ -210,21 +241,30 @@ function registerActiveProcess(userId, processData) {
     activeProcesses.set(userId, new Map());
   }
   
+  // Calcular estimativa de tempo
+  const tempoEstimado = calculateTimeEstimate(processData.tipo, processData.metadata || {});
+  
   const userProcesses = activeProcesses.get(userId);
-  userProcesses.set(processData.id, {
+  const processWithEstimate = {
     ...processData,
     criadoEm: new Date(),
-    status: 'em-progresso'
-  });
+    status: 'em-progresso',
+    tempoEstimadoMinutos: tempoEstimado,
+    progresso: 0
+  };
   
-  // Enviar atualização para o painel se houver conexão SSE
-  const connection = sseConnections.get(userId);
-  if (connection) {
-    sendSSEEvent(connection, 'process-registered', {
-      process: processData,
+  userProcesses.set(processData.id, processWithEstimate);
+  
+  // Enviar atualização para o painel se houver conexão SSE de processos
+  const processConnection = sseConnections.get(`${userId}_processes`);
+  if (processConnection) {
+    sendSSEEvent(processConnection, 'process-registered', {
+      process: processWithEstimate,
       totalProcesses: userProcesses.size
     });
   }
+  
+  console.log(`📊 [PROCESSO-REGISTRADO] ${processData.tipo} - Estimativa: ${tempoEstimado}min - ID: ${processData.id}`);
 }
 
 /**
@@ -237,21 +277,26 @@ function updateActiveProcess(userId, processId, progressData) {
   const userProcesses = activeProcesses.get(userId);
   if (userProcesses && userProcesses.has(processId)) {
     const process = userProcesses.get(processId);
-    userProcesses.set(processId, {
+    const updatedProcess = {
       ...process,
       ...progressData,
       ultimaAtualizacao: new Date()
-    });
+    };
     
-    // Enviar atualização para o painel se houver conexão SSE
-    const connection = sseConnections.get(userId);
-    if (connection) {
-      sendSSEEvent(connection, 'process-updated', {
+    userProcesses.set(processId, updatedProcess);
+    
+    // Enviar atualização para o painel de processos se houver conexão SSE
+    const processConnection = sseConnections.get(`${userId}_processes`);
+    if (processConnection) {
+      sendSSEEvent(processConnection, 'process-update', {
         processId,
-        progressData,
-        process: userProcesses.get(processId)
+        progresso: progressData.progresso || process.progresso || 0,
+        mensagem: progressData.mensagem || progressData.message || process.mensagem,
+        process: updatedProcess
       });
     }
+    
+    console.log(`🔄 [PROCESSO-ATUALIZADO] ${processId} - Progresso: ${progressData.progresso || 0}%`);
   }
 }
 
@@ -265,23 +310,28 @@ function completeActiveProcess(userId, processId, resultData = {}) {
   const userProcesses = activeProcesses.get(userId);
   if (userProcesses && userProcesses.has(processId)) {
     const process = userProcesses.get(processId);
-    userProcesses.set(processId, {
+    const completedProcess = {
       ...process,
       status: 'concluido',
       progresso: 100,
       concluidoEm: new Date(),
+      mensagem: 'Processo concluído!',
       ...resultData
-    });
+    };
     
-    // Enviar atualização para o painel se houver conexão SSE
-    const connection = sseConnections.get(userId);
-    if (connection) {
-      sendSSEEvent(connection, 'process-completed', {
+    userProcesses.set(processId, completedProcess);
+    
+    // Enviar atualização para o painel de processos se houver conexão SSE
+    const processConnection = sseConnections.get(`${userId}_processes`);
+    if (processConnection) {
+      sendSSEEvent(processConnection, 'process-complete', {
         processId,
-        process: userProcesses.get(processId),
-        totalProcesses: userProcesses.size
+        resourceId: resultData.resourceId,
+        process: completedProcess
       });
     }
+    
+    console.log(`✅ [PROCESSO-CONCLUÍDO] ${processId} - Tipo: ${process.tipo}`);
   }
 }
 
@@ -333,23 +383,28 @@ function errorActiveProcess(userId, processId, errorMessage) {
   const userProcesses = activeProcesses.get(userId);
   if (userProcesses && userProcesses.has(processId)) {
     const process = userProcesses.get(processId);
-    userProcesses.set(processId, {
+    const errorProcess = {
       ...process,
       status: 'erro',
       erro: true,
+      mensagem: errorMessage,
       mensagemErro: errorMessage,
       erroEm: new Date()
-    });
+    };
     
-    // Enviar atualização para o painel se houver conexão SSE
-    const connection = sseConnections.get(userId);
-    if (connection) {
-      sendSSEEvent(connection, 'process-error', {
+    userProcesses.set(processId, errorProcess);
+    
+    // Enviar atualização para o painel de processos se houver conexão SSE
+    const processConnection = sseConnections.get(`${userId}_processes`);
+    if (processConnection) {
+      sendSSEEvent(processConnection, 'process-error', {
         processId,
-        errorMessage,
-        process: userProcesses.get(processId)
+        erro: errorMessage,
+        process: errorProcess
       });
     }
+    
+    console.log(`❌ [PROCESSO-ERRO] ${processId} - Erro: ${errorMessage}`);
   }
 }
 

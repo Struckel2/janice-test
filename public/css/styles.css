@@ -226,6 +226,47 @@ body {
   margin-bottom: 5px;
 }
 
+.process-time-estimate {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--lighter-text);
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.time-elapsed {
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.time-estimate {
+  color: var(--light-text);
+  font-style: italic;
+}
+
+.process-error {
+  margin: 10px 0;
+}
+
+.process-error-message {
+  background: rgba(233, 30, 99, 0.1);
+  color: var(--error-color);
+  padding: 10px;
+  border-radius: var(--border-radius);
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  border-left: 3px solid var(--error-color);
+}
+
+.process-error-message i {
+  margin-right: 8px;
+  font-size: 0.9rem;
+}
+
 .process-time {
   font-size: 0.75rem;
   color: var(--lighter-text);
