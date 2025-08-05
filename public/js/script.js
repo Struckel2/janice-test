@@ -1595,6 +1595,9 @@ ${currentAnalysisData.analysis}`;
   
   // Função para atualizar o progresso na UI
   function updateProgress(data) {
+    console.log('🔍 [DEBUG-PROGRESS] Recebendo atualização de progresso:', data);
+    console.log('🔍 [DEBUG-PROGRESS] Estado atual do processo:', window.currentProcessInfo);
+    
     // Verificar se esta atualização é para o tipo de operação atual
     // Se data.operationType não estiver definido, assume 'analysis' para compatibilidade com versões anteriores
     const operationType = data.operationType || 'analysis';
@@ -1602,9 +1605,11 @@ ${currentAnalysisData.analysis}`;
     // Se não corresponder à operação atual e estamos em uma operação específica, ignorar atualização
     if (window.currentProcessInfo && window.currentProcessInfo.type && 
         operationType !== window.currentProcessInfo.type) {
-      console.log(`Ignorando atualização de progresso de tipo ${operationType} (operação atual: ${window.currentProcessInfo.type})`);
+      console.log(`🚫 [DEBUG-PROGRESS] Ignorando atualização de progresso de tipo ${operationType} (operação atual: ${window.currentProcessInfo.type})`);
       return;
     }
+    
+    console.log(`✅ [DEBUG-PROGRESS] Aplicando atualização de progresso para tipo: ${operationType}`);
     
     // Atualizar barra de progresso
     progressFill.style.width = `${data.percentage}%`;

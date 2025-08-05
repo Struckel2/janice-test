@@ -338,13 +338,13 @@ async function processTranscricaoAsync(filePath, transcricaoId, clienteId, idiom
         p.status === 'em-progresso'
       );
       
-      if (matchingProcess) {
-        // Atualizar processo para smart-whisper
-        progressService.updateGlobalProcess(matchingProcess.id, {
-          progresso: 10,
-          mensagem: 'Usando smart-whisper como fallback'
-        });
-      }
+    if (matchingProcess) {
+      // Atualizar processo para smart-whisper
+      progressService.updateActiveProcess(matchingProcess.id, {
+        progresso: 10,
+        mensagem: 'Usando smart-whisper como fallback'
+      });
+    }
       
       // Fallback para smart-whisper
       const resultado = await transcricaoService.transcribeFile(filePath, clienteId, {
@@ -385,7 +385,7 @@ async function processTranscricaoAsync(filePath, transcricaoId, clienteId, idiom
     
     if (matchingProcess) {
       // Atualizar progresso para Replicate
-      progressService.updateGlobalProcess(matchingProcess.id, {
+      progressService.updateActiveProcess(matchingProcess.id, {
         progresso: 15,
         mensagem: 'Usando Replicate para transcrição'
       });
