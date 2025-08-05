@@ -1265,20 +1265,36 @@ ${currentAnalysisData.analysis}`;
       analyses.sort((a, b) => new Date(b.dataCriacao) - new Date(a.dataCriacao));
       
       // Renderizar lista de análises
-      analysisList.innerHTML = analyses.map(analysis => `
-        <div class="analysis-item" data-id="${analysis._id}">
-          <div class="analysis-item-content">
-            <div class="analysis-date">
-              ${new Date(analysis.dataCriacao).toLocaleDateString('pt-BR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-              })}
+      analysisList.innerHTML = analyses.map(analysis => {
+        // Determinar status e classe CSS
+        let statusClass = 'completed';
+        let statusText = 'Concluído';
+        
+        if (analysis.emProgresso) {
+          statusClass = 'in-progress';
+          statusText = 'Em progresso';
+        } else if (analysis.erro) {
+          statusClass = 'error';
+          statusText = 'Erro';
+        }
+        
+        return `
+          <div class="analysis-item ${statusClass}" data-id="${analysis._id}">
+            <div class="analysis-item-content">
+              <div class="analysis-date">
+                ${new Date(analysis.dataCriacao).toLocaleDateString('pt-BR', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric'
+                })}
+              </div>
+              <div class="analysis-title">
+                Análise de Mercado e Estratégia
+              </div>
+              <div class="analysis-meta">
+                <span class="analysis-status ${statusClass}">${statusText}</span>
+              </div>
             </div>
-            <div class="analysis-title">
-              Análise de Mercado e Estratégia
-            </div>
-          </div>
           ${currentUser && currentUser.isAdmin ? `
             <div class="analysis-item-actions">
               <button class="delete-analysis-btn" data-id="${analysis._id}" title="Excluir análise">
@@ -1287,7 +1303,8 @@ ${currentAnalysisData.analysis}`;
             </div>
           ` : ''}
         </div>
-      `).join('');
+      `;
+      }).join('');
       
       // Adicionar evento de clique para cada análise
       document.querySelectorAll('.analysis-item').forEach(item => {
@@ -1922,16 +1939,20 @@ ${currentAnalysisData.analysis}`;
         // Calcular duração formatada
         const duration = formatDuration(transcription.duracao);
         
-        // Ícone de status
-        let statusIcon = '';
+        // Determinar status e classe CSS
+        let statusClass = 'completed';
+        let statusText = 'Concluído';
+        
         if (transcription.emProgresso) {
-          statusIcon = '<span><i class="fas fa-spinner fa-spin"></i> Em progresso</span>';
+          statusClass = 'in-progress';
+          statusText = 'Em progresso';
         } else if (transcription.erro) {
-          statusIcon = '<span><i class="fas fa-exclamation-circle"></i> Erro</span>';
+          statusClass = 'error';
+          statusText = 'Erro';
         }
         
         return `
-          <div class="transcription-item" data-id="${transcription._id}">
+          <div class="transcription-item ${statusClass}" data-id="${transcription._id}">
             <div class="transcription-item-content">
               <div class="transcription-date">
                 ${new Date(transcription.dataCriacao).toLocaleDateString('pt-BR', {
@@ -1946,7 +1967,7 @@ ${currentAnalysisData.analysis}`;
               <div class="transcription-meta">
                 <span><i class="fas fa-clock"></i> ${duration}</span>
                 <span><i class="fas fa-language"></i> ${transcription.idioma}</span>
-                ${statusIcon}
+                <span class="transcription-status ${statusClass}">${statusText}</span>
               </div>
             </div>
             <div class="transcription-item-actions">

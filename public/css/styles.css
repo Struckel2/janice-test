@@ -717,6 +717,53 @@ body {
   opacity: 0.5;
 }
 
+/* Estilos para indicadores de status de análises */
+.analysis-meta {
+  display: flex;
+  font-size: 0.8rem;
+  color: var(--light-text);
+  margin-top: 5px;
+}
+
+.analysis-status {
+  font-size: 0.8rem;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.analysis-status.completed {
+  background: rgba(76, 175, 80, 0.1);
+  color: var(--success-color);
+}
+
+.analysis-status.in-progress {
+  background: rgba(255, 152, 0, 0.1);
+  color: var(--warning-color);
+  animation: pulse-badge 2s infinite;
+}
+
+.analysis-status.error {
+  background: rgba(233, 30, 99, 0.1);
+  color: var(--error-color);
+}
+
+.analysis-item.in-progress {
+  border-left-color: var(--warning-color);
+  background: rgba(255, 152, 0, 0.05);
+}
+
+.analysis-item.error {
+  border-left-color: var(--error-color);
+  background: rgba(233, 30, 99, 0.05);
+}
+
+.analysis-item.completed {
+  border-left-color: var(--success-color);
+}
+
 /* Header */
 header {
     text-align: center;
@@ -1790,6 +1837,46 @@ footer {
   font-size: 1.5rem;
   margin-bottom: 10px;
   opacity: 0.5;
+}
+
+/* Estilos para indicadores de status de transcrições */
+.transcription-status {
+  font-size: 0.8rem;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.transcription-status.completed {
+  background: rgba(76, 175, 80, 0.1);
+  color: var(--success-color);
+}
+
+.transcription-status.in-progress {
+  background: rgba(255, 152, 0, 0.1);
+  color: var(--warning-color);
+  animation: pulse-badge 2s infinite;
+}
+
+.transcription-status.error {
+  background: rgba(233, 30, 99, 0.1);
+  color: var(--error-color);
+}
+
+.transcription-item.in-progress {
+  border-left-color: var(--warning-color);
+  background: rgba(255, 152, 0, 0.05);
+}
+
+.transcription-item.error {
+  border-left-color: var(--error-color);
+  background: rgba(233, 30, 99, 0.05);
+}
+
+.transcription-item.completed {
+  border-left-color: var(--success-color);
 }
 
 /* ===== ESTILOS PARA LOADING STATES DAS ABAS ===== */
