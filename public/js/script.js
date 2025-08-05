@@ -507,10 +507,26 @@ document.addEventListener('DOMContentLoaded', () => {
           estimate = `~${hours}h${mins > 0 ? ` ${mins}min` : ''}`;
         }
       } else {
-        // Fallback para estimativas baseadas no tipo
+        // Estimativas melhoradas baseadas no tipo e metadados específicos
         switch (process.tipo) {
           case 'transcricao':
-            estimate = '~10-40min';
+            // Para transcrições, tentar usar duração do áudio se disponível
+            if (process.metadados && process.metadados.duracaoAudioMinutos) {
+              const audioDuration = process.metadados.duracaoAudioMinutos;
+              // Whisper leva aproximadamente 20% do tempo real do áudio
+              const estimatedMinutes = Math.ceil(audioDuration * 0.2);
+              
+              if (estimatedMinutes < 60) {
+                estimate = `~${estimatedMinutes}min`;
+              } else {
+                const hours = Math.floor(estimatedMinutes / 60);
+                const mins = estimatedMinutes % 60;
+                estimate = `~${hours}h${mins > 0 ? `${mins}min` : ''}`;
+              }
+            } else {
+              // Fallback genérico para transcrições sem metadados
+              estimate = '~10-40min';
+            }
             break;
           case 'analise':
             estimate = '~3min';
@@ -561,7 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Método para registrar novo processo (chamado quando processo é iniciado)
-    registerProcess(type, clientId, titulo, resourceId = null) {
+    registerProcess(type, clientId, titulo, resourceId = null, metadados = null) {
       const processId = `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       console.log('🔍 [DEBUG-FRONTEND] Registrando novo processo:', {
@@ -569,7 +585,8 @@ document.addEventListener('DOMContentLoaded', () => {
         type,
         clientId,
         titulo,
-        resourceId
+        resourceId,
+        metadados
       });
       
       const processData = {
@@ -581,7 +598,8 @@ document.addEventListener('DOMContentLoaded', () => {
         status: 'em-progresso',
         mensagem: 'Iniciando...',
         criadoEm: new Date().toISOString(),
-        resourceId: resourceId
+        resourceId: resourceId,
+        metadados: metadados || {}
       };
       
       console.log('🔍 [DEBUG-FRONTEND] Dados do processo criado:', processData);
@@ -2109,12 +2127,23 @@ ${currentAnalysisData.analysis}`;
     }
     
     try {
-      // Registrar processo no painel de processos ativos
+      // Estimar duração do áudio baseada no tamanho do arquivo
+      const fileSize = transcriptionFileInput.files[0].size / (1024 * 1024); // tamanho em MB
+      const estimatedAudioMinutes = Math.max(1, Math.ceil(fileSize / 1)); // ~1MB por minuto
+      
+      // Registrar processo no painel de processos ativos com metadados
       const client = currentClients.find(c => c._id === currentClientId);
+      const processMetadata = {
+        duracaoAudioMinutos: estimatedAudioMinutes,
+        tamanhoArquivoMB: fileSize
+      };
+      
       const processId = activeProcessesManager.registerProcess(
         'transcricao', 
         currentClientId, 
-        `Transcrição: ${transcriptionTitleInput.value.trim()}`
+        `Transcrição: ${transcriptionTitleInput.value.trim()}`,
+        null,
+        processMetadata
       );
       
       // Mostrar tela de carregamento
@@ -2132,7 +2161,6 @@ ${currentAnalysisData.analysis}`;
       document.querySelector('.loading-text').textContent = 'Processando arquivo de áudio/vídeo...';
       
       // Estimar duração baseada no tamanho do arquivo (aproximadamente 1MB por minuto para áudio de qualidade média)
-      const fileSize = transcriptionFileInput.files[0].size / (1024 * 1024); // tamanho em MB
       const estimatedMinutes = Math.max(1, Math.ceil(fileSize / 1));
       
       // Adicionar aviso sobre tempo de processamento real
