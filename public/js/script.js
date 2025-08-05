@@ -140,24 +140,50 @@ document.addEventListener('DOMContentLoaded', () => {
     
     async loadActiveProcesses() {
       try {
+        console.log('🔍 [DEBUG-LOAD] ===== CARREGANDO PROCESSOS ATIVOS =====');
+        
         const response = await fetch('/api/processos/ativos');
+        console.log('🔍 [DEBUG-LOAD] Response status:', response.status);
+        console.log('🔍 [DEBUG-LOAD] Response ok:', response.ok);
+        
         if (response.ok) {
           const processes = await response.json();
           
+          console.log('🔍 [DEBUG-LOAD] Resposta da API:', processes);
+          console.log('🔍 [DEBUG-LOAD] Tipo da resposta:', typeof processes);
+          console.log('🔍 [DEBUG-LOAD] É array?', Array.isArray(processes));
+          console.log('🔍 [DEBUG-LOAD] Length:', processes?.length);
+          
           // Validar se processes é um array antes de usar forEach
           if (Array.isArray(processes)) {
-            processes.forEach(process => {
+            console.log('✅ [DEBUG-LOAD] Processando array de processos...');
+            processes.forEach((process, index) => {
+              console.log(`🔍 [DEBUG-LOAD] Processo ${index}:`, {
+                id: process.id,
+                tipo: process.tipo,
+                status: process.status,
+                progresso: process.progresso
+              });
               this.processes.set(process.id, process);
             });
+            console.log(`✅ [DEBUG-LOAD] ${processes.length} processos carregados no Map local`);
           } else {
-            console.warn('API retornou dados inválidos para processos ativos:', processes);
+            console.warn('⚠️ [DEBUG-LOAD] API retornou dados inválidos para processos ativos:', processes);
+            console.warn('⚠️ [DEBUG-LOAD] Esperado: Array, Recebido:', typeof processes);
             // Se não for array, assumir que não há processos ativos
           }
           
+          console.log('🔍 [DEBUG-LOAD] Estado final do Map:', {
+            totalProcessos: this.processes.size,
+            processIds: Array.from(this.processes.keys())
+          });
+          
           this.updateUI();
+        } else {
+          console.error('❌ [DEBUG-LOAD] Resposta não OK:', response.status, response.statusText);
         }
       } catch (error) {
-        console.error('Erro ao carregar processos ativos:', error);
+        console.error('❌ [DEBUG-LOAD] Erro ao carregar processos ativos:', error);
       }
     }
     

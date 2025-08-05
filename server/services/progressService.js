@@ -131,11 +131,42 @@ function registerConnection(clientId, res, type = 'progress') {
         stepStatus: 'active'
       });
     } else if (type === 'processes') {
-      // Enviar processos ativos existentes
+      // LIMPEZA: Remover processos concluídos há mais de 1 minuto antes de enviar lista
       const userProcesses = activeProcesses.get(clientId);
-      const processes = userProcesses ? Array.from(userProcesses.values()) : [];
+      if (userProcesses) {
+        console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Limpando processos antigos antes de enviar lista...`);
+        const now = new Date();
+        const processesToRemove = [];
+        
+        for (const [processId, process] of userProcesses.entries()) {
+          if (process.status === 'concluido' && process.concluidoEm) {
+            const timeSinceCompletion = now - new Date(process.concluidoEm);
+            const minutesSinceCompletion = timeSinceCompletion / (1000 * 60);
+            
+            if (minutesSinceCompletion > 1) {
+              console.log(`🗑️ [DEBUG-REGISTER-CONNECTION] Removendo processo concluído há ${minutesSinceCompletion.toFixed(1)} minutos: ${processId}`);
+              processesToRemove.push(processId);
+            }
+          }
+        }
+        
+        // Remover processos antigos
+        processesToRemove.forEach(processId => {
+          userProcesses.delete(processId);
+        });
+        
+        // Se não há mais processos, remover o usuário do mapa
+        if (userProcesses.size === 0) {
+          activeProcesses.delete(clientId);
+          console.log(`🔍 [DEBUG-REGISTER-CONNECTION] UserId ${clientId} removido do activeProcesses (sem mais processos após limpeza)`);
+        }
+      }
       
-      console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Enviando ${processes.length} processos ativos existentes`);
+      // Enviar processos ativos existentes (após limpeza)
+      const cleanedUserProcesses = activeProcesses.get(clientId);
+      const processes = cleanedUserProcesses ? Array.from(cleanedUserProcesses.values()) : [];
+      
+      console.log(`🔍 [DEBUG-REGISTER-CONNECTION] Enviando ${processes.length} processos ativos existentes (após limpeza)`);
       sendSSEEvent(res, 'processes-list', {
         processes: processes,
         totalProcesses: processes.length

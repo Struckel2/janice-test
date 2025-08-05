@@ -12,13 +12,22 @@ router.get('/ativos', requireAuth, async (req, res) => {
     const userId = req.user._id.toString();
     const activeProcesses = progressService.getActiveProcesses(userId);
     
-    res.json({
-      success: true,
-      processes: activeProcesses,
-      total: activeProcesses.length
-    });
+    console.log(`🔍 [DEBUG-ATIVOS] ===== GET /api/processos/ativos =====`);
+    console.log(`🔍 [DEBUG-ATIVOS] User ID: ${userId}`);
+    console.log(`🔍 [DEBUG-ATIVOS] Processos encontrados: ${activeProcesses.length}`);
+    console.log(`🔍 [DEBUG-ATIVOS] Processos:`, activeProcesses.map(p => ({
+      id: p.id,
+      tipo: p.tipo,
+      status: p.status,
+      progresso: p.progresso
+    })));
+    
+    // CORREÇÃO: Retornar array direto em vez de objeto
+    // Isso resolve o erro "processes.forEach is not a function"
+    res.json(activeProcesses);
+    
   } catch (error) {
-    console.error('Erro ao buscar processos ativos:', error);
+    console.error('❌ [DEBUG-ATIVOS] Erro ao buscar processos ativos:', error);
     res.status(500).json({
       success: false,
       message: 'Erro interno do servidor'
