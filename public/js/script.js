@@ -2636,6 +2636,27 @@ ${currentAnalysisData.analysis}`;
   const centralLogoInput = document.getElementById('central-logo-input');
   const detailLogoInput = document.getElementById('detail-logo-input');
   
+  // Configurar seletor de cores
+  function setupColorPicker() {
+    const colorInput = document.getElementById('client-color');
+    const colorSample = document.getElementById('color-sample');
+    const colorValue = document.getElementById('color-value');
+    
+    if (colorInput && colorSample && colorValue) {
+      // Atualizar preview quando a cor mudar
+      colorInput.addEventListener('input', (e) => {
+        const color = e.target.value;
+        colorSample.style.backgroundColor = color;
+        colorValue.textContent = color.toUpperCase();
+      });
+      
+      // Inicializar com cor padrão
+      const defaultColor = colorInput.value;
+      colorSample.style.backgroundColor = defaultColor;
+      colorValue.textContent = defaultColor.toUpperCase();
+    }
+  }
+  
   // Configurar logos clicáveis
   function setupClickableLogos() {
     // Logo do painel central
@@ -3703,6 +3724,9 @@ ${currentAnalysisData.analysis}`;
     
     // Configurar logos clicáveis
     setupClickableLogos();
+    
+    // Configurar seletor de cores
+    setupColorPicker();
     
     // Configurar eventos de planos de ação
     setupActionPlanEvents();

@@ -582,6 +582,50 @@ body {
   border-radius: var(--border-radius);
 }
 
+/* Seletor de cores */
+.color-picker-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: white;
+}
+
+.color-picker-container input[type="color"] {
+  width: 50px;
+  height: 40px;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  padding: 0;
+}
+
+.color-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.color-sample {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  background-color: #6a5acd;
+  transition: var(--transition);
+}
+
+.color-value {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: var(--text-color);
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
 /* Detalhes do cliente */
 .client-details-container {
   display: none;
@@ -1736,6 +1780,30 @@ footer {
 
 .tab-content.active {
   display: block;
+}
+
+/* Headers das abas (análises, transcrições) */
+.analysis-header,
+.transcription-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.analysis-header h3,
+.transcription-header h3 {
+  margin: 0;
+  color: var(--primary-dark);
+}
+
+.analysis-header .action-button,
+.transcription-header .action-button {
+  margin: 0;
+  padding: 8px 16px;
+  font-size: 0.9rem;
 }
 
 /* Histórico de transcrições */

@@ -29,6 +29,17 @@ const clienteSchema = new mongoose.Schema({
     type: String, // URL da imagem armazenada
     default: null
   },
+  cor: {
+    type: String, // Cor personalizada do cliente (hex)
+    default: '#6a5acd', // Cor padrão (primary-color)
+    validate: {
+      validator: function(cor) {
+        // Valida formato hexadecimal (#RRGGBB)
+        return /^#[0-9A-Fa-f]{6}$/.test(cor);
+      },
+      message: 'Formato de cor inválido. Use formato hexadecimal (#RRGGBB)'
+    }
+  },
   dataCadastro: {
     type: Date,
     default: Date.now

@@ -132,7 +132,8 @@ router.post('/', upload.single('logo'), async (req, res) => {
     const novoCliente = new Cliente({
       nome,
       cnpj: cnpj.replace(/\D/g, ''), // Armazena apenas os números
-      logo: logoUrl
+      logo: logoUrl,
+      cor: req.body.cor || '#6a5acd' // Cor padrão se não fornecida
     });
     
     console.log('[DEBUG] POST /clientes - Modelo criado, salvando no banco de dados');
@@ -236,6 +237,11 @@ router.put('/:id', upload.single('logo'), async (req, res) => {
       nome,
       dataUltimaAtualizacao: Date.now()
     };
+    
+    // Incluir cor se fornecida
+    if (req.body.cor) {
+      atualizacao.cor = req.body.cor;
+    }
     
     // Só incluir logo na atualização se um novo arquivo foi enviado e processado
     if (logoUrl) {

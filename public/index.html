@@ -52,12 +52,6 @@ a<!DOCTYPE html>
                 <button id="edit-client-btn" class="action-button secondary">
                     <i class="fas fa-edit"></i> Editar
                 </button>
-                <button id="new-analysis-btn" class="action-button">
-                    <i class="fas fa-chart-line"></i> Nova Análise
-                </button>
-                <button id="new-transcription-btn" class="action-button">
-                    <i class="fas fa-microphone"></i> Nova Transcrição
-                </button>
                 <button id="delete-client-btn" class="action-button danger">
                     <i class="fas fa-trash-alt"></i> Excluir
                 </button>
@@ -74,7 +68,12 @@ a<!DOCTYPE html>
                 
                 <div class="tab-content active" id="analysis-tab">
                     <div class="client-analysis-history">
-                        <h3>Histórico de Análises</h3>
+                        <div class="analysis-header">
+                            <h3>Histórico de Análises</h3>
+                            <button id="new-analysis-btn" class="action-button">
+                                <i class="fas fa-plus"></i> Nova Análise
+                            </button>
+                        </div>
                         <div id="analysis-list">
                             <!-- Histórico de análises será carregado dinamicamente -->
                             <div class="analysis-list-empty">
@@ -87,7 +86,12 @@ a<!DOCTYPE html>
                 
                 <div class="tab-content" id="transcriptions-tab">
                     <div class="client-transcription-history">
-                        <h3>Histórico de Transcrições</h3>
+                        <div class="transcription-header">
+                            <h3>Histórico de Transcrições</h3>
+                            <button id="new-transcription-btn" class="action-button">
+                                <i class="fas fa-plus"></i> Nova Transcrição
+                            </button>
+                        </div>
                         <div id="transcription-list">
                             <!-- Histórico de transcrições será carregado dinamicamente -->
                             <div class="transcription-list-empty">
@@ -434,6 +438,18 @@ a<!DOCTYPE html>
                         </div>
                         <div class="file-preview" id="logo-preview"></div>
                     </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="client-color">Cor Personalizada</label>
+                    <div class="color-picker-container">
+                        <input type="color" id="client-color" name="cor" value="#6a5acd">
+                        <div class="color-preview">
+                            <div class="color-sample" id="color-sample"></div>
+                            <span class="color-value" id="color-value">#6a5acd</span>
+                        </div>
+                    </div>
+                    <p class="hint">Esta cor será usada para destacar este cliente na interface</p>
                 </div>
                 
                 <div class="form-actions">
