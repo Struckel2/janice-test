@@ -116,12 +116,24 @@ function registerConnection(clientId, res, type = 'progress') {
 
 /**
  * Remove uma conexão SSE
- * @param {String} clientId - ID do cliente
+ * @param {String} connectionKey - Chave da conexão (pode ser clientId ou clientId_processes)
  * @param {Function} keepAlive - Função de keepAlive para limpar
  */
-function removeConnection(clientId, keepAlive) {
+function removeConnection(connectionKey, keepAlive) {
+  console.log(`🔍 [DEBUG-REMOVE-CONNECTION] Removendo conexão SSE:`, {
+    connectionKey,
+    existeNoMap: sseConnections.has(connectionKey),
+    totalConexoes: sseConnections.size
+  });
+  
   clearInterval(keepAlive);
-  sseConnections.delete(clientId);
+  const removed = sseConnections.delete(connectionKey);
+  
+  console.log(`🔍 [DEBUG-REMOVE-CONNECTION] Conexão removida:`, {
+    connectionKey,
+    removidaComSucesso: removed,
+    totalConexoesRestantes: sseConnections.size
+  });
 }
 
 /**
