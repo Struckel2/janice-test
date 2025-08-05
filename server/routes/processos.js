@@ -51,6 +51,55 @@ router.delete('/:processId', requireAuth, async (req, res) => {
 });
 
 /**
+ * POST /api/processos/ativos
+ * Registra um novo processo ativo
+ */
+router.post('/ativos', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user._id.toString();
+    const processData = req.body;
+    
+    console.log(`📝 [PROCESSOS-POST] ===== REGISTRANDO NOVO PROCESSO =====`);
+    console.log(`📝 [PROCESSOS-POST] User ID: ${userId}`);
+    console.log(`📝 [PROCESSOS-POST] Process ID: ${processData.id}`);
+    console.log(`📝 [PROCESSOS-POST] Tipo: ${processData.tipo}`);
+    console.log(`📝 [PROCESSOS-POST] Título: ${processData.titulo}`);
+    
+    // Validar dados obrigatórios
+    if (!processData.id || !processData.tipo || !processData.titulo) {
+      console.error(`❌ [PROCESSOS-POST] Dados obrigatórios faltando:`, {
+        id: !!processData.id,
+        tipo: !!processData.tipo,
+        titulo: !!processData.titulo
+      });
+      return res.status(400).json({
+        success: false,
+        error: 'Dados obrigatórios faltando: id, tipo e titulo são necessários'
+      });
+    }
+    
+    // Registrar processo no progressService
+    console.log(`📝 [PROCESSOS-POST] Chamando progressService.registerActiveProcess...`);
+    progressService.registerActiveProcess(userId, processData);
+    console.log(`📝 [PROCESSOS-POST] Processo registrado com sucesso no progressService`);
+    
+    res.json({
+      success: true,
+      message: 'Processo registrado com sucesso',
+      processId: processData.id
+    });
+    
+  } catch (error) {
+    console.error('❌ [PROCESSOS-POST] Erro ao registrar processo:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro interno do servidor',
+      message: error.message
+    });
+  }
+});
+
+/**
  * GET /api/processos/sse
  * Endpoint para Server-Sent Events do painel de processos
  */
