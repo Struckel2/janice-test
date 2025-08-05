@@ -366,6 +366,14 @@ async function processTranscricaoAsync(filePath, transcricaoId, clienteId, idiom
           resultado: 'Transcrição concluída com smart-whisper',
           resourceId: transcricaoId
         });
+        
+        // Enviar evento de conclusão via SSE
+        progressService.sendCompletionEvent(clienteId, {
+          percentage: 100,
+          message: 'Jerry terminou! Transcrição pronta!',
+          step: 4,
+          stepStatus: 'completed'
+        }, 'transcription');
       }
       
       console.log(`Transcrição ${transcricaoId} concluída com smart-whisper (fallback)`);
@@ -415,6 +423,14 @@ async function processTranscricaoAsync(filePath, transcricaoId, clienteId, idiom
         resultado: 'Transcrição concluída com Replicate',
         resourceId: transcricaoId
       });
+      
+      // Enviar evento de conclusão via SSE
+      progressService.sendCompletionEvent(clienteId, {
+        percentage: 100,
+        message: 'Jerry terminou! Transcrição pronta!',
+        step: 4,
+        stepStatus: 'completed'
+      }, 'transcription');
     }
     
     console.log(`Transcrição ${transcricaoId} concluída com sucesso via Replicate`);
@@ -442,6 +458,30 @@ async function processTranscricaoAsync(filePath, transcricaoId, clienteId, idiom
           mensagemErro: `Replicate falhou, usado smart-whisper: ${error.message}`
         });
         
+        // Encontrar e finalizar processo
+        const allProcesses = progressService.getAllGlobalProcesses();
+        const matchingProcess = allProcesses.find(p => 
+          p.tipo === 'transcricao' && 
+          p.cliente && p.cliente._id === clienteId &&
+          p.status === 'em-progresso'
+        );
+        
+        if (matchingProcess) {
+          progressService.completeActiveProcess(matchingProcess.id, {
+            progresso: 100,
+            resultado: 'Transcrição concluída com smart-whisper (fallback)',
+            resourceId: transcricaoId
+          });
+          
+          // Enviar evento de conclusão via SSE
+          progressService.sendCompletionEvent(clienteId, {
+            percentage: 100,
+            message: 'Jerry terminou! Transcrição pronta!',
+            step: 4,
+            stepStatus: 'completed'
+          }, 'transcription');
+        }
+        
         console.log(`Transcrição ${transcricaoId} concluída com smart-whisper (fallback após erro Replicate)`);
         return;
         
@@ -453,6 +493,18 @@ async function processTranscricaoAsync(filePath, transcricaoId, clienteId, idiom
           erro: true,
           mensagemErro: `Replicate e smart-whisper falharam. Replicate: ${error.message}. Smart-whisper: ${fallbackError.message}`
         });
+        
+        // Encontrar e marcar processo como erro
+        const allProcesses = progressService.getAllGlobalProcesses();
+        const matchingProcess = allProcesses.find(p => 
+          p.tipo === 'transcricao' && 
+          p.cliente && p.cliente._id === clienteId &&
+          p.status === 'em-progresso'
+        );
+        
+        if (matchingProcess) {
+          progressService.errorActiveProcess(matchingProcess.id, `Replicate e smart-whisper falharam. Replicate: ${error.message}. Smart-whisper: ${fallbackError.message}`);
+        }
         return;
       }
     }
@@ -463,6 +515,18 @@ async function processTranscricaoAsync(filePath, transcricaoId, clienteId, idiom
       erro: true,
       mensagemErro: error.message
     });
+    
+    // Encontrar e marcar processo como erro
+    const allProcesses = progressService.getAllGlobalProcesses();
+    const matchingProcess = allProcesses.find(p => 
+      p.tipo === 'transcricao' && 
+      p.cliente && p.cliente._id === clienteId &&
+      p.status === 'em-progresso'
+    );
+    
+    if (matchingProcess) {
+      progressService.errorActiveProcess(matchingProcess.id, error.message);
+    }
   } finally {
     // Remover arquivo temporário
     try {
