@@ -46,8 +46,16 @@ router.post('/gerar', async (req, res) => {
       });
     }
 
+    // Limpar campos vazios da configuração
+    const configuracaoLimpa = {};
+    Object.keys(configuracao).forEach(key => {
+      if (configuracao[key] && configuracao[key].trim() !== '') {
+        configuracaoLimpa[key] = configuracao[key].trim();
+      }
+    });
+
     // Validar configuração
-    const errosConfig = mockupService.validarConfiguracao(configuracao);
+    const errosConfig = mockupService.validarConfiguracao(configuracaoLimpa);
     if (errosConfig.length > 0) {
       return res.status(400).json({
         success: false,
@@ -61,7 +69,7 @@ router.post('/gerar', async (req, res) => {
       cliente: clienteId,
       criadoPor: req.user._id,
       titulo: titulo.trim(),
-      configuracao,
+      configuracao: configuracaoLimpa,
       prompt: prompt.trim(),
       configuracaoTecnica: {
         cfg: configuracaoTecnica.cfg || 3.5,

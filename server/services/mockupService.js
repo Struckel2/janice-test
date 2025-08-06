@@ -27,11 +27,13 @@ class MockupService {
    * Gera 4 variações de mockup
    */
   async gerarMockup(mockupData) {
+    let mockup = null;
+    
     try {
       console.log('🎨 Iniciando geração de mockup:', mockupData.titulo);
       
       // Criar registro no banco com status 'gerando'
-      const mockup = new Mockup({
+      mockup = new Mockup({
         ...mockupData,
         status: 'gerando',
         imagemUrl: '' // Será preenchido após escolha

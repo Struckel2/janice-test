@@ -76,7 +76,8 @@ const mockupSchema = new mongoose.Schema({
         'alto-contraste',
         'cores-marca',
         'personalizado'
-      ]
+      ],
+      default: 'colorido'
     },
     
     // Elementos visuais
@@ -88,7 +89,8 @@ const mockupSchema = new mongoose.Schema({
         'abstrato-conceitual',
         'com-texto-integrado',
         'icones-simbolos'
-      ]
+      ],
+      default: 'apenas-objetos'
     },
     
     // Setor/indústria
@@ -103,7 +105,8 @@ const mockupSchema = new mongoose.Schema({
         'financas',
         'imobiliario',
         'outros'
-      ]
+      ],
+      default: 'outros'
     },
     
     // Público-alvo
@@ -115,7 +118,8 @@ const mockupSchema = new mongoose.Schema({
         'maduro-50-plus',
         'corporativo-b2b',
         'consumidor-b2c'
-      ]
+      ],
+      default: 'consumidor-b2c'
     },
     
     // Mood/sentimento
@@ -127,7 +131,8 @@ const mockupSchema = new mongoose.Schema({
         'inovador-futurista',
         'confiavel-estavel',
         'dinamico-energetico'
-      ]
+      ],
+      default: 'profissional-serio'
     },
     
     // Estilo de renderização
@@ -139,7 +144,8 @@ const mockupSchema = new mongoose.Schema({
         'desenho-vetorial',
         'aquarela-artistico',
         '3d-render'
-      ]
+      ],
+      default: 'ilustracao-digital'
     }
   },
   
