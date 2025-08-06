@@ -118,7 +118,7 @@ async function generateActionPlan(transcricaoIds, analiseIds, clienteId, titulo)
       filename: filename,
       title: titulo,
       content: planoAcao,
-      folder: 'janice/planos-acao'
+      folder: 'janice/analises'
     });
     console.log(`PDF gerado: ${pdfUrl}`);
     
