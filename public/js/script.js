@@ -4305,6 +4305,62 @@ ${currentActionPlanData.conteudo}`;
     mockupVariationsModal.classList.add('show');
   }
   
+  // 🚀 NOVA FUNÇÃO: Mostrar variações para seleção de mockup já concluído
+  async function showMockupVariationsForSelection(mockupId) {
+    try {
+      // Buscar dados do mockup
+      const response = await fetch(`/api/mockups/${mockupId}`);
+      if (!response.ok) {
+        throw new Error('Erro ao carregar mockup');
+      }
+      
+      const mockup = await response.json();
+      
+      // Verificar se há variações temporárias
+      if (!mockup.metadados?.variacoesTemporarias?.length) {
+        alert('Este mockup não possui variações disponíveis para seleção.');
+        return;
+      }
+      
+      // Configurar dados para o modal
+      currentMockupData = {
+        mockupId: mockup._id,
+        titulo: mockup.titulo,
+        prompt: mockup.prompt
+      };
+      
+      // Preencher prompt usado
+      if (usedPrompt) {
+        usedPrompt.textContent = mockup.prompt || 'Prompt não disponível';
+      }
+      
+      // Renderizar grid com variações temporárias
+      if (variationsGrid) {
+        variationsGrid.innerHTML = mockup.metadados.variacoesTemporarias.map((url, index) => `
+          <div class="variation-item" data-url="${url}" data-seed="${index + 1}">
+            <img src="${url}" alt="Variação ${index + 1}" class="variation-image">
+            <div class="variation-info">
+              <div class="variation-seed">Variação ${index + 1}</div>
+              <button class="variation-select-btn">Escolher Esta</button>
+            </div>
+          </div>
+        `).join('');
+        
+        // Adicionar eventos de clique
+        variationsGrid.querySelectorAll('.variation-item').forEach(item => {
+          item.addEventListener('click', () => selectVariation(item));
+        });
+      }
+      
+      // Mostrar modal de variações
+      mockupVariationsModal.classList.add('show');
+      
+    } catch (error) {
+      console.error('Erro ao carregar variações do mockup:', error);
+      alert('Não foi possível carregar as variações do mockup. Tente novamente.');
+    }
+  }
+  
   // Selecionar variação
   function selectVariation(item) {
     // Remover seleção anterior
@@ -4406,26 +4462,55 @@ ${currentActionPlanData.conteudo}`;
           statusText = 'Erro';
         }
         
+        // 🚀 CORREÇÃO: Verificar imagemUrl em vez de imagemFinal
+        // Se imagemUrl estiver vazio mas há variações temporárias, mostrar botão para escolher
+        const hasVariations = mockup.metadados?.variacoesTemporarias?.length > 0;
+        const needsSelection = mockup.status === 'concluido' && !mockup.imagemUrl && hasVariations;
+        
+        let previewContent = '';
+        let actionButton = '';
+        
+        if (mockup.imagemUrl) {
+          // Mockup finalizado com imagem escolhida
+          previewContent = `<img src="${mockup.imagemUrl}" alt="${mockup.titulo}">`;
+        } else if (needsSelection) {
+          // Mockup concluído mas precisa escolher variação
+          previewContent = `
+            <div class="mockup-preview-placeholder">
+              <i class="fas fa-images"></i>
+              <span>Escolher Variação</span>
+            </div>
+          `;
+          actionButton = `
+            <button class="choose-variation-btn" data-id="${mockup._id}" title="Escolher variação">
+              <i class="fas fa-hand-pointer"></i> Escolher
+            </button>
+          `;
+          statusText = 'Aguardando Escolha';
+          statusClass = 'awaiting-choice';
+        } else {
+          // Mockup em progresso ou erro
+          previewContent = `<i class="fas fa-palette"></i>`;
+        }
+        
         return `
           <div class="mockup-item ${statusClass}" data-id="${mockup._id}">
             <div class="mockup-item-preview">
-              ${mockup.imagemFinal 
-                ? `<img src="${mockup.imagemFinal}" alt="${mockup.titulo}">`
-                : `<i class="fas fa-palette"></i>`
-              }
+              ${previewContent}
             </div>
             <div class="mockup-item-content">
               <div class="mockup-item-header">
                 <div class="mockup-item-title">${mockup.titulo}</div>
-                <div class="mockup-item-type">${getTypeLabel(mockup.configuracao.tipoArte)}</div>
+                <div class="mockup-item-type">${getTypeLabel(mockup.configuracao?.tipoArte || 'mockup')}</div>
               </div>
               <div class="mockup-item-meta">
                 <span><i class="fas fa-calendar"></i> ${new Date(mockup.dataCriacao).toLocaleDateString('pt-BR')}</span>
-                <span><i class="fas fa-expand-arrows-alt"></i> ${mockup.configuracao.aspectRatio}</span>
+                <span><i class="fas fa-expand-arrows-alt"></i> ${mockup.configuracao?.aspectRatio || 'N/A'}</span>
                 <span class="mockup-status ${statusClass}">${statusText}</span>
               </div>
             </div>
             <div class="mockup-item-actions">
+              ${actionButton}
               <button class="delete-mockup-btn" data-id="${mockup._id}" title="Excluir mockup">
                 <i class="fas fa-trash"></i>
               </button>
@@ -4440,6 +4525,15 @@ ${currentActionPlanData.conteudo}`;
         content.addEventListener('click', () => {
           const mockupId = item.dataset.id;
           viewMockup(mockupId);
+        });
+      });
+      
+      // Adicionar eventos para botões de escolher variação
+      mockupsList.querySelectorAll('.choose-variation-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const mockupId = btn.dataset.id;
+          showMockupVariationsForSelection(mockupId);
         });
       });
       
