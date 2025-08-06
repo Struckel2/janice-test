@@ -24,7 +24,7 @@ class MockupService {
   }
 
   /**
-   * Gera 4 variações de mockup
+   * Gera 2 variações de mockup (otimizado para performance)
    */
   async gerarMockup(mockupData) {
     let mockup = null;
@@ -60,21 +60,21 @@ class MockupService {
         output_quality: mockup.configuracaoTecnica.outputQuality || this.defaultConfig.output_quality
       };
       
-      // Gerar 4 variações com seeds diferentes
+      // Gerar 2 variações com seeds diferentes (otimizado para evitar timeout)
       const variacoes = [];
-      const seeds = this._gerarSeeds(4);
+      const seeds = this._gerarSeeds(2);
       
-      console.log('🔄 [MOCKUP-SERVICE] Gerando 4 variações...');
+      console.log('🔄 [MOCKUP-SERVICE] Gerando 2 variações (otimizado para performance)...');
       console.log('🔄 [MOCKUP-SERVICE] Seeds geradas:', seeds);
       console.log('🔄 [MOCKUP-SERVICE] Parâmetros da API:', apiParams);
       
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 2; i++) {
         const params = {
           ...apiParams,
           seed: seeds[i]
         };
         
-        console.log(`⏳ [MOCKUP-SERVICE] ===== GERANDO VARIAÇÃO ${i + 1}/4 =====`);
+        console.log(`⏳ [MOCKUP-SERVICE] ===== GERANDO VARIAÇÃO ${i + 1}/2 =====`);
         console.log(`⏳ [MOCKUP-SERVICE] Seed: ${seeds[i]}`);
         console.log(`⏳ [MOCKUP-SERVICE] Parâmetros completos:`, params);
         
@@ -104,7 +104,7 @@ class MockupService {
       mockup.metadados = {
         variacoesTemporarias: variacoes.map(v => v.url),
         tempoProcessamento: tempoTotal,
-        custo: 0.035 * 4 // $0.035 por imagem
+        custo: 0.035 * 2 // $0.035 por imagem (2 variações)
       };
       
       console.log('🎨 [MOCKUP-SERVICE] ===== ATUALIZANDO MOCKUP NO BANCO =====');

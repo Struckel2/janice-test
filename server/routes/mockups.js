@@ -12,7 +12,7 @@ router.use(isAuthenticated);
 
 /**
  * POST /api/mockups/gerar
- * Gera 4 variações de mockup
+ * Gera 2 variações de mockup (otimizado para performance)
  */
 router.post('/gerar', async (req, res) => {
   try {
@@ -97,8 +97,8 @@ router.post('/gerar', async (req, res) => {
       message: 'Mockup iniciado com sucesso. Processando em background...',
       data: {
         status: 'processing',
-        message: 'Gerando 4 variações de mockup. Isso pode levar até 2 minutos.',
-        estimatedTime: '1-2 minutos'
+        message: 'Gerando 2 variações de mockup. Isso pode levar até 1 minuto.',
+        estimatedTime: '30-60 segundos'
       }
     });
 
@@ -372,7 +372,7 @@ router.get('/estatisticas/resumo', async (req, res) => {
     ]);
 
     // Calcular custo total estimado
-    const custoTotal = totalMockups * 0.035 * 4; // 4 variações por mockup
+    const custoTotal = totalMockups * 0.035 * 2; // 2 variações por mockup (otimizado)
 
     res.json({
       success: true,
