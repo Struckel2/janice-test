@@ -4324,10 +4324,14 @@ ${currentActionPlanData.conteudo}`;
         throw new Error('Erro ao carregar mockup');
       }
       
-      const mockup = await response.json();
+      const responseData = await response.json();
+      
+      // 🚀 CORREÇÃO CRÍTICA: Extrair dados do wrapper da API se presente
+      const mockup = responseData.data || responseData;
       
       console.log('🔍 [MOCKUP-SELECTION] ===== DADOS DO MOCKUP RECEBIDOS =====');
-      console.log('🔍 [MOCKUP-SELECTION] Mockup completo:', mockup);
+      console.log('🔍 [MOCKUP-SELECTION] Resposta completa da API:', responseData);
+      console.log('🔍 [MOCKUP-SELECTION] Mockup extraído:', mockup);
       console.log('🔍 [MOCKUP-SELECTION] Status:', mockup.status);
       console.log('🔍 [MOCKUP-SELECTION] imagemUrl:', mockup.imagemUrl || 'VAZIO');
       console.log('🔍 [MOCKUP-SELECTION] metadados:', mockup.metadados);
