@@ -189,7 +189,7 @@ const mockupSchema = new mongoose.Schema({
   // URL da imagem final no Cloudinary
   imagemUrl: {
     type: String,
-    required: true
+    default: ''
   },
   
   // Metadados da geração

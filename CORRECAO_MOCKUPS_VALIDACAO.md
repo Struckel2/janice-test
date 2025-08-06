@@ -96,13 +96,37 @@ Para testar as correções:
 4. Submeta o formulário
 5. ✅ Deve funcionar sem erros de validação
 
+### 4. Campo imagemUrl Obrigatório (Correção Adicional)
+**Erro:** `Mockup validation failed: imagemUrl: Path 'imagemUrl' is required.`
+**Causa:** Campo `imagemUrl` marcado como obrigatório, mas documento criado antes da geração da imagem
+**Solução:** Removido `required: true` e adicionado `default: ''`
+
+```javascript
+// ANTES
+imagemUrl: {
+  type: String,
+  required: true  // ❌ Obrigatório desde criação
+},
+
+// DEPOIS
+imagemUrl: {
+  type: String,
+  default: ''     // ✅ Opcional durante geração
+},
+```
+
 ## 📝 Arquivos Modificados
 
 - `server/services/mockupService.js` - Correção de escopo da variável
-- `server/models/Mockup.js` - Adição de valores padrão
+- `server/models/Mockup.js` - Adição de valores padrão + correção imagemUrl
 - `server/routes/mockups.js` - Limpeza de campos vazios
 - `CORRECAO_MOCKUPS_VALIDACAO.md` - Esta documentação
 
 ## 🚀 Deploy
 
 As correções foram implementadas no projeto de teste e estão prontas para deploy no Railway.
+
+## 📋 Histórico de Correções
+
+1. **v1** - Correção inicial de validação enum e escopo de variável
+2. **v2** - Correção adicional do campo imagemUrl obrigatório
