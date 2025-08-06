@@ -1,5 +1,4 @@
 const Replicate = require('replicate');
-const fetch = require('node-fetch');
 const cloudinary = require('../config/cloudinary');
 const Mockup = require('../models/Mockup');
 
