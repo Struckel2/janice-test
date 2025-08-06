@@ -4308,19 +4308,62 @@ ${currentActionPlanData.conteudo}`;
   // 🚀 NOVA FUNÇÃO: Mostrar variações para seleção de mockup já concluído
   async function showMockupVariationsForSelection(mockupId) {
     try {
+      console.log('🔍 [MOCKUP-SELECTION] ===== INICIANDO SELEÇÃO DE VARIAÇÕES =====');
+      console.log('🔍 [MOCKUP-SELECTION] Mockup ID:', mockupId);
+      
+      // 🚀 CORREÇÃO: Cache busting para evitar dados em cache
+      const cacheBuster = Date.now();
+      const url = `/api/mockups/${mockupId}?t=${cacheBuster}`;
+      
+      console.log('🔍 [MOCKUP-SELECTION] URL com cache busting:', url);
+      
       // Buscar dados do mockup
-      const response = await fetch(`/api/mockups/${mockupId}`);
+      const response = await fetch(url);
       if (!response.ok) {
+        console.error('❌ [MOCKUP-SELECTION] Resposta não OK:', response.status, response.statusText);
         throw new Error('Erro ao carregar mockup');
       }
       
       const mockup = await response.json();
       
-      // Verificar se há variações temporárias
-      if (!mockup.metadados?.variacoesTemporarias?.length) {
-        alert('Este mockup não possui variações disponíveis para seleção.');
+      console.log('🔍 [MOCKUP-SELECTION] ===== DADOS DO MOCKUP RECEBIDOS =====');
+      console.log('🔍 [MOCKUP-SELECTION] Mockup completo:', mockup);
+      console.log('🔍 [MOCKUP-SELECTION] Status:', mockup.status);
+      console.log('🔍 [MOCKUP-SELECTION] imagemUrl:', mockup.imagemUrl || 'VAZIO');
+      console.log('🔍 [MOCKUP-SELECTION] metadados:', mockup.metadados);
+      console.log('🔍 [MOCKUP-SELECTION] metadados.variacoesTemporarias:', mockup.metadados?.variacoesTemporarias);
+      console.log('🔍 [MOCKUP-SELECTION] Quantidade de variações:', mockup.metadados?.variacoesTemporarias?.length || 0);
+      
+      // 🚀 CORREÇÃO: Verificação mais robusta com múltiplos caminhos
+      let variacoes = null;
+      let origemVariacoes = '';
+      
+      // Tentar múltiplos caminhos para encontrar as variações
+      if (mockup.metadados?.variacoesTemporarias?.length > 0) {
+        variacoes = mockup.metadados.variacoesTemporarias;
+        origemVariacoes = 'metadados.variacoesTemporarias';
+      } else if (mockup.variacoes?.length > 0) {
+        variacoes = mockup.variacoes.map(v => v.url || v);
+        origemVariacoes = 'mockup.variacoes';
+      } else if (mockup.variacoesTemporarias?.length > 0) {
+        variacoes = mockup.variacoesTemporarias;
+        origemVariacoes = 'mockup.variacoesTemporarias';
+      }
+      
+      console.log('🔍 [MOCKUP-SELECTION] ===== ANÁLISE DE VARIAÇÕES =====');
+      console.log('🔍 [MOCKUP-SELECTION] Variações encontradas:', variacoes);
+      console.log('🔍 [MOCKUP-SELECTION] Origem das variações:', origemVariacoes);
+      console.log('🔍 [MOCKUP-SELECTION] Quantidade final:', variacoes?.length || 0);
+      
+      if (!variacoes || variacoes.length === 0) {
+        console.error('❌ [MOCKUP-SELECTION] NENHUMA VARIAÇÃO ENCONTRADA!');
+        console.error('❌ [MOCKUP-SELECTION] Estrutura completa do mockup:', JSON.stringify(mockup, null, 2));
+        
+        alert('Este mockup não possui variações disponíveis para seleção. Verifique se o mockup foi gerado corretamente.');
         return;
       }
+      
+      console.log('✅ [MOCKUP-SELECTION] Variações válidas encontradas:', variacoes.length);
       
       // Configurar dados para o modal
       currentMockupData = {
@@ -4329,34 +4372,66 @@ ${currentActionPlanData.conteudo}`;
         prompt: mockup.prompt
       };
       
+      console.log('🔍 [MOCKUP-SELECTION] Dados configurados para modal:', currentMockupData);
+      
       // Preencher prompt usado
       if (usedPrompt) {
         usedPrompt.textContent = mockup.prompt || 'Prompt não disponível';
+        console.log('🔍 [MOCKUP-SELECTION] Prompt preenchido:', mockup.prompt);
       }
       
-      // Renderizar grid com variações temporárias
+      // 🚀 CORREÇÃO: Renderizar grid com validação de URLs
       if (variationsGrid) {
-        variationsGrid.innerHTML = mockup.metadados.variacoesTemporarias.map((url, index) => `
-          <div class="variation-item" data-url="${url}" data-seed="${index + 1}">
-            <img src="${url}" alt="Variação ${index + 1}" class="variation-image">
-            <div class="variation-info">
-              <div class="variation-seed">Variação ${index + 1}</div>
-              <button class="variation-select-btn">Escolher Esta</button>
+        console.log('🔍 [MOCKUP-SELECTION] ===== RENDERIZANDO GRID DE VARIAÇÕES =====');
+        
+        const gridHTML = variacoes.map((url, index) => {
+          console.log(`🔍 [MOCKUP-SELECTION] Variação ${index + 1}: ${url}`);
+          
+          // Validar se a URL é válida
+          if (!url || typeof url !== 'string') {
+            console.warn(`⚠️ [MOCKUP-SELECTION] URL inválida na variação ${index + 1}:`, url);
+            return '';
+          }
+          
+          return `
+            <div class="variation-item" data-url="${url}" data-seed="${index + 1}">
+              <img src="${url}" alt="Variação ${index + 1}" class="variation-image" 
+                   onerror="console.error('Erro ao carregar imagem:', this.src)">
+              <div class="variation-info">
+                <div class="variation-seed">Variação ${index + 1}</div>
+                <button class="variation-select-btn">Escolher Esta</button>
+              </div>
             </div>
-          </div>
-        `).join('');
+          `;
+        }).filter(html => html !== '').join('');
+        
+        console.log('🔍 [MOCKUP-SELECTION] HTML do grid gerado:', gridHTML);
+        
+        variationsGrid.innerHTML = gridHTML;
         
         // Adicionar eventos de clique
-        variationsGrid.querySelectorAll('.variation-item').forEach(item => {
-          item.addEventListener('click', () => selectVariation(item));
+        const variationItems = variationsGrid.querySelectorAll('.variation-item');
+        console.log('🔍 [MOCKUP-SELECTION] Itens de variação encontrados:', variationItems.length);
+        
+        variationItems.forEach((item, index) => {
+          console.log(`🔍 [MOCKUP-SELECTION] Configurando evento para item ${index + 1}`);
+          item.addEventListener('click', () => {
+            console.log(`🔍 [MOCKUP-SELECTION] Variação ${index + 1} clicada`);
+            selectVariation(item);
+          });
         });
       }
+      
+      console.log('✅ [MOCKUP-SELECTION] Modal configurado, mostrando...');
       
       // Mostrar modal de variações
       mockupVariationsModal.classList.add('show');
       
+      console.log('✅ [MOCKUP-SELECTION] ===== SELEÇÃO DE VARIAÇÕES INICIADA COM SUCESSO =====');
+      
     } catch (error) {
-      console.error('Erro ao carregar variações do mockup:', error);
+      console.error('❌ [MOCKUP-SELECTION] Erro ao carregar variações do mockup:', error);
+      console.error('❌ [MOCKUP-SELECTION] Stack trace:', error.stack);
       alert('Não foi possível carregar as variações do mockup. Tente novamente.');
     }
   }
