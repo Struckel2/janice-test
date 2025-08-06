@@ -525,13 +525,13 @@ a<!DOCTYPE html>
                 <form id="mockup-form">
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="mockup-title">Título do Mockup</label>
-                            <input type="text" id="mockup-title" required placeholder="Ex: Logo para campanha verão">
+                            <label for="mockup-title">Título do Mockup <span class="required">*</span></label>
+                            <input type="text" id="mockup-title" required placeholder="Ex: Logo para campanha verão" class="required-field">
                         </div>
                         
                         <div class="form-group">
-                            <label for="mockup-type">Tipo de Arte</label>
-                            <select id="mockup-type" required>
+                            <label for="mockup-type">Tipo de Arte <span class="required">*</span></label>
+                            <select id="mockup-type" required class="required-field">
                                 <option value="">Selecione o tipo</option>
                                 <option value="logo">🏷️ Logo</option>
                                 <option value="post-social">📱 Post Social</option>
@@ -546,8 +546,8 @@ a<!DOCTYPE html>
                     
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="mockup-aspect-ratio">Proporção</label>
-                            <select id="mockup-aspect-ratio" required>
+                            <label for="mockup-aspect-ratio">Proporção <span class="required">*</span></label>
+                            <select id="mockup-aspect-ratio" required class="required-field">
                                 <option value="1:1">1:1 (Quadrado - Instagram Post)</option>
                                 <option value="16:9">16:9 (Banner Horizontal)</option>
                                 <option value="9:16">9:16 (Stories/Vertical)</option>
@@ -561,8 +561,8 @@ a<!DOCTYPE html>
                         </div>
                         
                         <div class="form-group">
-                            <label for="mockup-style">Estilo Visual</label>
-                            <select id="mockup-style" required>
+                            <label for="mockup-style">Estilo Visual <span class="required">*</span></label>
+                            <select id="mockup-style" required class="required-field">
                                 <option value="">Selecione o estilo</option>
                                 <option value="minimalista">✨ Minimalista</option>
                                 <option value="corporativo">🏢 Corporativo</option>
@@ -656,8 +656,8 @@ a<!DOCTYPE html>
                     </div>
                     
                     <div class="form-group">
-                        <label for="mockup-prompt">Descrição Detalhada</label>
-                        <textarea id="mockup-prompt" rows="4" required 
+                        <label for="mockup-prompt">Descrição Detalhada <span class="required">*</span></label>
+                        <textarea id="mockup-prompt" rows="4" required class="required-field"
                                 placeholder="Descreva detalhadamente o que você quer criar. Ex: Logo minimalista para uma cafeteria, usando tons terrosos, com uma xícara estilizada e tipografia moderna..."></textarea>
                         <div class="prompt-suggestions" id="prompt-suggestions">
                             <small>💡 Dica: Seja específico sobre cores, elementos, estilo e composição para melhores resultados</small>

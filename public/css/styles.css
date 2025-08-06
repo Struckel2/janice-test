@@ -3407,3 +3407,96 @@ footer {
 .quality-indicator.low .quality-stars {
   color: var(--error-color);
 }
+
+/* ===== ESTILOS PARA CAMPOS OBRIGATÓRIOS ===== */
+
+/* Asterisco vermelho para campos obrigatórios */
+.required {
+  color: var(--error-color);
+  font-weight: bold;
+  margin-left: 3px;
+}
+
+/* Estilo para campos obrigatórios */
+.required-field {
+  border-left: 3px solid transparent;
+  transition: border-color 0.3s ease;
+}
+
+.required-field:focus {
+  border-left-color: var(--primary-color);
+}
+
+.required-field:invalid {
+  border-left-color: var(--error-color);
+}
+
+/* Melhorar visibilidade dos campos obrigatórios vazios */
+.required-field:invalid:not(:focus) {
+  background-color: rgba(233, 30, 99, 0.02);
+}
+
+/* Tooltip para campos obrigatórios */
+.form-group label {
+  position: relative;
+}
+
+.form-group label .required::after {
+  content: "Campo obrigatório";
+  position: absolute;
+  top: -30px;
+  left: 0;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  z-index: 1000;
+}
+
+.form-group label .required:hover::after {
+  opacity: 1;
+}
+
+/* Estilo especial para selects obrigatórios */
+select.required-field {
+  background-image: linear-gradient(45deg, transparent 40%, var(--error-color) 50%, transparent 60%);
+  background-size: 20px 20px;
+  background-position: right 10px center;
+  background-repeat: no-repeat;
+}
+
+select.required-field:valid {
+  background-image: none;
+}
+
+/* Animação sutil para chamar atenção aos campos obrigatórios */
+@keyframes required-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(233, 30, 99, 0.4); }
+  70% { box-shadow: 0 0 0 4px rgba(233, 30, 99, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(233, 30, 99, 0); }
+}
+
+.required-field:invalid:not(:focus):not(:placeholder-shown) {
+  animation: required-pulse 2s infinite;
+}
+
+/* Estilo para textarea obrigatório */
+textarea.required-field {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Melhorar contraste do placeholder em campos obrigatórios */
+.required-field::placeholder {
+  color: var(--lighter-text);
+  opacity: 0.8;
+}
+
+.required-field:focus::placeholder {
+  opacity: 0.5;
+}

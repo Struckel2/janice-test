@@ -4081,7 +4081,7 @@ ${currentActionPlanData.conteudo}`;
       const configuracao = {
         tipoArte,
         aspectRatio,
-        estiloVisual: estilo,
+        estilo: estilo, // CORREÇÃO: era estiloVisual, agora é estilo
         paletaCores: document.getElementById('mockup-colors')?.value || '',
         elementosVisuais: document.getElementById('mockup-elements')?.value || '',
         setor: document.getElementById('mockup-sector')?.value || '',
