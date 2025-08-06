@@ -4527,33 +4527,78 @@ ${currentActionPlanData.conteudo}`;
   
   // Iniciar polling para verificar mockups concluídos
   function startMockupPolling() {
+    console.log('🔍 [MOCKUP-POLLING] ===== INICIANDO POLLING DE MOCKUPS =====');
+    console.log('🔍 [MOCKUP-POLLING] Cliente ID:', currentClientId);
+    
+    let pollCount = 0;
+    
     // Verificar a cada 10 segundos se há novos mockups concluídos
     const pollInterval = setInterval(async () => {
       try {
+        pollCount++;
+        console.log(`🔍 [MOCKUP-POLLING] ===== VERIFICAÇÃO #${pollCount} =====`);
+        
         if (!currentClientId) {
+          console.log('❌ [MOCKUP-POLLING] Cliente ID não encontrado, parando polling');
           clearInterval(pollInterval);
           return;
         }
         
+        console.log('🔍 [MOCKUP-POLLING] Buscando mockups do cliente:', currentClientId);
+        
         // Buscar mockups do cliente
         const response = await fetch(`/api/mockups/cliente/${currentClientId}`);
-        if (!response.ok) return;
+        if (!response.ok) {
+          console.log('❌ [MOCKUP-POLLING] Resposta não OK:', response.status);
+          return;
+        }
         
         const result = await response.json();
         const mockups = result.data.mockups;
         
-        // Verificar se há mockups recém-concluídos (últimos 2 minutos)
-        const recentMockups = mockups.filter(mockup => {
+        console.log('🔍 [MOCKUP-POLLING] Mockups encontrados:', mockups.length);
+        console.log('🔍 [MOCKUP-POLLING] Mockups detalhados:', mockups);
+        
+        // Verificar se há mockups recém-concluídos (últimos 10 minutos - aumentado)
+        const now = Date.now();
+        const tenMinutesAgo = now - (10 * 60 * 1000); // Aumentado de 2 para 10 minutos
+        
+        console.log('🔍 [MOCKUP-POLLING] Analisando critérios de detecção...');
+        console.log('🔍 [MOCKUP-POLLING] Tempo atual:', new Date(now).toISOString());
+        console.log('🔍 [MOCKUP-POLLING] Janela de detecção (10min atrás):', new Date(tenMinutesAgo).toISOString());
+        
+        const recentMockups = mockups.filter((mockup, index) => {
           const createdTime = new Date(mockup.criadoEm).getTime();
-          const now = Date.now();
-          const twoMinutesAgo = now - (2 * 60 * 1000);
+          const timeSinceCreation = (now - createdTime) / 1000; // em segundos
           
-          return mockup.status === 'concluido' && 
-                 createdTime > twoMinutesAgo && 
-                 mockup.imagemUrl; // Tem imagem final
+          console.log(`🔍 [MOCKUP-${index}] ===== ANÁLISE MOCKUP ${mockup._id} =====`);
+          console.log(`🔍 [MOCKUP-${index}] Status: ${mockup.status}`);
+          console.log(`🔍 [MOCKUP-${index}] Criado em: ${mockup.criadoEm}`);
+          console.log(`🔍 [MOCKUP-${index}] Tempo desde criação: ${timeSinceCreation}s (${Math.floor(timeSinceCreation/60)}min)`);
+          console.log(`🔍 [MOCKUP-${index}] imagemUrl: ${mockup.imagemUrl || 'undefined'}`);
+          console.log(`🔍 [MOCKUP-${index}] imagemFinal: ${mockup.imagemFinal || 'undefined'}`);
+          console.log(`🔍 [MOCKUP-${index}] variacoes:`, mockup.variacoes?.length || 0);
+          
+          const statusOk = mockup.status === 'concluido';
+          const tempoOk = createdTime > tenMinutesAgo;
+          const imagemOk = !!(mockup.imagemUrl || mockup.imagemFinal); // Verificar ambos os campos
+          
+          console.log(`🔍 [MOCKUP-${index}] Critérios:`, {
+            statusOk: statusOk,
+            tempoOk: tempoOk,
+            imagemOk: imagemOk,
+            passouTodos: statusOk && tempoOk && imagemOk
+          });
+          
+          return statusOk && tempoOk && imagemOk;
         });
         
+        console.log('🔍 [MOCKUP-POLLING] Mockups recém-concluídos encontrados:', recentMockups.length);
+        
         if (recentMockups.length > 0) {
+          console.log('✅ [MOCKUP-POLLING] MOCKUP CONCLUÍDO DETECTADO!');
+          console.log('✅ [MOCKUP-POLLING] Parando polling...');
+          
           // Parar polling
           clearInterval(pollInterval);
           
@@ -4567,6 +4612,8 @@ ${currentActionPlanData.conteudo}`;
           
           // Aguardar 2 segundos e recarregar lista
           setTimeout(() => {
+            console.log('✅ [MOCKUP-POLLING] Recarregando lista e voltando para cliente...');
+            
             // Recarregar lista de mockups
             loadClientMockups(currentClientId);
             
@@ -4574,22 +4621,25 @@ ${currentActionPlanData.conteudo}`;
             showOnlySection('client-details-panel');
             
             // Mostrar notificação de sucesso
-            console.log('✅ Mockup concluído via polling');
+            console.log('✅ [MOCKUP-POLLING] Mockup concluído via polling');
           }, 2000);
+        } else {
+          console.log('⏳ [MOCKUP-POLLING] Nenhum mockup concluído detectado, continuando polling...');
         }
         
       } catch (error) {
-        console.error('Erro no polling de mockups:', error);
+        console.error('❌ [MOCKUP-POLLING] Erro no polling:', error);
       }
     }, 10000); // Verificar a cada 10 segundos
     
-    // Timeout de segurança (5 minutos)
+    // Timeout de segurança (10 minutos - aumentado)
     setTimeout(() => {
+      console.log('⏰ [MOCKUP-POLLING] TIMEOUT DE 10 MINUTOS ATINGIDO');
       clearInterval(pollInterval);
       if (document.getElementById('loading-container').style.display !== 'none') {
         showError('Timeout: O mockup está demorando mais que o esperado. Verifique a lista de mockups em alguns minutos.');
       }
-    }, 300000); // 5 minutos
+    }, 600000); // 10 minutos
   }
   
   // ===== EVENTOS PARA MOCKUPS =====

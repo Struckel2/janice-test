@@ -173,21 +173,39 @@ router.get('/cliente/:clienteId', async (req, res) => {
     const { clienteId } = req.params;
     const { status, limite = 20, pagina = 1 } = req.query;
 
-    console.log('📋 Listando mockups do cliente:', clienteId);
+    console.log('📋 [MOCKUP-LIST] ===== LISTANDO MOCKUPS DO CLIENTE =====');
+    console.log('📋 [MOCKUP-LIST] Cliente ID:', clienteId);
+    console.log('📋 [MOCKUP-LIST] Filtros:', { status, limite, pagina });
 
     let mockups = await mockupService.listarPorCliente(clienteId);
+    
+    console.log('📋 [MOCKUP-LIST] Mockups encontrados no banco:', mockups.length);
+    console.log('📋 [MOCKUP-LIST] Detalhes dos mockups:', mockups.map(m => ({
+      id: m._id,
+      titulo: m.titulo,
+      status: m.status,
+      criadoEm: m.criadoEm,
+      imagemUrl: m.imagemUrl,
+      imagemFinal: m.imagemFinal,
+      metadados: m.metadados
+    })));
 
     // Filtrar por status se especificado
     if (status) {
+      const mockupsAntes = mockups.length;
       mockups = mockups.filter(m => m.status === status);
+      console.log('📋 [MOCKUP-LIST] Filtrados por status:', status, 'de', mockupsAntes, 'para', mockups.length);
     }
 
     // Paginação simples
     const inicio = (pagina - 1) * limite;
     const fim = inicio + parseInt(limite);
     const mockupsPaginados = mockups.slice(inicio, fim);
+    
+    console.log('📋 [MOCKUP-LIST] Paginação:', { inicio, fim, total: mockups.length, pagina: parseInt(pagina) });
+    console.log('📋 [MOCKUP-LIST] Mockups paginados:', mockupsPaginados.length);
 
-    res.json({
+    const response = {
       success: true,
       data: {
         mockups: mockupsPaginados,
@@ -196,7 +214,11 @@ router.get('/cliente/:clienteId', async (req, res) => {
         limite: parseInt(limite),
         totalPaginas: Math.ceil(mockups.length / limite)
       }
-    });
+    };
+    
+    console.log('📋 [MOCKUP-LIST] Resposta final:', response);
+
+    res.json(response);
 
   } catch (error) {
     console.error('❌ Erro ao listar mockups:', error);

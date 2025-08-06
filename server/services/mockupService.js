@@ -30,7 +30,10 @@ class MockupService {
     let mockup = null;
     
     try {
-      console.log('🎨 Iniciando geração de mockup:', mockupData.titulo);
+      console.log('🎨 [MOCKUP-SERVICE] ===== INICIANDO GERAÇÃO DE MOCKUP =====');
+      console.log('🎨 [MOCKUP-SERVICE] Título:', mockupData.titulo);
+      console.log('🎨 [MOCKUP-SERVICE] Cliente:', mockupData.cliente);
+      console.log('🎨 [MOCKUP-SERVICE] Configuração:', mockupData.configuracao);
       
       // Criar registro no banco com status 'gerando'
       mockup = new Mockup({
@@ -40,6 +43,8 @@ class MockupService {
       });
       
       await mockup.save();
+      console.log('🎨 [MOCKUP-SERVICE] Mockup criado no banco:', mockup._id);
+      console.log('🎨 [MOCKUP-SERVICE] Status inicial:', mockup.status);
       
       // Gerar prompt otimizado
       const promptOtimizado = mockup.gerarPromptOtimizado();
@@ -59,7 +64,9 @@ class MockupService {
       const variacoes = [];
       const seeds = this._gerarSeeds(4);
       
-      console.log('🔄 Gerando 4 variações...');
+      console.log('🔄 [MOCKUP-SERVICE] Gerando 4 variações...');
+      console.log('🔄 [MOCKUP-SERVICE] Seeds geradas:', seeds);
+      console.log('🔄 [MOCKUP-SERVICE] Parâmetros da API:', apiParams);
       
       for (let i = 0; i < 4; i++) {
         const params = {
@@ -67,14 +74,21 @@ class MockupService {
           seed: seeds[i]
         };
         
-        console.log(`⏳ Gerando variação ${i + 1}/4 (seed: ${seeds[i]})`);
+        console.log(`⏳ [MOCKUP-SERVICE] ===== GERANDO VARIAÇÃO ${i + 1}/4 =====`);
+        console.log(`⏳ [MOCKUP-SERVICE] Seed: ${seeds[i]}`);
+        console.log(`⏳ [MOCKUP-SERVICE] Parâmetros completos:`, params);
         
         const startTime = Date.now();
-        const prediction = await this.replicate.run(this.modelVersion, { input: params });
-        const endTime = Date.now();
+        console.log(`⏳ [MOCKUP-SERVICE] Iniciando chamada para Replicate...`);
         
+        const prediction = await this.replicate.run(this.modelVersion, { input: params });
+        
+        const endTime = Date.now();
         const tempoProcessamento = endTime - startTime;
-        console.log(`✅ Variação ${i + 1} concluída em ${tempoProcessamento}ms`);
+        
+        console.log(`✅ [MOCKUP-SERVICE] Variação ${i + 1} concluída em ${tempoProcessamento}ms`);
+        console.log(`✅ [MOCKUP-SERVICE] Resposta do Replicate:`, prediction);
+        console.log(`✅ [MOCKUP-SERVICE] URL gerada: ${prediction[0]}`);
         
         // Armazenar URL temporária
         variacoes.push({
@@ -85,21 +99,35 @@ class MockupService {
       }
       
       // Atualizar mockup com URLs temporárias
+      const tempoTotal = variacoes.reduce((acc, v) => acc + v.tempoProcessamento, 0);
+      
       mockup.metadados = {
         variacoesTemporarias: variacoes.map(v => v.url),
-        tempoProcessamento: variacoes.reduce((acc, v) => acc + v.tempoProcessamento, 0),
+        tempoProcessamento: tempoTotal,
         custo: 0.035 * 4 // $0.035 por imagem
       };
       
+      console.log('🎨 [MOCKUP-SERVICE] ===== ATUALIZANDO MOCKUP NO BANCO =====');
+      console.log('🎨 [MOCKUP-SERVICE] Metadados:', mockup.metadados);
+      console.log('🎨 [MOCKUP-SERVICE] Tempo total de processamento:', tempoTotal + 'ms');
+      console.log('🎨 [MOCKUP-SERVICE] URLs das variações:', variacoes.map(v => v.url));
+      
       await mockup.save();
       
-      console.log('🎉 Todas as variações geradas com sucesso');
+      console.log('🎉 [MOCKUP-SERVICE] ===== TODAS AS VARIAÇÕES GERADAS COM SUCESSO =====');
+      console.log('🎉 [MOCKUP-SERVICE] Mockup ID:', mockup._id);
+      console.log('🎉 [MOCKUP-SERVICE] Status final:', mockup.status);
+      console.log('🎉 [MOCKUP-SERVICE] Total de variações:', variacoes.length);
       
-      return {
+      const resultado = {
         mockupId: mockup._id,
         variacoes: variacoes,
         promptUsado: promptOtimizado
       };
+      
+      console.log('🎉 [MOCKUP-SERVICE] Resultado final:', resultado);
+      
+      return resultado;
       
     } catch (error) {
       console.error('❌ Erro na geração de mockup:', error);
