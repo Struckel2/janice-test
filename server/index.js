@@ -1,3 +1,6 @@
+// Configurar fetch polyfill ANTES de qualquer outra importação
+require('./config/fetch-polyfill');
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
