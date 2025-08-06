@@ -36,7 +36,14 @@ class MockupService {
       console.log('🎨 [MOCKUP-SERVICE] ===== INICIANDO GERAÇÃO DE MOCKUP =====');
       console.log('🎨 [MOCKUP-SERVICE] Título:', mockupData.titulo);
       console.log('🎨 [MOCKUP-SERVICE] Cliente:', mockupData.cliente);
-      console.log('🎨 [MOCKUP-SERVICE] Configuração:', mockupData.configuracao);
+      console.log('🎨 [MOCKUP-SERVICE] Configuração completa:', JSON.stringify(mockupData.configuracao, null, 2));
+      console.log('🎨 [MOCKUP-SERVICE] Configuração técnica:', JSON.stringify(mockupData.configuracaoTecnica, null, 2));
+      console.log('🎨 [MOCKUP-SERVICE] Prompt original:', mockupData.prompt);
+      
+      // Validar dados essenciais antes de criar no banco
+      if (!mockupData.titulo || !mockupData.cliente || !mockupData.configuracao || !mockupData.prompt) {
+        throw new Error('Dados obrigatórios ausentes para criação do mockup');
+      }
       
       // Criar registro no banco com status 'gerando'
       mockup = new Mockup({
@@ -45,8 +52,17 @@ class MockupService {
         imagemUrl: '' // Será preenchido após escolha
       });
       
+      console.log('🎨 [MOCKUP-SERVICE] Dados do mockup antes de salvar:', {
+        titulo: mockup.titulo,
+        cliente: mockup.cliente,
+        status: mockup.status,
+        configuracao: mockup.configuracao,
+        prompt: mockup.prompt
+      });
+      
       await mockup.save();
-      console.log('🎨 [MOCKUP-SERVICE] Mockup criado no banco:', mockup._id);
+      console.log('🎨 [MOCKUP-SERVICE] ✅ Mockup criado no banco com sucesso!');
+      console.log('🎨 [MOCKUP-SERVICE] ID do mockup:', mockup._id);
       console.log('🎨 [MOCKUP-SERVICE] Status inicial:', mockup.status);
       
       // Gerar prompt otimizado

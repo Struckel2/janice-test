@@ -16,6 +16,11 @@ router.use(isAuthenticated);
  */
 router.post('/gerar', async (req, res) => {
   try {
+    console.log('🎨 [MOCKUP-ROUTE] ===== NOVA REQUISIÇÃO DE GERAÇÃO =====');
+    console.log('🎨 [MOCKUP-ROUTE] Body completo recebido:', JSON.stringify(req.body, null, 2));
+    console.log('🎨 [MOCKUP-ROUTE] Headers da requisição:', req.headers);
+    console.log('🎨 [MOCKUP-ROUTE] Usuário autenticado:', req.user ? req.user._id : 'NENHUM');
+    
     const {
       clienteId,
       titulo,
@@ -24,8 +29,18 @@ router.post('/gerar', async (req, res) => {
       configuracaoTecnica = {}
     } = req.body;
 
+    console.log('🎨 [MOCKUP-ROUTE] Dados extraídos:');
+    console.log('🎨 [MOCKUP-ROUTE] - clienteId:', clienteId);
+    console.log('🎨 [MOCKUP-ROUTE] - titulo:', titulo);
+    console.log('🎨 [MOCKUP-ROUTE] - configuracao:', configuracao);
+    console.log('🎨 [MOCKUP-ROUTE] - prompt:', prompt);
+    console.log('🎨 [MOCKUP-ROUTE] - configuracaoTecnica:', configuracaoTecnica);
+
     // Validações básicas
+    console.log('🎨 [MOCKUP-ROUTE] ===== INICIANDO VALIDAÇÕES =====');
+    
     if (!clienteId) {
+      console.log('❌ [MOCKUP-ROUTE] Erro: Cliente é obrigatório');
       return res.status(400).json({
         success: false,
         message: 'Cliente é obrigatório'
@@ -33,6 +48,7 @@ router.post('/gerar', async (req, res) => {
     }
 
     if (!titulo || titulo.trim().length === 0) {
+      console.log('❌ [MOCKUP-ROUTE] Erro: Título é obrigatório');
       return res.status(400).json({
         success: false,
         message: 'Título é obrigatório'
@@ -40,11 +56,25 @@ router.post('/gerar', async (req, res) => {
     }
 
     if (!prompt || prompt.trim().length === 0) {
+      console.log('❌ [MOCKUP-ROUTE] Erro: Descrição/prompt é obrigatória');
       return res.status(400).json({
         success: false,
         message: 'Descrição/prompt é obrigatória'
       });
     }
+
+    console.log('✅ [MOCKUP-ROUTE] Validações básicas passaram');
+
+    // Verificar se configuracao existe e é um objeto
+    if (!configuracao || typeof configuracao !== 'object') {
+      console.log('❌ [MOCKUP-ROUTE] Erro: Configuração inválida ou ausente');
+      return res.status(400).json({
+        success: false,
+        message: 'Configuração é obrigatória e deve ser um objeto válido'
+      });
+    }
+
+    console.log('🎨 [MOCKUP-ROUTE] Configuração recebida:', configuracao);
 
     // Limpar campos vazios da configuração
     const configuracaoLimpa = {};
@@ -54,15 +84,23 @@ router.post('/gerar', async (req, res) => {
       }
     });
 
+    console.log('🎨 [MOCKUP-ROUTE] Configuração após limpeza:', configuracaoLimpa);
+
     // Validar configuração
+    console.log('🎨 [MOCKUP-ROUTE] Validando configuração...');
     const errosConfig = mockupService.validarConfiguracao(configuracaoLimpa);
+    console.log('🎨 [MOCKUP-ROUTE] Erros de configuração encontrados:', errosConfig);
+    
     if (errosConfig.length > 0) {
+      console.log('❌ [MOCKUP-ROUTE] Configuração inválida:', errosConfig);
       return res.status(400).json({
         success: false,
         message: 'Configuração inválida',
         erros: errosConfig
       });
     }
+
+    console.log('✅ [MOCKUP-ROUTE] Configuração válida');
 
     // Preparar dados do mockup
     const mockupData = {
