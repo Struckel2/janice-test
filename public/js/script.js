@@ -3871,6 +3871,736 @@ ${currentActionPlanData.conteudo}`;
     welcomeContainer.style.display = 'block';
   }
 
+  // ===== FUNÇÕES PARA MOCKUPS COM IA =====
+  
+  // Elementos específicos para mockups
+  const newMockupBtn = document.getElementById('new-mockup-btn');
+  const mockupModal = document.getElementById('mockup-modal');
+  const mockupVariationsModal = document.getElementById('mockup-variations-modal');
+  const mockupForm = document.getElementById('mockup-form');
+  const cancelMockupBtn = document.getElementById('cancel-mockup-btn');
+  const generateMockupBtn = document.getElementById('generate-mockup-btn');
+  const mockupsList = document.getElementById('mockups-list');
+  const toggleAdvancedBtn = document.getElementById('toggle-advanced');
+  const advancedContent = document.getElementById('advanced-content');
+  const variationsGrid = document.getElementById('variations-grid');
+  const usedPrompt = document.getElementById('used-prompt');
+  const regenerateMockupBtn = document.getElementById('regenerate-mockup-btn');
+  
+  // Controles de range
+  const cfgRange = document.getElementById('mockup-cfg');
+  const cfgValue = document.getElementById('cfg-value');
+  const stepsRange = document.getElementById('mockup-steps');
+  const stepsValue = document.getElementById('steps-value');
+  const qualityRange = document.getElementById('mockup-quality');
+  const qualityValue = document.getElementById('quality-value');
+  
+  // Estado dos mockups
+  let currentMockupData = null;
+  let selectedVariation = null;
+  
+  // Mostrar modal de criação de mockup
+  function showMockupModal() {
+    // Limpar formulário
+    mockupForm.reset();
+    selectedVariation = null;
+    
+    // Resetar configurações avançadas
+    if (advancedContent) {
+      advancedContent.classList.remove('show');
+      toggleAdvancedBtn.classList.remove('active');
+    }
+    
+    // Resetar valores dos ranges
+    if (cfgRange && cfgValue) {
+      cfgRange.value = 3.5;
+      cfgValue.textContent = '3.5';
+    }
+    if (stepsRange && stepsValue) {
+      stepsRange.value = 28;
+      stepsValue.textContent = '28';
+    }
+    if (qualityRange && qualityValue) {
+      qualityRange.value = 90;
+      qualityValue.textContent = '90';
+    }
+    
+    // Mostrar modal
+    mockupModal.classList.add('show');
+  }
+  
+  // Fechar modal de mockup
+  function closeMockupModal() {
+    mockupModal.classList.remove('show');
+  }
+  
+  // Fechar modal de variações
+  function closeVariationsModal() {
+    mockupVariationsModal.classList.remove('show');
+  }
+  
+  // Configurar controles de range
+  function setupRangeControls() {
+    if (cfgRange && cfgValue) {
+      cfgRange.addEventListener('input', (e) => {
+        cfgValue.textContent = e.target.value;
+      });
+    }
+    
+    if (stepsRange && stepsValue) {
+      stepsRange.addEventListener('input', (e) => {
+        stepsValue.textContent = e.target.value;
+      });
+    }
+    
+    if (qualityRange && qualityValue) {
+      qualityRange.addEventListener('input', (e) => {
+        qualityValue.textContent = e.target.value;
+      });
+    }
+  }
+  
+  // Configurar configurações avançadas
+  function setupAdvancedSettings() {
+    if (toggleAdvancedBtn && advancedContent) {
+      toggleAdvancedBtn.addEventListener('click', () => {
+        const isActive = toggleAdvancedBtn.classList.contains('active');
+        
+        if (isActive) {
+          toggleAdvancedBtn.classList.remove('active');
+          advancedContent.classList.remove('show');
+        } else {
+          toggleAdvancedBtn.classList.add('active');
+          advancedContent.classList.add('show');
+        }
+      });
+    }
+  }
+  
+  // Gerar sugestões de prompt baseadas na configuração
+  function generatePromptSuggestions() {
+    const tipoArte = document.getElementById('mockup-type')?.value;
+    const estilo = document.getElementById('mockup-style')?.value;
+    const cores = document.getElementById('mockup-colors')?.value;
+    
+    if (!tipoArte) return;
+    
+    const suggestions = {
+      'logo': [
+        'Logo minimalista e moderno',
+        'Logo com tipografia elegante',
+        'Logo com símbolo icônico',
+        'Logo corporativo profissional'
+      ],
+      'post-social': [
+        'Post atrativo para Instagram',
+        'Design para stories dinâmico',
+        'Post promocional criativo',
+        'Conteúdo visual engajante'
+      ],
+      'banner': [
+        'Banner promocional impactante',
+        'Header para website moderno',
+        'Banner publicitário criativo',
+        'Design para campanha digital'
+      ]
+    };
+    
+    const baseSuggestions = suggestions[tipoArte] || ['Design criativo e profissional'];
+    const randomSuggestion = baseSuggestions[Math.floor(Math.random() * baseSuggestions.length)];
+    
+    // Atualizar dica de sugestão
+    const promptSuggestions = document.getElementById('prompt-suggestions');
+    if (promptSuggestions) {
+      promptSuggestions.innerHTML = `
+        <small>💡 Sugestão: ${randomSuggestion}</small>
+      `;
+    }
+  }
+  
+  // Submeter formulário de mockup
+  async function submitMockupForm(event) {
+    event.preventDefault();
+    
+    // Validar campos obrigatórios
+    const titulo = document.getElementById('mockup-title')?.value?.trim();
+    const tipoArte = document.getElementById('mockup-type')?.value;
+    const aspectRatio = document.getElementById('mockup-aspect-ratio')?.value;
+    const estilo = document.getElementById('mockup-style')?.value;
+    const prompt = document.getElementById('mockup-prompt')?.value?.trim();
+    
+    if (!titulo) {
+      alert('O título do mockup é obrigatório');
+      return;
+    }
+    
+    if (!tipoArte) {
+      alert('Selecione o tipo de arte');
+      return;
+    }
+    
+    if (!aspectRatio) {
+      alert('Selecione a proporção');
+      return;
+    }
+    
+    if (!estilo) {
+      alert('Selecione o estilo visual');
+      return;
+    }
+    
+    if (!prompt) {
+      alert('A descrição detalhada é obrigatória');
+      return;
+    }
+    
+    try {
+      // Registrar processo no painel de processos ativos
+      const client = currentClients.find(c => c._id === currentClientId);
+      const processId = activeProcessesManager.registerProcess(
+        'mockup', 
+        currentClientId, 
+        `Mockup: ${titulo}`
+      );
+      
+      // Fechar modal
+      closeMockupModal();
+      
+      // Mostrar tela de carregamento
+      showOnlySection('loading-container');
+      
+      // Adaptar interface para mockup
+      document.querySelector('.loading-text').textContent = 'Gerando mockups com IA...';
+      loadingStatus.textContent = 'Preparando geração de 4 variações...';
+      
+      // Resetar progresso
+      resetProgress();
+      setupMockupProgressSteps();
+      
+      // Coletar dados do formulário
+      const configuracao = {
+        tipoArte,
+        aspectRatio,
+        estiloVisual: estilo,
+        paletaCores: document.getElementById('mockup-colors')?.value || '',
+        elementosVisuais: document.getElementById('mockup-elements')?.value || '',
+        setor: document.getElementById('mockup-sector')?.value || '',
+        publicoAlvo: document.getElementById('mockup-audience')?.value || '',
+        mood: document.getElementById('mockup-mood')?.value || '',
+        estiloRenderizacao: document.getElementById('mockup-render-style')?.value || ''
+      };
+      
+      const configuracaoTecnica = {
+        cfg: parseFloat(cfgRange?.value || 3.5),
+        steps: parseInt(stepsRange?.value || 28),
+        outputFormat: document.getElementById('mockup-format')?.value || 'webp',
+        outputQuality: parseInt(qualityRange?.value || 90)
+      };
+      
+      const requestData = {
+        clienteId: currentClientId,
+        titulo,
+        configuracao,
+        prompt,
+        configuracaoTecnica
+      };
+      
+      // Iniciar simulação de progresso
+      startMockupProgressSimulation();
+      
+      // Enviar requisição
+      const response = await fetch('/api/mockups/gerar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao gerar mockup');
+      }
+      
+      const result = await response.json();
+      
+      // Armazenar dados do mockup
+      currentMockupData = result.data;
+      
+      // Iniciar monitoramento do progresso real
+      startMockupMonitoring(result.data.mockupId);
+      
+    } catch (error) {
+      console.error('Erro ao gerar mockup:', error);
+      showError(error.message || 'Ocorreu um erro ao gerar o mockup.');
+    }
+  }
+  
+  // Configurar etapas específicas para mockups
+  function setupMockupProgressSteps() {
+    document.getElementById('step-1').querySelector('.step-text').textContent = 'Processando Prompt';
+    document.getElementById('step-2').querySelector('.step-text').textContent = 'Gerando Variações';
+    document.getElementById('step-3').querySelector('.step-text').textContent = 'Renderizando Imagens';
+    document.getElementById('step-4').querySelector('.step-text').textContent = 'Finalizando';
+  }
+  
+  // Simular progresso para mockups
+  function startMockupProgressSimulation() {
+    // Adicionar informações específicas sobre o processo
+    const infoElement = document.createElement('div');
+    infoElement.className = 'mockup-progress-info';
+    infoElement.style.cssText = `
+      margin: 20px 0;
+      padding: 15px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 8px;
+      border-left: 4px solid #6a5acd;
+      font-size: 14px;
+      line-height: 1.5;
+    `;
+    
+    infoElement.innerHTML = `
+      <div style="display: flex; align-items: center; margin-bottom: 10px;">
+        <i class="fas fa-palette" style="color: #6a5acd; margin-right: 8px;"></i>
+        <strong>Geração de Mockups com IA</strong>
+      </div>
+      <p style="margin: 0; color: #6c757d;">
+        Estamos criando 4 variações únicas do seu mockup usando inteligência artificial avançada. 
+        Cada variação terá características visuais distintas para você escolher a melhor.
+      </p>
+      <div style="margin-top: 10px; padding: 8px; background: #e7e3ff; border-radius: 4px; border: 1px solid #d1c7ff;">
+        <small style="color: #4c3d99;">
+          <i class="fas fa-info-circle" style="margin-right: 5px;"></i>
+          <strong>Custo:</strong> $0.14 total (4 variações × $0.035 cada)
+        </small>
+      </div>
+    `;
+    
+    // Inserir após a barra de progresso
+    const progressContainer = document.querySelector('.progress-container');
+    if (progressContainer && !progressContainer.querySelector('.mockup-progress-info')) {
+      progressContainer.appendChild(infoElement);
+    }
+    
+    // Simular progresso realista
+    const progressSteps = [
+      { percentage: 20, message: 'Analisando prompt e configurações...', step: 1, stepStatus: 'active', delay: 1000 },
+      { percentage: 45, message: 'Gerando primeira variação...', step: 2, stepStatus: 'active', delay: 3000 },
+      { percentage: 65, message: 'Criando variações adicionais...', step: 2, stepStatus: 'active', delay: 4000 },
+      { percentage: 85, message: 'Renderizando imagens finais...', step: 3, stepStatus: 'active', delay: 3000 },
+      { percentage: 95, message: 'Preparando resultado...', step: 4, stepStatus: 'active', delay: 2000 }
+    ];
+    
+    let currentStep = 0;
+    
+    function executeNextStep() {
+      if (currentStep < progressSteps.length) {
+        const step = progressSteps[currentStep];
+        updateProgress(step);
+        currentStep++;
+        
+        setTimeout(executeNextStep, step.delay);
+      }
+    }
+    
+    // Iniciar após pequeno delay
+    setTimeout(executeNextStep, 500);
+  }
+  
+  // Monitorar progresso real do mockup
+  function startMockupMonitoring(mockupId) {
+    // Verificar status a cada 3 segundos
+    const checkInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/mockups/${mockupId}`);
+        if (!response.ok) {
+          console.error('Erro ao verificar status do mockup');
+          return;
+        }
+        
+        const mockup = await response.json();
+        
+        // Se não está mais gerando
+        if (mockup.status !== 'gerando') {
+          clearInterval(checkInterval);
+          
+          if (mockup.status === 'erro') {
+            // Mostrar erro
+            showError(mockup.mensagemErro || 'Erro ao gerar mockup');
+          } else if (mockup.status === 'concluido') {
+            // Completar progresso e mostrar variações
+            updateProgress({
+              percentage: 100,
+              message: 'Mockup gerado com sucesso!',
+              step: 4,
+              stepStatus: 'completed'
+            });
+            
+            // Aguardar 2 segundos antes de mostrar variações
+            setTimeout(() => {
+              showMockupVariations(mockup);
+            }, 2000);
+          }
+        }
+        
+      } catch (error) {
+        console.error('Erro ao monitorar mockup:', error);
+      }
+    }, 3000);
+    
+    // Timeout de segurança (5 minutos)
+    setTimeout(() => {
+      clearInterval(checkInterval);
+      if (document.getElementById('loading-container').style.display !== 'none') {
+        showError('Timeout: O mockup está demorando mais que o esperado. Verifique a lista de mockups em alguns minutos.');
+      }
+    }, 300000);
+  }
+  
+  // Mostrar variações do mockup
+  function showMockupVariations(mockup) {
+    currentMockupData = mockup;
+    
+    // Preencher prompt usado
+    if (usedPrompt) {
+      usedPrompt.textContent = mockup.promptUsado || mockup.prompt;
+    }
+    
+    // Renderizar grid de variações
+    if (variationsGrid && mockup.variacoes) {
+      variationsGrid.innerHTML = mockup.variacoes.map((variacao, index) => `
+        <div class="variation-item" data-url="${variacao.url}" data-seed="${variacao.seed}">
+          <img src="${variacao.url}" alt="Variação ${index + 1}" class="variation-image">
+          <div class="variation-info">
+            <div class="variation-seed">Seed: ${variacao.seed}</div>
+            <button class="variation-select-btn">Escolher Esta</button>
+          </div>
+        </div>
+      `).join('');
+      
+      // Adicionar eventos de clique
+      variationsGrid.querySelectorAll('.variation-item').forEach(item => {
+        item.addEventListener('click', () => selectVariation(item));
+      });
+    }
+    
+    // Esconder loading e mostrar modal de variações
+    loadingContainer.style.display = 'none';
+    mockupVariationsModal.classList.add('show');
+  }
+  
+  // Selecionar variação
+  function selectVariation(item) {
+    // Remover seleção anterior
+    variationsGrid.querySelectorAll('.variation-item').forEach(v => {
+      v.classList.remove('selected');
+    });
+    
+    // Marcar como selecionada
+    item.classList.add('selected');
+    
+    // Armazenar dados da variação
+    selectedVariation = {
+      url: item.dataset.url,
+      seed: item.dataset.seed
+    };
+    
+    // Salvar variação automaticamente
+    saveSelectedVariation();
+  }
+  
+  // Salvar variação escolhida
+  async function saveSelectedVariation() {
+    if (!selectedVariation || !currentMockupData) return;
+    
+    try {
+      const response = await fetch(`/api/mockups/${currentMockupData.mockupId}/salvar-variacao`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          urlEscolhida: selectedVariation.url,
+          seedEscolhida: selectedVariation.seed
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao salvar variação');
+      }
+      
+      const result = await response.json();
+      
+      // Fechar modal de variações
+      closeVariationsModal();
+      
+      // Recarregar lista de mockups
+      if (currentClientId) {
+        loadClientMockups(currentClientId);
+      }
+      
+      // Voltar para detalhes do cliente
+      showOnlySection('client-details-panel');
+      
+      // Mostrar feedback de sucesso
+      console.log('✅ Variação salva com sucesso');
+      
+    } catch (error) {
+      console.error('Erro ao salvar variação:', error);
+      alert('Não foi possível salvar a variação escolhida. Tente novamente.');
+    }
+  }
+  
+  // Carregar mockups do cliente
+  async function loadClientMockups(clientId) {
+    try {
+      const response = await fetch(`/api/mockups/cliente/${clientId}`);
+      if (!response.ok) {
+        throw new Error('Erro ao carregar mockups');
+      }
+      
+      const result = await response.json();
+      const mockups = result.data.mockups;
+      
+      if (!mockups.length) {
+        mockupsList.innerHTML = `
+          <div class="mockups-list-empty">
+            <i class="fas fa-image"></i>
+            <p>Nenhum mockup criado</p>
+            <small>Crie mockups profissionais usando IA para logos, posts sociais, banners e muito mais</small>
+          </div>
+        `;
+        return;
+      }
+      
+      // Ordenar por data (mais recente primeiro)
+      mockups.sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
+      
+      // Renderizar lista
+      mockupsList.innerHTML = mockups.map(mockup => {
+        let statusClass = 'completed';
+        let statusText = 'Concluído';
+        
+        if (mockup.status === 'gerando') {
+          statusClass = 'generating';
+          statusText = 'Gerando';
+        } else if (mockup.status === 'erro') {
+          statusClass = 'error';
+          statusText = 'Erro';
+        }
+        
+        return `
+          <div class="mockup-item ${statusClass}" data-id="${mockup._id}">
+            <div class="mockup-item-preview">
+              ${mockup.imagemFinal 
+                ? `<img src="${mockup.imagemFinal}" alt="${mockup.titulo}">`
+                : `<i class="fas fa-palette"></i>`
+              }
+            </div>
+            <div class="mockup-item-content">
+              <div class="mockup-item-header">
+                <div class="mockup-item-title">${mockup.titulo}</div>
+                <div class="mockup-item-type">${getTypeLabel(mockup.configuracao.tipoArte)}</div>
+              </div>
+              <div class="mockup-item-meta">
+                <span><i class="fas fa-calendar"></i> ${new Date(mockup.criadoEm).toLocaleDateString('pt-BR')}</span>
+                <span><i class="fas fa-expand-arrows-alt"></i> ${mockup.configuracao.aspectRatio}</span>
+                <span class="mockup-status ${statusClass}">${statusText}</span>
+              </div>
+            </div>
+            <div class="mockup-item-actions">
+              <button class="delete-mockup-btn" data-id="${mockup._id}" title="Excluir mockup">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      // Adicionar eventos de clique
+      mockupsList.querySelectorAll('.mockup-item').forEach(item => {
+        const content = item.querySelector('.mockup-item-content');
+        content.addEventListener('click', () => {
+          const mockupId = item.dataset.id;
+          viewMockup(mockupId);
+        });
+      });
+      
+      // Adicionar eventos para botões de delete
+      mockupsList.querySelectorAll('.delete-mockup-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const mockupId = btn.dataset.id;
+          deleteMockup(mockupId);
+        });
+      });
+      
+    } catch (error) {
+      console.error('Erro ao carregar mockups:', error);
+      mockupsList.innerHTML = `
+        <div class="mockups-list-empty">
+          <i class="fas fa-exclamation-circle"></i>
+          <p>Erro ao carregar mockups. Tente novamente.</p>
+        </div>
+      `;
+    }
+  }
+  
+  // Obter label do tipo de arte
+  function getTypeLabel(tipoArte) {
+    const labels = {
+      'logo': 'Logo',
+      'post-social': 'Post',
+      'banner': 'Banner',
+      'landing-page': 'Landing',
+      'material-apresentacao': 'Apresentação',
+      'ilustracao-conceitual': 'Ilustração',
+      'mockup-produto': 'Produto'
+    };
+    
+    return labels[tipoArte] || tipoArte;
+  }
+  
+  // Visualizar mockup
+  function viewMockup(mockupId) {
+    // Por enquanto, apenas log - pode ser expandido para mostrar detalhes
+    console.log('Visualizando mockup:', mockupId);
+  }
+  
+  // Deletar mockup
+  async function deleteMockup(mockupId) {
+    if (!confirm('Tem certeza que deseja excluir este mockup? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/mockups/${mockupId}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao excluir mockup');
+      }
+      
+      // Recarregar lista
+      if (currentClientId) {
+        loadClientMockups(currentClientId);
+      }
+      
+      console.log('✅ Mockup excluído com sucesso');
+      
+    } catch (error) {
+      console.error('Erro ao excluir mockup:', error);
+      alert('Não foi possível excluir o mockup. Tente novamente.');
+    }
+  }
+  
+  // Regenerar mockup
+  function regenerateMockup() {
+    if (!currentMockupData) return;
+    
+    // Fechar modal de variações
+    closeVariationsModal();
+    
+    // Reabrir modal de criação com dados preenchidos
+    // (implementação futura)
+    showMockupModal();
+  }
+  
+  // ===== EVENTOS PARA MOCKUPS =====
+  
+  function setupMockupEvents() {
+    // Botão de novo mockup
+    if (newMockupBtn) {
+      newMockupBtn.addEventListener('click', showMockupModal);
+    }
+    
+    // Fechar modais
+    document.querySelectorAll('.close-modal').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const modal = e.target.closest('.modal');
+        if (modal) {
+          modal.classList.remove('show');
+        }
+      });
+    });
+    
+    // Cancelar mockup
+    if (cancelMockupBtn) {
+      cancelMockupBtn.addEventListener('click', closeMockupModal);
+    }
+    
+    // Submeter formulário
+    if (mockupForm) {
+      mockupForm.addEventListener('submit', submitMockupForm);
+    }
+    
+    // Regenerar mockup
+    if (regenerateMockupBtn) {
+      regenerateMockupBtn.addEventListener('click', regenerateMockup);
+    }
+    
+    // Configurar controles de range
+    setupRangeControls();
+    
+    // Configurar configurações avançadas
+    setupAdvancedSettings();
+    
+    // Gerar sugestões quando tipo mudar
+    const tipoSelect = document.getElementById('mockup-type');
+    if (tipoSelect) {
+      tipoSelect.addEventListener('change', generatePromptSuggestions);
+    }
+    
+    // Fechar modais ao clicar fora
+    window.addEventListener('click', (e) => {
+      if (e.target === mockupModal) {
+        closeMockupModal();
+      }
+      if (e.target === mockupVariationsModal) {
+        closeVariationsModal();
+      }
+    });
+  }
+  
+  // Modificar a função loadClientDetails para incluir mockups
+  const originalLoadClientDetails = loadClientDetails;
+  loadClientDetails = async function(clientId) {
+    await originalLoadClientDetails(clientId);
+    
+    // Carregar mockups também
+    loadClientMockups(clientId);
+  };
+  
+  // Modificar a função init para incluir eventos de mockups
+  function init() {
+    // Inicializar gerenciador de processos ativos
+    activeProcessesManager = new ActiveProcessesManager();
+    
+    // Carregar clientes
+    loadClients();
+    
+    // Configurar abas
+    setupClientTabs();
+    
+    // Configurar logos clicáveis
+    setupClickableLogos();
+    
+    // Configurar seletor de cores
+    setupColorPicker();
+    
+    // Configurar eventos de planos de ação
+    setupActionPlanEvents();
+    
+    // Configurar eventos de mockups
+    setupMockupEvents();
+    
+    // Mostrar tela de boas-vindas
+    welcomeContainer.style.display = 'block';
+  }
+
   // Carregar clientes ao iniciar e mostrar tela de boas-vindas
   init();
 });

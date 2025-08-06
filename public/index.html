@@ -64,6 +64,9 @@ a<!DOCTYPE html>
                     <button class="tab-button" data-tab="action-plans">
                         Planos de Ação
                     </button>
+                    <button class="tab-button" data-tab="mockups">
+                        <i class="fas fa-palette"></i> Mockups
+                    </button>
                 </div>
                 
                 <div class="tab-content active" id="analysis-tab">
@@ -115,6 +118,25 @@ a<!DOCTYPE html>
                             <div class="action-plans-list-empty">
                                 <i class="fas fa-tasks"></i>
                                 <p>Nenhum plano de ação criado</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="mockups-tab">
+                    <div class="client-mockups-history">
+                        <div class="mockups-header">
+                            <h3>Mockups com IA</h3>
+                            <button id="new-mockup-btn" class="action-button">
+                                <i class="fas fa-palette"></i> Novo Mockup
+                            </button>
+                        </div>
+                        <div id="mockups-list">
+                            <!-- Histórico de mockups será carregado dinamicamente -->
+                            <div class="mockups-list-empty">
+                                <i class="fas fa-image"></i>
+                                <p>Nenhum mockup criado</p>
+                                <small>Crie mockups profissionais usando IA para logos, posts sociais, banners e muito mais</small>
                             </div>
                         </div>
                     </div>
@@ -488,6 +510,243 @@ a<!DOCTYPE html>
             <div class="modal-footer">
                 <button id="cancel-delete-btn" class="action-button secondary">Cancelar</button>
                 <button id="confirm-delete-btn" class="action-button danger">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para criação de mockup -->
+    <div id="mockup-modal" class="modal">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h3>Novo Mockup com IA</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="mockup-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="mockup-title">Título do Mockup</label>
+                            <input type="text" id="mockup-title" required placeholder="Ex: Logo para campanha verão">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="mockup-type">Tipo de Arte</label>
+                            <select id="mockup-type" required>
+                                <option value="">Selecione o tipo</option>
+                                <option value="logo">🏷️ Logo</option>
+                                <option value="post-social">📱 Post Social</option>
+                                <option value="banner">🎯 Banner</option>
+                                <option value="landing-page">🌐 Landing Page</option>
+                                <option value="material-apresentacao">📄 Material de Apresentação</option>
+                                <option value="ilustracao-conceitual">🎨 Ilustração Conceitual</option>
+                                <option value="mockup-produto">📦 Mockup de Produto</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="mockup-aspect-ratio">Proporção</label>
+                            <select id="mockup-aspect-ratio" required>
+                                <option value="1:1">1:1 (Quadrado - Instagram Post)</option>
+                                <option value="16:9">16:9 (Banner Horizontal)</option>
+                                <option value="9:16">9:16 (Stories/Vertical)</option>
+                                <option value="4:5">4:5 (Instagram Portrait)</option>
+                                <option value="3:2">3:2 (Foto Paisagem)</option>
+                                <option value="2:3">2:3 (Foto Retrato)</option>
+                                <option value="21:9">21:9 (Banner Ultra-wide)</option>
+                                <option value="5:4">5:4 (Monitor Clássico)</option>
+                                <option value="9:21">9:21 (Banner Vertical)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="mockup-style">Estilo Visual</label>
+                            <select id="mockup-style" required>
+                                <option value="">Selecione o estilo</option>
+                                <option value="minimalista">✨ Minimalista</option>
+                                <option value="corporativo">🏢 Corporativo</option>
+                                <option value="criativo-artistico">🎨 Criativo/Artístico</option>
+                                <option value="moderno">🚀 Moderno</option>
+                                <option value="vintage-retro">📻 Vintage/Retrô</option>
+                                <option value="tecnologico">💻 Tecnológico</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="mockup-colors">Paleta de Cores</label>
+                            <select id="mockup-colors">
+                                <option value="">Automático</option>
+                                <option value="monocromatico">⚫ Monocromático</option>
+                                <option value="colorido">🌈 Colorido</option>
+                                <option value="tons-pasteis">🌸 Tons Pastéis</option>
+                                <option value="alto-contraste">⚡ Alto Contraste</option>
+                                <option value="cores-marca">🎯 Cores da Marca</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="mockup-elements">Elementos Visuais</label>
+                            <select id="mockup-elements">
+                                <option value="">Automático</option>
+                                <option value="com-pessoas">👥 Com Pessoas</option>
+                                <option value="apenas-objetos">📦 Apenas Objetos</option>
+                                <option value="abstrato-conceitual">🔮 Abstrato/Conceitual</option>
+                                <option value="com-texto-integrado">📝 Com Texto Integrado</option>
+                                <option value="icones-simbolos">🔣 Ícones/Símbolos</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="mockup-sector">Setor/Indústria</label>
+                            <select id="mockup-sector">
+                                <option value="">Automático</option>
+                                <option value="tecnologia">💻 Tecnologia</option>
+                                <option value="saude-medicina">🏥 Saúde/Medicina</option>
+                                <option value="educacao">🎓 Educação</option>
+                                <option value="alimentacao">🍕 Alimentação</option>
+                                <option value="moda-beleza">💄 Moda/Beleza</option>
+                                <option value="financas">💰 Finanças</option>
+                                <option value="imobiliario">🏠 Imobiliário</option>
+                                <option value="outros">📋 Outros</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="mockup-audience">Público-Alvo</label>
+                            <select id="mockup-audience">
+                                <option value="">Automático</option>
+                                <option value="jovem-18-30">🧑 Jovem (18-30)</option>
+                                <option value="adulto-30-50">👨 Adulto (30-50)</option>
+                                <option value="maduro-50-plus">👴 Maduro (50+)</option>
+                                <option value="corporativo-b2b">🏢 Corporativo B2B</option>
+                                <option value="consumidor-b2c">🛍️ Consumidor B2C</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="mockup-mood">Mood/Sentimento</label>
+                            <select id="mockup-mood">
+                                <option value="">Automático</option>
+                                <option value="profissional-serio">💼 Profissional/Sério</option>
+                                <option value="amigavel-caloroso">😊 Amigável/Caloroso</option>
+                                <option value="inovador-futurista">🚀 Inovador/Futurista</option>
+                                <option value="confiavel-estavel">🛡️ Confiável/Estável</option>
+                                <option value="dinamico-energetico">⚡ Dinâmico/Energético</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="mockup-render-style">Estilo de Renderização</label>
+                            <select id="mockup-render-style">
+                                <option value="">Automático</option>
+                                <option value="fotorrealista">📸 Fotorrealista</option>
+                                <option value="ilustracao-digital">🎨 Ilustração Digital</option>
+                                <option value="desenho-vetorial">📐 Desenho Vetorial</option>
+                                <option value="aquarela-artistico">🖌️ Aquarela/Artístico</option>
+                                <option value="3d-render">🎯 3D Render</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="mockup-prompt">Descrição Detalhada</label>
+                        <textarea id="mockup-prompt" rows="4" required 
+                                placeholder="Descreva detalhadamente o que você quer criar. Ex: Logo minimalista para uma cafeteria, usando tons terrosos, com uma xícara estilizada e tipografia moderna..."></textarea>
+                        <div class="prompt-suggestions" id="prompt-suggestions">
+                            <small>💡 Dica: Seja específico sobre cores, elementos, estilo e composição para melhores resultados</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Configurações Avançadas (colapsível) -->
+                    <div class="advanced-settings">
+                        <button type="button" class="toggle-advanced" id="toggle-advanced">
+                            <i class="fas fa-cog"></i> Configurações Avançadas
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        
+                        <div class="advanced-content" id="advanced-content">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="mockup-cfg">Guidance Scale (CFG)</label>
+                                    <input type="range" id="mockup-cfg" min="0" max="20" step="0.5" value="3.5">
+                                    <span class="range-value" id="cfg-value">3.5</span>
+                                    <small>Controla o quão fielmente o modelo segue o prompt</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="mockup-steps">Steps de Difusão</label>
+                                    <input type="range" id="mockup-steps" min="1" max="28" value="28">
+                                    <span class="range-value" id="steps-value">28</span>
+                                    <small>Mais steps = mais detalhes (recomendado: 28)</small>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="mockup-format">Formato de Saída</label>
+                                    <select id="mockup-format">
+                                        <option value="webp">WebP (Recomendado)</option>
+                                        <option value="png">PNG (Transparência)</option>
+                                        <option value="jpg">JPG (Menor tamanho)</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="mockup-quality">Qualidade</label>
+                                    <input type="range" id="mockup-quality" min="60" max="100" value="90">
+                                    <span class="range-value" id="quality-value">90</span>
+                                    <small>Qualidade da compressão da imagem</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="cost-info">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Custo: $0.14 (4 variações × $0.035 cada)</span>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="action-button secondary" id="cancel-mockup-btn">Cancelar</button>
+                <button type="submit" form="mockup-form" class="action-button" id="generate-mockup-btn">
+                    <i class="fas fa-magic"></i> Gerar 4 Variações
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para escolha de variação -->
+    <div id="mockup-variations-modal" class="modal">
+        <div class="modal-content extra-large-modal">
+            <div class="modal-header">
+                <h3>Escolha sua Variação</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="variations-info">
+                    <p>4 variações foram geradas com sucesso! Clique na imagem que você mais gostou para salvá-la.</p>
+                    <div class="prompt-used">
+                        <strong>Prompt usado:</strong> <span id="used-prompt"></span>
+                    </div>
+                </div>
+                
+                <div class="variations-grid" id="variations-grid">
+                    <!-- Variações serão inseridas dinamicamente -->
+                </div>
+                
+                <div class="variations-actions">
+                    <button type="button" class="action-button secondary" id="regenerate-mockup-btn">
+                        <i class="fas fa-redo"></i> Gerar Novas Variações
+                    </button>
+                </div>
             </div>
         </div>
     </div>

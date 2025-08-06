@@ -39,6 +39,7 @@ const analisesRoutes = require('./routes/analises');
 const transcricoesRoutes = require('./routes/transcricoes');
 const planosAcaoRoutes = require('./routes/planosAcao');
 const authRoutes = require('./routes/auth');
+const mockupRoutes = require('./routes/mockups');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -113,6 +114,9 @@ app.use('/api/planos-acao', planosAcaoRoutes);
 
 console.log('📋 [ROUTE-REGISTER] Registrando /api/processos (com auth)');
 app.use('/api/processos', requireAuth, require('./routes/processos'));
+
+console.log('📋 [ROUTE-REGISTER] Registrando /api/mockups (com auth)');
+app.use('/api/mockups', requireAuth, mockupRoutes);
 
 // Rota geral da API (deve vir por último)
 console.log('📋 [ROUTE-REGISTER] Registrando /api (geral - por último)');
