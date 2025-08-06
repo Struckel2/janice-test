@@ -82,17 +82,23 @@ router.post('/gerar', async (req, res) => {
 
     console.log('🎨 Iniciando geração de mockup para cliente:', clienteId);
 
-    // Gerar mockup (processo assíncrono)
-    const resultado = await mockupService.gerarMockup(mockupData);
+    // Iniciar geração assíncrona (não aguardar conclusão)
+    mockupService.gerarMockup(mockupData)
+      .then(resultado => {
+        console.log('✅ Mockup gerado com sucesso:', resultado.mockupId);
+      })
+      .catch(error => {
+        console.error('❌ Erro na geração assíncrona:', error);
+      });
 
-    res.json({
+    // Retornar imediatamente com status de processamento
+    res.status(202).json({
       success: true,
-      message: 'Mockup gerado com sucesso',
+      message: 'Mockup iniciado com sucesso. Processando em background...',
       data: {
-        mockupId: resultado.mockupId,
-        variacoes: resultado.variacoes,
-        promptUsado: resultado.promptUsado,
-        custoTotal: 0.035 * 4
+        status: 'processing',
+        message: 'Gerando 4 variações de mockup. Isso pode levar até 2 minutos.',
+        estimatedTime: '1-2 minutos'
       }
     });
 

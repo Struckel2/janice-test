@@ -4124,11 +4124,27 @@ ${currentActionPlanData.conteudo}`;
       
       const result = await response.json();
       
-      // Armazenar dados do mockup
-      currentMockupData = result.data;
-      
-      // Iniciar monitoramento do progresso real
-      startMockupMonitoring(result.data.mockupId);
+      // Verificar se é resposta assíncrona (status 202)
+      if (response.status === 202) {
+        // Processo iniciado em background
+        console.log('✅ Mockup iniciado em background:', result.message);
+        
+        // Atualizar progresso para mostrar que foi aceito
+        updateProgress({
+          percentage: 10,
+          message: 'Mockup aceito para processamento...',
+          step: 1,
+          stepStatus: 'active'
+        });
+        
+        // Iniciar monitoramento via polling (verificar lista de mockups periodicamente)
+        startMockupPolling();
+        
+      } else {
+        // Resposta síncrona (compatibilidade com versão anterior)
+        currentMockupData = result.data;
+        startMockupMonitoring(result.data.mockupId);
+      }
       
     } catch (error) {
       console.error('Erro ao gerar mockup:', error);
@@ -4507,6 +4523,73 @@ ${currentActionPlanData.conteudo}`;
     // Reabrir modal de criação com dados preenchidos
     // (implementação futura)
     showMockupModal();
+  }
+  
+  // Iniciar polling para verificar mockups concluídos
+  function startMockupPolling() {
+    // Verificar a cada 10 segundos se há novos mockups concluídos
+    const pollInterval = setInterval(async () => {
+      try {
+        if (!currentClientId) {
+          clearInterval(pollInterval);
+          return;
+        }
+        
+        // Buscar mockups do cliente
+        const response = await fetch(`/api/mockups/cliente/${currentClientId}`);
+        if (!response.ok) return;
+        
+        const result = await response.json();
+        const mockups = result.data.mockups;
+        
+        // Verificar se há mockups recém-concluídos (últimos 2 minutos)
+        const recentMockups = mockups.filter(mockup => {
+          const createdTime = new Date(mockup.criadoEm).getTime();
+          const now = Date.now();
+          const twoMinutesAgo = now - (2 * 60 * 1000);
+          
+          return mockup.status === 'concluido' && 
+                 createdTime > twoMinutesAgo && 
+                 mockup.imagemUrl; // Tem imagem final
+        });
+        
+        if (recentMockups.length > 0) {
+          // Parar polling
+          clearInterval(pollInterval);
+          
+          // Completar progresso
+          updateProgress({
+            percentage: 100,
+            message: 'Mockup concluído com sucesso!',
+            step: 4,
+            stepStatus: 'completed'
+          });
+          
+          // Aguardar 2 segundos e recarregar lista
+          setTimeout(() => {
+            // Recarregar lista de mockups
+            loadClientMockups(currentClientId);
+            
+            // Voltar para detalhes do cliente
+            showOnlySection('client-details-panel');
+            
+            // Mostrar notificação de sucesso
+            console.log('✅ Mockup concluído via polling');
+          }, 2000);
+        }
+        
+      } catch (error) {
+        console.error('Erro no polling de mockups:', error);
+      }
+    }, 10000); // Verificar a cada 10 segundos
+    
+    // Timeout de segurança (5 minutos)
+    setTimeout(() => {
+      clearInterval(pollInterval);
+      if (document.getElementById('loading-container').style.display !== 'none') {
+        showError('Timeout: O mockup está demorando mais que o esperado. Verifique a lista de mockups em alguns minutos.');
+      }
+    }, 300000); // 5 minutos
   }
   
   // ===== EVENTOS PARA MOCKUPS =====
