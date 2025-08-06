@@ -1,3 +1,6 @@
+// Garantir que fetch esteja disponível
+require('../config/fetch-polyfill');
+
 const Replicate = require('replicate');
 const cloudinary = require('../config/cloudinary');
 const Mockup = require('../models/Mockup');
@@ -107,10 +110,14 @@ class MockupService {
         custo: 0.035 * 2 // $0.035 por imagem (2 variações)
       };
       
+      // 🚀 CORREÇÃO: Atualizar status para 'concluido'
+      mockup.status = 'concluido';
+      
       console.log('🎨 [MOCKUP-SERVICE] ===== ATUALIZANDO MOCKUP NO BANCO =====');
       console.log('🎨 [MOCKUP-SERVICE] Metadados:', mockup.metadados);
       console.log('🎨 [MOCKUP-SERVICE] Tempo total de processamento:', tempoTotal + 'ms');
       console.log('🎨 [MOCKUP-SERVICE] URLs das variações:', variacoes.map(v => v.url));
+      console.log('🎨 [MOCKUP-SERVICE] Status atualizado para:', mockup.status);
       
       await mockup.save();
       

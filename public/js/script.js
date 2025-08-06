@@ -395,9 +395,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       
-      // Converter Map para Array e ordenar por data de criação
-      const processArray = Array.from(this.processes.values())
-        .sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
+        // Converter Map para Array e ordenar por data de criação
+        const processArray = Array.from(this.processes.values())
+          .sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
       
       this.processList.innerHTML = processArray.map(process => this.renderProcess(process)).join('');
     }
@@ -4391,7 +4391,7 @@ ${currentActionPlanData.conteudo}`;
       }
       
       // Ordenar por data (mais recente primeiro)
-      mockups.sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
+      mockups.sort((a, b) => new Date(b.dataCriacao) - new Date(a.dataCriacao));
       
       // Renderizar lista
       mockupsList.innerHTML = mockups.map(mockup => {
@@ -4420,7 +4420,7 @@ ${currentActionPlanData.conteudo}`;
                 <div class="mockup-item-type">${getTypeLabel(mockup.configuracao.tipoArte)}</div>
               </div>
               <div class="mockup-item-meta">
-                <span><i class="fas fa-calendar"></i> ${new Date(mockup.criadoEm).toLocaleDateString('pt-BR')}</span>
+                <span><i class="fas fa-calendar"></i> ${new Date(mockup.dataCriacao).toLocaleDateString('pt-BR')}</span>
                 <span><i class="fas fa-expand-arrows-alt"></i> ${mockup.configuracao.aspectRatio}</span>
                 <span class="mockup-status ${statusClass}">${statusText}</span>
               </div>
@@ -4568,12 +4568,12 @@ ${currentActionPlanData.conteudo}`;
         console.log('🔍 [MOCKUP-POLLING] Janela de detecção (10min atrás):', new Date(tenMinutesAgo).toISOString());
         
         const recentMockups = mockups.filter((mockup, index) => {
-          const createdTime = new Date(mockup.criadoEm).getTime();
+          const createdTime = new Date(mockup.dataCriacao).getTime();
           const timeSinceCreation = (now - createdTime) / 1000; // em segundos
           
           console.log(`🔍 [MOCKUP-${index}] ===== ANÁLISE MOCKUP ${mockup._id} =====`);
           console.log(`🔍 [MOCKUP-${index}] Status: ${mockup.status}`);
-          console.log(`🔍 [MOCKUP-${index}] Criado em: ${mockup.criadoEm}`);
+          console.log(`🔍 [MOCKUP-${index}] Criado em: ${mockup.dataCriacao}`);
           console.log(`🔍 [MOCKUP-${index}] Tempo desde criação: ${timeSinceCreation}s (${Math.floor(timeSinceCreation/60)}min)`);
           console.log(`🔍 [MOCKUP-${index}] imagemUrl: ${mockup.imagemUrl || 'undefined'}`);
           console.log(`🔍 [MOCKUP-${index}] imagemFinal: ${mockup.imagemFinal || 'undefined'}`);
@@ -4581,7 +4581,7 @@ ${currentActionPlanData.conteudo}`;
           
           const statusOk = mockup.status === 'concluido';
           const tempoOk = createdTime > tenMinutesAgo;
-          const imagemOk = !!(mockup.imagemUrl || mockup.imagemFinal); // Verificar ambos os campos
+          const imagemOk = mockup.status === 'concluido' && mockup.metadados?.variacoesTemporarias?.length > 0;
           
           console.log(`🔍 [MOCKUP-${index}] Critérios:`, {
             statusOk: statusOk,

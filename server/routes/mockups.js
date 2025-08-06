@@ -184,9 +184,8 @@ router.get('/cliente/:clienteId', async (req, res) => {
       id: m._id,
       titulo: m.titulo,
       status: m.status,
-      criadoEm: m.criadoEm,
+      dataCriacao: m.dataCriacao,
       imagemUrl: m.imagemUrl,
-      imagemFinal: m.imagemFinal,
       metadados: m.metadados
     })));
 
