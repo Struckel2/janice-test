@@ -578,10 +578,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Método para registrar novo processo (chamado quando processo é iniciado)
     registerProcess(type, clientId, titulo, resourceId = null, metadados = null) {
-      const processId = `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // 🚀 CORREÇÃO: Não criar processo duplicado no frontend
+      // O backend já cria o processo real via progressService.registerActiveProcess
+      // Apenas retornar um ID temporário para compatibilidade
+      const tempProcessId = `temp_${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      console.log('🔍 [DEBUG-FRONTEND] Registrando novo processo:', {
-        processId,
+      console.log('🔍 [DEBUG-FRONTEND] Processo será criado pelo backend. ID temporário:', tempProcessId);
+      console.log('🔍 [DEBUG-FRONTEND] Dados do processo:', {
         type,
         clientId,
         titulo,
@@ -589,43 +592,10 @@ document.addEventListener('DOMContentLoaded', () => {
         metadados
       });
       
-      const processData = {
-        id: processId,
-        tipo: type,
-        cliente: currentClients.find(c => c._id === clientId),
-        titulo: titulo,
-        progresso: 0,
-        status: 'em-progresso',
-        mensagem: 'Iniciando...',
-        criadoEm: new Date().toISOString(),
-        resourceId: resourceId,
-        metadados: metadados || {}
-      };
+      // Não adicionar ao Map local nem enviar para servidor
+      // O processo real será recebido via SSE quando o backend o criar
       
-      console.log('🔍 [DEBUG-FRONTEND] Dados do processo criado:', processData);
-      
-      this.addProcess(processData);
-      console.log('🔍 [DEBUG-FRONTEND] Processo adicionado ao Map local. Total processos:', this.processes.size);
-      
-      // Registrar no servidor
-      console.log('🔍 [DEBUG-FRONTEND] Enviando processo para servidor via POST /api/processos/ativos');
-      fetch('/api/processos/ativos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(processData)
-      })
-      .then(response => {
-        console.log('🔍 [DEBUG-FRONTEND] Resposta do servidor ao registrar processo:', response.status);
-        return response.json();
-      })
-      .then(data => {
-        console.log('🔍 [DEBUG-FRONTEND] Processo registrado no servidor com sucesso:', data);
-      })
-      .catch(error => {
-        console.error('❌ [DEBUG-FRONTEND] Erro ao registrar processo no servidor:', error);
-      });
-      
-      return processId;
+      return tempProcessId;
     }
     
     scheduleReconnect() {
