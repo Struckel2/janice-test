@@ -184,7 +184,8 @@ class MockupService {
         throw new Error(`Erro ao baixar imagem: ${response.statusText}`);
       }
       
-      const imageBuffer = await response.buffer();
+      const arrayBuffer = await response.arrayBuffer();
+      const imageBuffer = Buffer.from(arrayBuffer);
       
       // Upload para Cloudinary
       const uploadResult = await new Promise((resolve, reject) => {
