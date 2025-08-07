@@ -207,7 +207,27 @@ const mockupSchema = new mongoose.Schema({
     },
     
     // URLs temporárias das 4 variações (para debug)
-    variacoesTemporarias: [String]
+    variacoesTemporarias: [String],
+    
+    // Imagens salvas no Cloudinary (para galeria)
+    imagensSalvas: [{
+      url: {
+        type: String,
+        required: true
+      },
+      seed: {
+        type: Number,
+        required: true
+      },
+      publicId: {
+        type: String,
+        required: true
+      },
+      dataSalvamento: {
+        type: Date,
+        default: Date.now
+      }
+    }]
   },
   
   // Status do mockup
