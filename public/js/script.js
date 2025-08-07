@@ -5000,6 +5000,12 @@ ${currentActionPlanData.conteudo}`;
         const modal = e.target.closest('.modal');
         if (modal) {
           modal.classList.remove('show');
+          // Limpar seleções ao fechar modal de variações
+          if (modal.id === 'mockup-variations-modal') {
+            selectedVariations.clear();
+            updateSelectionCounter();
+            updateSaveButton();
+          }
         }
       });
     });
@@ -5017,6 +5023,12 @@ ${currentActionPlanData.conteudo}`;
     // Regenerar mockup
     if (regenerateMockupBtn) {
       regenerateMockupBtn.addEventListener('click', regenerateMockup);
+    }
+    
+    // 🚀 CORREÇÃO: Configurar botão de salvar variações selecionadas
+    const saveSelectedBtn = document.getElementById('save-selected-btn');
+    if (saveSelectedBtn) {
+      saveSelectedBtn.addEventListener('click', saveSelectedVariations);
     }
     
     // Configurar controles de range
@@ -5038,6 +5050,10 @@ ${currentActionPlanData.conteudo}`;
       }
       if (e.target === mockupVariationsModal) {
         closeVariationsModal();
+        // Limpar seleções ao fechar modal
+        selectedVariations.clear();
+        updateSelectionCounter();
+        updateSaveButton();
       }
     });
   }
