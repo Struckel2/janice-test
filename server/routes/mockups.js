@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mockupService = require('../services/mockupService');
 const { isAuthenticated } = require('../middleware/auth');
+const Mockup = require('../models/Mockup');
 
 /**
  * Rotas para sistema de mockups com IA
@@ -447,8 +448,6 @@ router.post('/sugestoes/prompt', async (req, res) => {
  */
 router.get('/estatisticas/resumo', async (req, res) => {
   try {
-    const Mockup = require('../models/Mockup');
-
     // Buscar estatísticas básicas
     const [
       totalMockups,
