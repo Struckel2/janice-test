@@ -4,6 +4,7 @@ require('../config/fetch-polyfill');
 const Replicate = require('replicate');
 const { cloudinary } = require('../config/cloudinary');
 const Mockup = require('../models/Mockup');
+const progressService = require('./progressService');
 
 /**
  * Serviço para geração de mockups usando Stable Diffusion 3
@@ -29,8 +30,9 @@ class MockupService {
   /**
    * Gera 4 variações de mockup (otimizado para performance)
    */
-  async gerarMockup(mockupData) {
+  async gerarMockup(mockupData, userInfo = {}) {
     let mockup = null;
+    let processId = null;
     
     try {
       console.log('🎨 [MOCKUP-SERVICE] ===== INICIANDO GERAÇÃO DE MOCKUP =====');
@@ -39,6 +41,7 @@ class MockupService {
       console.log('🎨 [MOCKUP-SERVICE] Configuração completa:', JSON.stringify(mockupData.configuracao, null, 2));
       console.log('🎨 [MOCKUP-SERVICE] Configuração técnica:', JSON.stringify(mockupData.configuracaoTecnica, null, 2));
       console.log('🎨 [MOCKUP-SERVICE] Prompt original:', mockupData.prompt);
+      console.log('🎨 [MOCKUP-SERVICE] Informações do usuário:', userInfo);
       
       // Validar dados essenciais antes de criar no banco
       if (!mockupData.titulo || !mockupData.cliente || !mockupData.configuracao || !mockupData.prompt) {
@@ -64,6 +67,26 @@ class MockupService {
       console.log('🎨 [MOCKUP-SERVICE] ✅ Mockup criado no banco com sucesso!');
       console.log('🎨 [MOCKUP-SERVICE] ID do mockup:', mockup._id);
       console.log('🎨 [MOCKUP-SERVICE] Status inicial:', mockup.status);
+      
+      // 🚀 REGISTRAR PROCESSO NO SISTEMA DE PROGRESSO
+      processId = mockup._id.toString();
+      const processData = {
+        id: processId,
+        tipo: 'mockup',
+        titulo: `Mockup: ${mockupData.titulo}`,
+        metadata: {
+          tipoArte: mockupData.configuracao.tipoArte,
+          aspectRatio: mockupData.configuracao.aspectRatio
+        }
+      };
+      
+      progressService.registerActiveProcess(
+        mockupData.criadoPor,
+        processData,
+        userInfo
+      );
+      
+      console.log('📊 [MOCKUP-SERVICE] Processo registrado no sistema de progresso:', processId);
       
       // Gerar prompt otimizado
       const promptOtimizado = mockup.gerarPromptOtimizado();
@@ -97,6 +120,13 @@ class MockupService {
         console.log(`⏳ [MOCKUP-SERVICE] Seed: ${seeds[i]}`);
         console.log(`⏳ [MOCKUP-SERVICE] Parâmetros completos:`, params);
         
+        // 🚀 ATUALIZAR PROGRESSO
+        const progresso = Math.round((i / 4) * 100);
+        progressService.updateActiveProcess(processId, {
+          progresso: progresso,
+          mensagem: `Gerando variação ${i + 1} de 4...`
+        });
+        
         const startTime = Date.now();
         console.log(`⏳ [MOCKUP-SERVICE] Iniciando chamada para Replicate...`);
         
@@ -114,6 +144,13 @@ class MockupService {
           url: prediction[0], // SD3 retorna array com uma URL
           seed: seeds[i],
           tempoProcessamento
+        });
+        
+        // 🚀 ATUALIZAR PROGRESSO APÓS CADA VARIAÇÃO
+        const progressoAtualizado = Math.round(((i + 1) / 4) * 100);
+        progressService.updateActiveProcess(processId, {
+          progresso: progressoAtualizado,
+          mensagem: `Variação ${i + 1} de 4 concluída`
         });
       }
       
@@ -137,10 +174,16 @@ class MockupService {
       
       await mockup.save();
       
+      // 🚀 FINALIZAR PROCESSO NO SISTEMA DE PROGRESSO
+      progressService.completeActiveProcess(processId, {
+        resourceId: mockup._id
+      });
+      
       console.log('🎉 [MOCKUP-SERVICE] ===== TODAS AS VARIAÇÕES GERADAS COM SUCESSO =====');
       console.log('🎉 [MOCKUP-SERVICE] Mockup ID:', mockup._id);
       console.log('🎉 [MOCKUP-SERVICE] Status final:', mockup.status);
       console.log('🎉 [MOCKUP-SERVICE] Total de variações:', variacoes.length);
+      console.log('📊 [MOCKUP-SERVICE] Processo finalizado no sistema de progresso:', processId);
       
       const resultado = {
         mockupId: mockup._id,
@@ -160,6 +203,12 @@ class MockupService {
         mockup.status = 'erro';
         mockup.mensagemErro = error.message;
         await mockup.save();
+      }
+      
+      // 🚀 MARCAR PROCESSO COMO ERRO NO SISTEMA DE PROGRESSO
+      if (processId) {
+        progressService.errorActiveProcess(processId, error.message);
+        console.log('📊 [MOCKUP-SERVICE] Processo marcado como erro no sistema de progresso:', processId);
       }
       
       throw error;

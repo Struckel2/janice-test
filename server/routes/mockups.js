@@ -121,8 +121,14 @@ router.post('/gerar', async (req, res) => {
 
     console.log('🎨 Iniciando geração de mockup para cliente:', clienteId);
 
+    // Preparar informações do usuário para o sistema de progresso
+    const userInfo = {
+      nome: req.user.nome || req.user.email || 'Usuário',
+      email: req.user.email || ''
+    };
+
     // Iniciar geração assíncrona (não aguardar conclusão)
-    mockupService.gerarMockup(mockupData)
+    mockupService.gerarMockup(mockupData, userInfo)
       .then(resultado => {
         console.log('✅ Mockup gerado com sucesso:', resultado.mockupId);
       })
@@ -489,6 +495,112 @@ router.get('/estatisticas/resumo', async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
+});
+
+// Endpoint para deletar imagem específica da galeria
+router.delete('/galeria/imagem/:imageId', async (req, res) => {
+    try {
+        const { imageId } = req.params;
+        
+        console.log(`🗑️ [GALERIA-DELETE] Deletando imagem: ${imageId}`);
+        
+        // Extrair mockupId e seed do imageId (formato: mockupId_seed)
+        const [mockupId, seed] = imageId.split('_');
+        
+        if (!mockupId || !seed) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID da imagem inválido'
+            });
+        }
+        
+        console.log(`🗑️ [GALERIA-DELETE] Mockup ID: ${mockupId}, Seed: ${seed}`);
+        
+        // Buscar o mockup
+        const mockup = await Mockup.findById(mockupId);
+        if (!mockup) {
+            return res.status(404).json({
+                success: false,
+                message: 'Mockup não encontrado'
+            });
+        }
+        
+        // Verificar se o usuário tem permissão (criador ou admin)
+        if (mockup.criadoPor.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Sem permissão para deletar esta imagem'
+            });
+        }
+        
+        // Verificar se existem imagens salvas
+        if (!mockup.metadados || !mockup.metadados.imagensSalvas || mockup.metadados.imagensSalvas.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Nenhuma imagem encontrada para deletar'
+            });
+        }
+        
+        // Encontrar a imagem específica
+        const imagemIndex = mockup.metadados.imagensSalvas.findIndex(img => img.seed.toString() === seed);
+        
+        if (imagemIndex === -1) {
+            return res.status(404).json({
+                success: false,
+                message: 'Imagem não encontrada'
+            });
+        }
+        
+        const imagemParaDeletar = mockup.metadados.imagensSalvas[imagemIndex];
+        console.log(`🗑️ [GALERIA-DELETE] Imagem encontrada:`, imagemParaDeletar);
+        
+        // Deletar do Cloudinary se tiver publicId
+        if (imagemParaDeletar.publicId) {
+            try {
+                const { cloudinary } = require('../config/cloudinary');
+                await cloudinary.uploader.destroy(imagemParaDeletar.publicId);
+                console.log(`🗑️ [GALERIA-DELETE] Imagem removida do Cloudinary: ${imagemParaDeletar.publicId}`);
+            } catch (cloudinaryError) {
+                console.error(`❌ [GALERIA-DELETE] Erro ao remover do Cloudinary:`, cloudinaryError);
+                // Continuar mesmo se falhar no Cloudinary
+            }
+        }
+        
+        // Remover do array de imagens salvas
+        mockup.metadados.imagensSalvas.splice(imagemIndex, 1);
+        
+        // Se era a imagem principal e ainda há outras imagens, atualizar a principal
+        if (mockup.imagemUrl === imagemParaDeletar.url && mockup.metadados.imagensSalvas.length > 0) {
+            mockup.imagemUrl = mockup.metadados.imagensSalvas[0].url;
+            console.log(`🗑️ [GALERIA-DELETE] Imagem principal atualizada para: ${mockup.imagemUrl}`);
+        } else if (mockup.metadados.imagensSalvas.length === 0) {
+            // Se não há mais imagens salvas, limpar a URL principal
+            mockup.imagemUrl = '';
+            console.log(`🗑️ [GALERIA-DELETE] Todas as imagens removidas, limpando URL principal`);
+        }
+        
+        // Salvar as alterações
+        await mockup.save();
+        
+        console.log(`✅ [GALERIA-DELETE] Imagem deletada com sucesso. Restam ${mockup.metadados.imagensSalvas.length} imagens`);
+        
+        res.json({
+            success: true,
+            message: 'Imagem deletada com sucesso',
+            data: {
+                imagensRestantes: mockup.metadados.imagensSalvas.length,
+                imagemPrincipal: mockup.imagemUrl
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ [GALERIA-DELETE] Erro ao deletar imagem:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor ao deletar imagem',
+            error: error.message
+        });
+    }
 });
 
 // Endpoint para galeria de imagens do cliente

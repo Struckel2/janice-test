@@ -3964,6 +3964,9 @@ ${currentActionPlanData.conteudo}`;
               <button class="gallery-download-btn" title="Download">
                 <i class="fas fa-download"></i>
               </button>
+              <button class="gallery-delete-btn" title="Excluir imagem">
+                <i class="fas fa-trash"></i>
+              </button>
             </div>
           </div>
           <div class="gallery-item-info">
@@ -4001,6 +4004,16 @@ ${currentActionPlanData.conteudo}`;
         const galleryItem = e.target.closest('.gallery-item');
         const imageId = galleryItem.dataset.imageId;
         downloadGalleryImage(imageId);
+      });
+    });
+    
+    // Eventos de delete
+    galleryGrid.querySelectorAll('.gallery-delete-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const galleryItem = e.target.closest('.gallery-item');
+        const imageId = galleryItem.dataset.imageId;
+        deleteGalleryImage(imageId);
       });
     });
     
@@ -4080,6 +4093,50 @@ ${currentActionPlanData.conteudo}`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+  
+  // Deletar imagem da galeria
+  async function deleteGalleryImage(imageId) {
+    const image = currentGalleryImages.find(img => img.id === imageId);
+    if (!image) return;
+    
+    // Confirmar exclusão
+    if (!confirm(`Tem certeza que deseja excluir esta imagem?\n\n"${image.titulo}"\n\nEsta ação não pode ser desfeita.`)) {
+      return;
+    }
+    
+    try {
+      console.log(`🗑️ [GALERIA-DELETE] Deletando imagem: ${imageId}`);
+      
+      const response = await fetch(`/api/mockups/galeria/imagem/${imageId}`, {
+        method: 'DELETE'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao deletar imagem');
+      }
+      
+      const result = await response.json();
+      console.log(`✅ [GALERIA-DELETE] Imagem deletada com sucesso:`, result);
+      
+      // Recarregar galeria
+      if (currentClientId) {
+        await loadClientGallery(currentClientId);
+      }
+      
+      // Mostrar feedback de sucesso
+      console.log(`✅ Imagem deletada com sucesso. Restam ${result.data.imagensRestantes} imagens`);
+      
+      // Fechar modal se estiver aberto
+      if (galleryModal.classList.contains('show')) {
+        galleryModal.classList.remove('show');
+      }
+      
+    } catch (error) {
+      console.error('❌ [GALERIA-DELETE] Erro ao deletar imagem:', error);
+      alert(`Não foi possível deletar a imagem: ${error.message}`);
+    }
   }
   
   // Obter ícone do tipo para galeria
