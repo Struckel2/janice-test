@@ -1224,7 +1224,9 @@ ${currentAnalysisData.analysis}`;
         await Promise.all([
           loadClientAnalyses(clientId),
           loadClientTranscriptions(clientId),
-          loadClientActionPlans(clientId)
+          loadClientActionPlans(clientId),
+          loadClientMockups(clientId),
+          loadClientGallery(clientId)
         ]);
         
         console.log(`✅ [DEBUG] Todos os dados do cliente ${clientId} carregados com sucesso`);
@@ -3871,6 +3873,254 @@ ${currentActionPlanData.conteudo}`;
     welcomeContainer.style.display = 'block';
   }
 
+  // ===== FUNÇÕES PARA GALERIA DE IMAGENS =====
+  
+  // Elementos específicos para galeria
+  const galleryGrid = document.getElementById('gallery-grid');
+  const galleryModal = document.getElementById('gallery-modal');
+  const galleryModalImage = document.getElementById('gallery-modal-image');
+  const galleryModalTitle = document.getElementById('gallery-modal-title');
+  const galleryModalType = document.getElementById('gallery-modal-type');
+  const galleryModalPrompt = document.getElementById('gallery-modal-prompt');
+  const galleryModalDate = document.getElementById('gallery-modal-date');
+  const galleryModalSeed = document.getElementById('gallery-modal-seed');
+  const downloadGalleryImageBtn = document.getElementById('download-gallery-image');
+  const closeGalleryModalBtn = document.getElementById('close-gallery-modal');
+  
+  // Estado da galeria
+  let currentGalleryImages = [];
+  let currentGalleryFilter = 'all';
+  
+  // Carregar galeria do cliente
+  async function loadClientGallery(clientId) {
+    try {
+      console.log(`🖼️ [GALERIA] Carregando galeria para cliente: ${clientId}`);
+      
+      const response = await fetch(`/api/mockups/galeria/${clientId}`);
+      if (!response.ok) {
+        throw new Error('Erro ao carregar galeria');
+      }
+      
+      const data = await response.json();
+      console.log(`🖼️ [GALERIA] Dados recebidos:`, data);
+      
+      currentGalleryImages = data.imagens || [];
+      
+      if (!currentGalleryImages.length) {
+        galleryGrid.innerHTML = `
+          <div class="gallery-empty">
+            <i class="fas fa-images"></i>
+            <p>Nenhuma imagem salva</p>
+            <small>As imagens dos mockups que você salvar aparecerão aqui organizadas por tipo</small>
+          </div>
+        `;
+        return;
+      }
+      
+      // Renderizar galeria
+      renderGallery(currentGalleryImages);
+      
+      // Configurar filtros
+      setupGalleryFilters();
+      
+      console.log(`✅ [GALERIA] ${currentGalleryImages.length} imagens carregadas com sucesso`);
+      
+    } catch (error) {
+      console.error('❌ [GALERIA] Erro ao carregar galeria:', error);
+      galleryGrid.innerHTML = `
+        <div class="gallery-empty">
+          <i class="fas fa-exclamation-circle"></i>
+          <p>Erro ao carregar galeria. Tente novamente.</p>
+        </div>
+      `;
+    }
+  }
+  
+  // Renderizar galeria de imagens
+  function renderGallery(images) {
+    if (!images.length) {
+      galleryGrid.innerHTML = `
+        <div class="gallery-empty">
+          <i class="fas fa-images"></i>
+          <p>Nenhuma imagem encontrada</p>
+          <small>Tente alterar o filtro ou criar novos mockups</small>
+        </div>
+      `;
+      return;
+    }
+    
+    galleryGrid.innerHTML = images.map(image => {
+      const typeIcon = getGalleryTypeIcon(image.tipo);
+      const formattedDate = new Date(image.dataSalvamento).toLocaleDateString('pt-BR');
+      
+      return `
+        <div class="gallery-item" data-image-id="${image.id}">
+          <div class="gallery-item-image">
+            <img src="${image.url}" alt="${image.titulo}" loading="lazy">
+            <div class="gallery-item-overlay">
+              <button class="gallery-view-btn" title="Visualizar">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="gallery-download-btn" title="Download">
+                <i class="fas fa-download"></i>
+              </button>
+            </div>
+          </div>
+          <div class="gallery-item-info">
+            <div class="gallery-item-type">
+              <i class="${typeIcon}"></i>
+              ${getTypeLabel(image.tipo)}
+            </div>
+            <div class="gallery-item-title">${image.titulo}</div>
+            <div class="gallery-item-date">${formattedDate}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    // Adicionar eventos de clique
+    setupGalleryEvents();
+  }
+  
+  // Configurar eventos da galeria
+  function setupGalleryEvents() {
+    // Eventos de visualização
+    galleryGrid.querySelectorAll('.gallery-view-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const galleryItem = e.target.closest('.gallery-item');
+        const imageId = galleryItem.dataset.imageId;
+        viewGalleryImage(imageId);
+      });
+    });
+    
+    // Eventos de download direto
+    galleryGrid.querySelectorAll('.gallery-download-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const galleryItem = e.target.closest('.gallery-item');
+        const imageId = galleryItem.dataset.imageId;
+        downloadGalleryImage(imageId);
+      });
+    });
+    
+    // Clique na imagem para visualizar
+    galleryGrid.querySelectorAll('.gallery-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const imageId = item.dataset.imageId;
+        viewGalleryImage(imageId);
+      });
+    });
+  }
+  
+  // Configurar filtros da galeria
+  function setupGalleryFilters() {
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Remover classe active de todos os botões
+        filterButtons.forEach(b => b.classList.remove('active'));
+        
+        // Adicionar classe active ao botão clicado
+        btn.classList.add('active');
+        
+        // Aplicar filtro
+        const filter = btn.dataset.filter;
+        applyGalleryFilter(filter);
+      });
+    });
+  }
+  
+  // Aplicar filtro na galeria
+  function applyGalleryFilter(filter) {
+    currentGalleryFilter = filter;
+    
+    let filteredImages = currentGalleryImages;
+    
+    if (filter !== 'all') {
+      filteredImages = currentGalleryImages.filter(image => image.tipo === filter);
+    }
+    
+    renderGallery(filteredImages);
+  }
+  
+  // Visualizar imagem da galeria
+  function viewGalleryImage(imageId) {
+    const image = currentGalleryImages.find(img => img.id === imageId);
+    if (!image) return;
+    
+    // Preencher modal
+    galleryModalImage.src = image.url;
+    galleryModalTitle.textContent = image.titulo;
+    galleryModalType.textContent = getTypeLabel(image.tipo);
+    galleryModalPrompt.textContent = image.prompt || 'Prompt não disponível';
+    galleryModalDate.textContent = new Date(image.dataSalvamento).toLocaleString('pt-BR');
+    galleryModalSeed.textContent = image.seed || 'N/A';
+    
+    // Configurar botão de download
+    downloadGalleryImageBtn.onclick = () => downloadGalleryImage(imageId);
+    
+    // Mostrar modal
+    galleryModal.classList.add('show');
+  }
+  
+  // Download de imagem da galeria
+  function downloadGalleryImage(imageId) {
+    const image = currentGalleryImages.find(img => img.id === imageId);
+    if (!image) return;
+    
+    // Criar link temporário para download
+    const link = document.createElement('a');
+    link.href = image.url;
+    link.download = `${image.titulo.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${image.seed}.webp`;
+    link.target = '_blank';
+    
+    // Trigger download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+  
+  // Obter ícone do tipo para galeria
+  function getGalleryTypeIcon(tipo) {
+    const icons = {
+      'logo': 'fas fa-tag',
+      'post-social': 'fas fa-mobile-alt',
+      'banner': 'fas fa-rectangle-ad',
+      'landing-page': 'fas fa-globe',
+      'material-apresentacao': 'fas fa-presentation',
+      'ilustracao-conceitual': 'fas fa-paint-brush',
+      'mockup-produto': 'fas fa-box'
+    };
+    
+    return icons[tipo] || 'fas fa-image';
+  }
+  
+  // Configurar eventos do modal da galeria
+  function setupGalleryModalEvents() {
+    // Fechar modal
+    if (closeGalleryModalBtn) {
+      closeGalleryModalBtn.addEventListener('click', () => {
+        galleryModal.classList.remove('show');
+      });
+    }
+    
+    // Fechar modal ao clicar fora
+    window.addEventListener('click', (e) => {
+      if (e.target === galleryModal) {
+        galleryModal.classList.remove('show');
+      }
+    });
+    
+    // Fechar modal com ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && galleryModal.classList.contains('show')) {
+        galleryModal.classList.remove('show');
+      }
+    });
+  }
+
   // ===== FUNÇÕES PARA MOCKUPS COM IA =====
   
   // Elementos específicos para mockups
@@ -5089,6 +5339,9 @@ ${currentActionPlanData.conteudo}`;
     
     // Configurar eventos de mockups
     setupMockupEvents();
+    
+    // Configurar eventos da galeria
+    setupGalleryModalEvents();
     
     // Mostrar tela de boas-vindas
     welcomeContainer.style.display = 'block';
