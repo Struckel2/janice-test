@@ -7,7 +7,7 @@ const Mockup = require('../models/Mockup');
 const progressService = require('./progressService');
 
 /**
- * Serviço para geração de mockups usando Stable Diffusion 3
+ * Serviço para geração de mockups usando Flux 1.1 Pro
  */
 class MockupService {
   constructor() {
@@ -15,15 +15,14 @@ class MockupService {
       auth: process.env.REPLICATE_API_TOKEN,
     });
     
-    // Versão específica do SD3 para estabilidade
-    this.modelVersion = "stability-ai/stable-diffusion-3:8ed5310807da2e35da9f2ec47ad31540279196d721332519f6560de9efe93348";
+    // Flux 1.1 Pro - Melhor qualidade e handling de texto
+    this.modelVersion = "black-forest-labs/flux-1.1-pro";
     
-    // Configurações padrão otimizadas
+    // Configurações padrão otimizadas para Flux
     this.defaultConfig = {
-      cfg: 3.5,
-      steps: 28,
       output_format: 'webp',
-      output_quality: 90
+      output_quality: 90,
+      safety_tolerance: 2 // Controle de segurança (1-5, sendo 5 mais permissivo)
     };
   }
 
@@ -92,14 +91,13 @@ class MockupService {
       const promptOtimizado = mockup.gerarPromptOtimizado();
       console.log('📝 Prompt gerado:', promptOtimizado);
       
-      // Configurar parâmetros da API
+      // Configurar parâmetros da API para Flux 1.1 Pro
       const apiParams = {
         prompt: promptOtimizado,
         aspect_ratio: mockup.configuracao.aspectRatio,
-        cfg: mockup.configuracaoTecnica.cfg || this.defaultConfig.cfg,
-        steps: mockup.configuracaoTecnica.steps || this.defaultConfig.steps,
         output_format: mockup.configuracaoTecnica.outputFormat || this.defaultConfig.output_format,
-        output_quality: mockup.configuracaoTecnica.outputQuality || this.defaultConfig.output_quality
+        output_quality: mockup.configuracaoTecnica.outputQuality || this.defaultConfig.output_quality,
+        safety_tolerance: mockup.configuracaoTecnica.safetyTolerance || this.defaultConfig.safety_tolerance
       };
       
       // Gerar 4 variações com seeds diferentes (otimizado para evitar timeout)
@@ -137,11 +135,11 @@ class MockupService {
         
         console.log(`✅ [MOCKUP-SERVICE] Variação ${i + 1} concluída em ${tempoProcessamento}ms`);
         console.log(`✅ [MOCKUP-SERVICE] Resposta do Replicate:`, prediction);
-        console.log(`✅ [MOCKUP-SERVICE] URL gerada: ${prediction[0]}`);
+        console.log(`✅ [MOCKUP-SERVICE] URL gerada: ${prediction}`);
         
         // Armazenar URL temporária
         variacoes.push({
-          url: prediction[0], // SD3 retorna array com uma URL
+          url: prediction, // Flux 1.1 Pro retorna URL diretamente
           seed: seeds[i],
           tempoProcessamento
         });
@@ -160,7 +158,7 @@ class MockupService {
       mockup.metadados = {
         variacoesTemporarias: variacoes.map(v => v.url),
         tempoProcessamento: tempoTotal,
-        custo: 0.035 * 4 // $0.035 por imagem (4 variações)
+        custo: 0.055 * 4 // $0.055 por imagem Flux 1.1 Pro (4 variações)
       };
       
       // 🚀 CORREÇÃO: Atualizar status para 'concluido'
