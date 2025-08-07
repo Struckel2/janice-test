@@ -3676,6 +3676,56 @@ textarea.required-field {
   color: var(--primary-color);
 }
 
+/* Seção do título da galeria com botão de refresh */
+.gallery-title-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.gallery-title-section h3 {
+  margin: 0;
+}
+
+/* Botão de refresh da galeria */
+.refresh-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.refresh-btn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.refresh-btn:active {
+  transform: translateY(0);
+}
+
+.refresh-btn i {
+  font-size: 0.9rem;
+}
+
+.refresh-btn.loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.refresh-btn.loading i {
+  animation: spin 1s linear infinite;
+}
+
 /* Filtros da galeria */
 .gallery-filters {
   display: flex;

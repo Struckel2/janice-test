@@ -4436,7 +4436,7 @@ ${currentActionPlanData.conteudo}`;
         Estamos criando 4 variações únicas do seu mockup usando inteligência artificial avançada. 
         Cada variação terá características visuais distintas para você escolher a melhor.
       </p>
-      <div style="margin-top: 10px; padding: 8px; background: #e7e3ff; border-radius: 4px; border: 1px solid #d1c7ff;">
+      <div style="margin-top: 10px; padding: 8px; background: #e7e3ff; border-radius: 4px; border: 1px solid #d1c7ff; display: none;" class="mockup-cost-info">
         <small style="color: #4c3d99;">
           <i class="fas fa-info-circle" style="margin-right: 5px;"></i>
           <strong>Custo:</strong> $0.14 total (4 variações × $0.035 cada)
@@ -5340,11 +5340,57 @@ ${currentActionPlanData.conteudo}`;
     // Configurar eventos de mockups
     setupMockupEvents();
     
-    // Configurar eventos da galeria
-    setupGalleryModalEvents();
+  // Configurar eventos da galeria
+  setupGalleryModalEvents();
+  
+  // Configurar botão de refresh da galeria
+  setupGalleryRefreshButton();
     
     // Mostrar tela de boas-vindas
     welcomeContainer.style.display = 'block';
+  }
+
+  // ===== FUNÇÃO PARA CONFIGURAR BOTÃO DE REFRESH DA GALERIA =====
+  
+  function setupGalleryRefreshButton() {
+    const refreshBtn = document.getElementById('refresh-gallery-btn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', async () => {
+        if (!currentClientId) return;
+        
+        // Mostrar estado de loading
+        const originalText = refreshBtn.innerHTML;
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Atualizando...';
+        refreshBtn.disabled = true;
+        refreshBtn.classList.add('loading');
+        
+        try {
+          // Recarregar galeria
+          await loadClientGallery(currentClientId);
+          
+          // Feedback de sucesso
+          refreshBtn.innerHTML = '<i class="fas fa-check"></i> Atualizado!';
+          
+          setTimeout(() => {
+            refreshBtn.innerHTML = originalText;
+            refreshBtn.disabled = false;
+            refreshBtn.classList.remove('loading');
+          }, 1500);
+          
+        } catch (error) {
+          console.error('Erro ao atualizar galeria:', error);
+          
+          // Feedback de erro
+          refreshBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Erro';
+          
+          setTimeout(() => {
+            refreshBtn.innerHTML = originalText;
+            refreshBtn.disabled = false;
+            refreshBtn.classList.remove('loading');
+          }, 2000);
+        }
+      });
+    }
   }
 
   // Carregar clientes ao iniciar e mostrar tela de boas-vindas
