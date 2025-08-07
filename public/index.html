@@ -67,6 +67,9 @@ a<!DOCTYPE html>
                     <button class="tab-button" data-tab="mockups">
                         <i class="fas fa-palette"></i> Mockups
                     </button>
+                    <button class="tab-button" data-tab="gallery">
+                        <i class="fas fa-images"></i> Galeria
+                    </button>
                 </div>
                 
                 <div class="tab-content active" id="analysis-tab">
@@ -137,6 +140,36 @@ a<!DOCTYPE html>
                                 <i class="fas fa-image"></i>
                                 <p>Nenhum mockup criado</p>
                                 <small>Crie mockups profissionais usando IA para logos, posts sociais, banners e muito mais</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="gallery-tab">
+                    <div class="client-gallery">
+                        <div class="gallery-header">
+                            <h3>Galeria de Imagens</h3>
+                            <div class="gallery-filters">
+                                <button class="filter-btn active" data-filter="all">
+                                    <i class="fas fa-th"></i> Todos
+                                </button>
+                                <button class="filter-btn" data-filter="logo">
+                                    <i class="fas fa-tag"></i> Logos
+                                </button>
+                                <button class="filter-btn" data-filter="post-social">
+                                    <i class="fas fa-mobile-alt"></i> Posts
+                                </button>
+                                <button class="filter-btn" data-filter="banner">
+                                    <i class="fas fa-rectangle-ad"></i> Banners
+                                </button>
+                            </div>
+                        </div>
+                        <div id="gallery-grid" class="gallery-grid">
+                            <!-- Galeria será carregada dinamicamente -->
+                            <div class="gallery-empty">
+                                <i class="fas fa-images"></i>
+                                <p>Nenhuma imagem salva</p>
+                                <small>As imagens dos mockups que você salvar aparecerão aqui organizadas por tipo</small>
                             </div>
                         </div>
                     </div>
@@ -727,14 +760,17 @@ a<!DOCTYPE html>
     <div id="mockup-variations-modal" class="modal">
         <div class="modal-content extra-large-modal">
             <div class="modal-header">
-                <h3>Escolha sua Variação</h3>
+                <h3>Escolha suas Variações</h3>
                 <span class="close-modal">&times;</span>
             </div>
             <div class="modal-body">
                 <div class="variations-info">
-                    <p>4 variações foram geradas com sucesso! Clique na imagem que você mais gostou para salvá-la.</p>
+                    <p>4 variações foram geradas com sucesso! Selecione uma ou mais imagens que você deseja salvar.</p>
                     <div class="prompt-used">
                         <strong>Prompt usado:</strong> <span id="used-prompt"></span>
+                    </div>
+                    <div class="selection-counter">
+                        <span id="selection-count">0 de 4 variações selecionadas</span>
                     </div>
                 </div>
                 
@@ -746,7 +782,47 @@ a<!DOCTYPE html>
                     <button type="button" class="action-button secondary" id="regenerate-mockup-btn">
                         <i class="fas fa-redo"></i> Gerar Novas Variações
                     </button>
+                    <button type="button" class="action-button" id="save-selected-btn" disabled>
+                        <i class="fas fa-save"></i> Salvar Selecionadas
+                    </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para visualização da galeria -->
+    <div id="gallery-modal" class="modal">
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h3 id="gallery-modal-title">Visualizar Imagem</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="gallery-modal-content">
+                    <div class="gallery-image-container">
+                        <img id="gallery-modal-image" src="" alt="Imagem da galeria">
+                    </div>
+                    <div class="gallery-image-info">
+                        <div class="info-row">
+                            <strong>Tipo:</strong> <span id="gallery-modal-type"></span>
+                        </div>
+                        <div class="info-row">
+                            <strong>Prompt:</strong> <span id="gallery-modal-prompt"></span>
+                        </div>
+                        <div class="info-row">
+                            <strong>Data:</strong> <span id="gallery-modal-date"></span>
+                        </div>
+                        <div class="info-row">
+                            <strong>Seed:</strong> <span id="gallery-modal-seed"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="action-button secondary" id="close-gallery-modal">Fechar</button>
+                <button type="button" class="action-button" id="download-gallery-image">
+                    <i class="fas fa-download"></i> Download
+                </button>
             </div>
         </div>
     </div>

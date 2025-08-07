@@ -492,4 +492,80 @@ router.get('/estatisticas/resumo', async (req, res) => {
   }
 });
 
+// Endpoint para galeria de imagens do cliente
+router.get('/galeria/:clienteId', async (req, res) => {
+    try {
+        const { clienteId } = req.params;
+        const { tipo } = req.query; // Filtro opcional por tipo
+
+        console.log(`🖼️ [GALERIA] Carregando galeria para cliente: ${clienteId}`);
+        
+        // Buscar todos os mockups do cliente que têm imagens salvas
+        let query = { 
+            cliente: clienteId,
+            'metadados.imagensSalvas': { $exists: true, $ne: [] }
+        };
+
+        const mockups = await Mockup.find(query)
+            .populate('cliente', 'nome cnpj')
+            .sort({ criadoEm: -1 });
+
+        console.log(`🖼️ [GALERIA] Encontrados ${mockups.length} mockups com imagens salvas`);
+
+        // Processar e organizar as imagens
+        let imagensGaleria = [];
+
+        mockups.forEach(mockup => {
+            if (mockup.metadados && mockup.metadados.imagensSalvas) {
+                mockup.metadados.imagensSalvas.forEach(imagem => {
+                    // Filtrar por tipo se especificado
+                    if (tipo && tipo !== 'all' && mockup.tipo !== tipo) {
+                        return;
+                    }
+
+                    imagensGaleria.push({
+                        id: `${mockup._id}_${imagem.seed}`,
+                        mockupId: mockup._id,
+                        url: imagem.url,
+                        seed: imagem.seed,
+                        publicId: imagem.publicId,
+                        dataSalvamento: imagem.dataSalvamento,
+                        // Dados do mockup
+                        titulo: mockup.titulo,
+                        tipo: mockup.tipo,
+                        prompt: mockup.prompt,
+                        criadoEm: mockup.criadoEm,
+                        // Dados do cliente
+                        cliente: {
+                            id: mockup.cliente._id,
+                            nome: mockup.cliente.nome,
+                            cnpj: mockup.cliente.cnpj
+                        }
+                    });
+                });
+            }
+        });
+
+        // Ordenar por data de salvamento (mais recentes primeiro)
+        imagensGaleria.sort((a, b) => new Date(b.dataSalvamento) - new Date(a.dataSalvamento));
+
+        console.log(`🖼️ [GALERIA] Retornando ${imagensGaleria.length} imagens para a galeria`);
+
+        res.json({
+            success: true,
+            imagens: imagensGaleria,
+            total: imagensGaleria.length,
+            filtro: tipo || 'all'
+        });
+
+    } catch (error) {
+        console.error('❌ [GALERIA] Erro ao carregar galeria:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro interno do servidor ao carregar galeria',
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;

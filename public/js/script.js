@@ -3897,6 +3897,8 @@ ${currentActionPlanData.conteudo}`;
   
   // Estado dos mockups
   let currentMockupData = null;
+  let currentVariations = [];
+  let selectedVariations = new Set();
   let selectedVariation = null;
   
   // Mostrar modal de criação de mockup
@@ -4440,24 +4442,93 @@ ${currentActionPlanData.conteudo}`;
     }
   }
   
-  // Selecionar variação
+  // Selecionar variação (agora suporta seleção múltipla)
   function selectVariation(item) {
-    // Remover seleção anterior
-    variationsGrid.querySelectorAll('.variation-item').forEach(v => {
-      v.classList.remove('selected');
-    });
+    const url = item.dataset.url;
+    const seed = item.dataset.seed;
     
-    // Marcar como selecionada
-    item.classList.add('selected');
+    // Verificar se já está selecionada
+    if (selectedVariations.has(url)) {
+      // Remover da seleção
+      selectedVariations.delete(url);
+      item.classList.remove('selected');
+    } else {
+      // Adicionar à seleção
+      selectedVariations.add(url);
+      item.classList.add('selected');
+    }
     
-    // Armazenar dados da variação
-    selectedVariation = {
-      url: item.dataset.url,
-      seed: item.dataset.seed
-    };
+    // Atualizar contador e botão
+    updateSelectionCounter();
+    updateSaveButton();
+  }
+  
+  // Atualizar contador de seleções
+  function updateSelectionCounter() {
+    const counter = document.getElementById('selection-count');
+    if (counter) {
+      const total = variationsGrid.querySelectorAll('.variation-item').length;
+      counter.textContent = `${selectedVariations.size} de ${total} variações selecionadas`;
+    }
+  }
+  
+  // Atualizar estado do botão salvar
+  function updateSaveButton() {
+    const saveBtn = document.getElementById('save-selected-btn');
+    if (saveBtn) {
+      saveBtn.disabled = selectedVariations.size === 0;
+    }
+  }
+  
+  // Salvar variações selecionadas
+  async function saveSelectedVariations() {
+    if (selectedVariations.size === 0 || !currentMockupData) return;
     
-    // Salvar variação automaticamente
-    saveSelectedVariation();
+    try {
+      // Preparar dados das variações selecionadas
+      const variacoesSelecionadas = Array.from(selectedVariations).map((url, index) => ({
+        url: url,
+        seed: index + 1 // Usar índice como seed temporário
+      }));
+      
+      const response = await fetch(`/api/mockups/${currentMockupData.mockupId}/salvar-multiplas-variacoes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          variacoesSelecionadas
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao salvar variações');
+      }
+      
+      const result = await response.json();
+      
+      // Fechar modal de variações
+      closeVariationsModal();
+      
+      // Limpar seleções
+      selectedVariations.clear();
+      
+      // Recarregar lista de mockups
+      if (currentClientId) {
+        loadClientMockups(currentClientId);
+      }
+      
+      // Voltar para detalhes do cliente
+      showOnlySection('client-details-panel');
+      
+      // Mostrar feedback de sucesso
+      console.log(`✅ ${result.totalSalvas} variações salvas com sucesso`);
+      
+    } catch (error) {
+      console.error('Erro ao salvar variações:', error);
+      alert('Não foi possível salvar as variações escolhidas. Tente novamente.');
+    }
   }
   
   // Salvar variação escolhida
