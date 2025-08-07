@@ -27,7 +27,7 @@ class MockupService {
   }
 
   /**
-   * Gera 2 variações de mockup (otimizado para performance)
+   * Gera 4 variações de mockup (otimizado para performance)
    */
   async gerarMockup(mockupData) {
     let mockup = null;
@@ -79,21 +79,21 @@ class MockupService {
         output_quality: mockup.configuracaoTecnica.outputQuality || this.defaultConfig.output_quality
       };
       
-      // Gerar 2 variações com seeds diferentes (otimizado para evitar timeout)
+      // Gerar 4 variações com seeds diferentes (otimizado para evitar timeout)
       const variacoes = [];
-      const seeds = this._gerarSeeds(2);
+      const seeds = this._gerarSeeds(4);
       
-      console.log('🔄 [MOCKUP-SERVICE] Gerando 2 variações (otimizado para performance)...');
+      console.log('🔄 [MOCKUP-SERVICE] Gerando 4 variações (otimizado para performance)...');
       console.log('🔄 [MOCKUP-SERVICE] Seeds geradas:', seeds);
       console.log('🔄 [MOCKUP-SERVICE] Parâmetros da API:', apiParams);
       
-      for (let i = 0; i < 2; i++) {
+      for (let i = 0; i < 4; i++) {
         const params = {
           ...apiParams,
           seed: seeds[i]
         };
         
-        console.log(`⏳ [MOCKUP-SERVICE] ===== GERANDO VARIAÇÃO ${i + 1}/2 =====`);
+        console.log(`⏳ [MOCKUP-SERVICE] ===== GERANDO VARIAÇÃO ${i + 1}/4 =====`);
         console.log(`⏳ [MOCKUP-SERVICE] Seed: ${seeds[i]}`);
         console.log(`⏳ [MOCKUP-SERVICE] Parâmetros completos:`, params);
         
@@ -123,7 +123,7 @@ class MockupService {
       mockup.metadados = {
         variacoesTemporarias: variacoes.map(v => v.url),
         tempoProcessamento: tempoTotal,
-        custo: 0.035 * 2 // $0.035 por imagem (2 variações)
+        custo: 0.035 * 4 // $0.035 por imagem (4 variações)
       };
       
       // 🚀 CORREÇÃO: Atualizar status para 'concluido'
@@ -167,7 +167,92 @@ class MockupService {
   }
 
   /**
-   * Salva a variação escolhida no Cloudinary
+   * Salva múltiplas variações escolhidas no Cloudinary
+   */
+  async salvarMultiplasVariacoes(mockupId, variacoesSelecionadas) {
+    try {
+      console.log('💾 Salvando múltiplas variações no Cloudinary...');
+      console.log('💾 Variações selecionadas:', variacoesSelecionadas.length);
+      
+      const mockup = await Mockup.findById(mockupId);
+      if (!mockup) {
+        throw new Error('Mockup não encontrado');
+      }
+      
+      const imagensSalvas = [];
+      
+      // Processar cada variação selecionada
+      for (let i = 0; i < variacoesSelecionadas.length; i++) {
+        const variacao = variacoesSelecionadas[i];
+        console.log(`💾 Processando variação ${i + 1}/${variacoesSelecionadas.length}...`);
+        
+        // Download da imagem temporária
+        const response = await fetch(variacao.url);
+        if (!response.ok) {
+          throw new Error(`Erro ao baixar imagem ${i + 1}: ${response.statusText}`);
+        }
+        
+        const arrayBuffer = await response.arrayBuffer();
+        const imageBuffer = Buffer.from(arrayBuffer);
+        
+        // Upload para Cloudinary
+        const uploadResult = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: 'mockups',
+              public_id: `mockup_${mockupId}_var${i + 1}_${Date.now()}`,
+              resource_type: 'image',
+              format: mockup.configuracaoTecnica.outputFormat || 'webp',
+              quality: mockup.configuracaoTecnica.outputQuality || 90
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          
+          uploadStream.end(imageBuffer);
+        });
+        
+        imagensSalvas.push({
+          url: uploadResult.secure_url,
+          seed: variacao.seed,
+          publicId: uploadResult.public_id,
+          dataSalvamento: new Date()
+        });
+        
+        console.log(`✅ Variação ${i + 1} salva: ${uploadResult.secure_url}`);
+      }
+      
+      // Atualizar mockup com múltiplas URLs
+      mockup.imagemUrl = imagensSalvas[0].url; // Primeira imagem como principal
+      mockup.status = 'concluido';
+      
+      // Adicionar array de imagens salvas aos metadados
+      mockup.metadados.imagensSalvas = imagensSalvas;
+      
+      // Limpar URLs temporárias
+      mockup.metadados.variacoesTemporarias = [];
+      
+      await mockup.save();
+      
+      console.log('✅ Múltiplas variações salvas com sucesso no Cloudinary');
+      console.log('✅ Total de imagens salvas:', imagensSalvas.length);
+      
+      return {
+        mockup: mockup,
+        imagensSalvas: imagensSalvas,
+        totalSalvas: imagensSalvas.length
+      };
+      
+    } catch (error) {
+      console.error('❌ Erro ao salvar múltiplas variações:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Salva a variação escolhida no Cloudinary (método legado - mantido para compatibilidade)
    */
   async salvarVariacaoEscolhida(mockupId, urlEscolhida, seedEscolhida) {
     try {

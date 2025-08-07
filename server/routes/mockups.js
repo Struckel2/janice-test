@@ -12,7 +12,7 @@ router.use(isAuthenticated);
 
 /**
  * POST /api/mockups/gerar
- * Gera 2 variações de mockup (otimizado para performance)
+ * Gera 4 variações de mockup (otimizado para performance)
  */
 router.post('/gerar', async (req, res) => {
   try {
@@ -135,8 +135,8 @@ router.post('/gerar', async (req, res) => {
       message: 'Mockup iniciado com sucesso. Processando em background...',
       data: {
         status: 'processing',
-        message: 'Gerando 2 variações de mockup. Isso pode levar até 1 minuto.',
-        estimatedTime: '30-60 segundos'
+        message: 'Gerando 4 variações de mockup. Isso pode levar até 2 minutos.',
+        estimatedTime: '60-120 segundos'
       }
     });
 
@@ -197,6 +197,62 @@ router.post('/:id/salvar-variacao', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erro ao salvar variação escolhida',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
+ * POST /api/mockups/:id/salvar-multiplas-variacoes
+ * Salva múltiplas variações escolhidas no Cloudinary
+ */
+router.post('/:id/salvar-multiplas-variacoes', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { variacoesSelecionadas } = req.body;
+
+    if (!variacoesSelecionadas || !Array.isArray(variacoesSelecionadas) || variacoesSelecionadas.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Pelo menos uma variação deve ser selecionada'
+      });
+    }
+
+    // Validar estrutura das variações
+    for (let i = 0; i < variacoesSelecionadas.length; i++) {
+      const variacao = variacoesSelecionadas[i];
+      if (!variacao.url || !variacao.seed) {
+        return res.status(400).json({
+          success: false,
+          message: `Variação ${i + 1} está incompleta (URL e seed são obrigatórios)`
+        });
+      }
+    }
+
+    console.log('💾 Salvando múltiplas variações para mockup:', id);
+    console.log('💾 Quantidade de variações:', variacoesSelecionadas.length);
+
+    const resultado = await mockupService.salvarMultiplasVariacoes(
+      id, 
+      variacoesSelecionadas
+    );
+
+    res.json({
+      success: true,
+      message: `${resultado.totalSalvas} variações salvas com sucesso`,
+      data: {
+        mockup: resultado.mockup,
+        imagensSalvas: resultado.imagensSalvas,
+        totalSalvas: resultado.totalSalvas
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Erro ao salvar múltiplas variações:', error);
+    
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao salvar variações escolhidas',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
