@@ -2,7 +2,7 @@
 require('../config/fetch-polyfill');
 
 const Replicate = require('replicate');
-const cloudinary = require('../config/cloudinary');
+const { cloudinary } = require('../config/cloudinary');
 const Mockup = require('../models/Mockup');
 
 /**
