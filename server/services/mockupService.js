@@ -35,6 +35,8 @@ class MockupService {
     
     try {
       console.log('🎨 [MOCKUP-SERVICE] ===== INICIANDO GERAÇÃO DE MOCKUP =====');
+      console.log('🔒 [MODELO-VERIFICACAO] Usando modelo:', this.modelVersion);
+      console.log('🔒 [CONFIG-VERIFICACAO] Configurações padrão:', JSON.stringify(this.defaultConfig, null, 2));
       console.log('🎨 [MOCKUP-SERVICE] Título:', mockupData.titulo);
       console.log('🎨 [MOCKUP-SERVICE] Cliente:', mockupData.cliente);
       console.log('🎨 [MOCKUP-SERVICE] Configuração completa:', JSON.stringify(mockupData.configuracao, null, 2));
@@ -116,7 +118,7 @@ class MockupService {
         
         console.log(`⏳ [MOCKUP-SERVICE] ===== GERANDO VARIAÇÃO ${i + 1}/4 =====`);
         console.log(`⏳ [MOCKUP-SERVICE] Seed: ${seeds[i]}`);
-        console.log(`⏳ [MOCKUP-SERVICE] Parâmetros completos:`, params);
+        console.log(`🔒 [API-PARAMS] Parâmetros enviados para Replicate:`, JSON.stringify(params, null, 2));
         
         // 🚀 ATUALIZAR PROGRESSO
         const progresso = Math.round((i / 4) * 100);
@@ -126,16 +128,24 @@ class MockupService {
         });
         
         const startTime = Date.now();
-        console.log(`⏳ [MOCKUP-SERVICE] Iniciando chamada para Replicate...`);
+        console.log(`🔒 [REPLICATE-CALL] Iniciando chamada para modelo: ${this.modelVersion}`);
+        console.log(`🔒 [REPLICATE-CALL] Input completo:`, JSON.stringify({ input: params }, null, 2));
         
         const prediction = await this.replicate.run(this.modelVersion, { input: params });
         
         const endTime = Date.now();
         const tempoProcessamento = endTime - startTime;
         
+        console.log(`🔒 [REPLICATE-RESPONSE] Resposta completa do Replicate:`, JSON.stringify(prediction, null, 2));
+        console.log(`🔒 [TIMING] Tempo real de processamento: ${tempoProcessamento}ms (${(tempoProcessamento/1000).toFixed(2)}s)`);
         console.log(`✅ [MOCKUP-SERVICE] Variação ${i + 1} concluída em ${tempoProcessamento}ms`);
-        console.log(`✅ [MOCKUP-SERVICE] Resposta do Replicate:`, prediction);
         console.log(`✅ [MOCKUP-SERVICE] URL gerada: ${prediction}`);
+        
+        // Verificar se a resposta é suspeita (muito rápida)
+        if (tempoProcessamento < 5000) { // Menos de 5 segundos
+          console.log(`⚠️ [TIMING-ALERT] TEMPO SUSPEITO! Processamento muito rápido: ${tempoProcessamento}ms`);
+          console.log(`⚠️ [TIMING-ALERT] Pode indicar cache ou modelo incorreto!`);
+        }
         
         // Armazenar URL temporária
         variacoes.push({

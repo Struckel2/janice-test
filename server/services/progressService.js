@@ -351,6 +351,12 @@ function registerActiveProcess(userId, processData, userInfo = {}) {
     userInfo
   });
   
+  // 🚀 VERIFICAR SE JÁ EXISTE PARA EVITAR DUPLICAÇÃO
+  if (globalProcesses.has(processData.id)) {
+    console.log(`⚠️ [DEBUG-REGISTER] Processo ${processData.id} já existe no Map global - ignorando duplicação`);
+    return;
+  }
+  
   // Calcular estimativa de tempo
   const tempoEstimado = calculateTimeEstimate(processData.tipo, processData.metadata || {});
   
