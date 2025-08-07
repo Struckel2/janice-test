@@ -315,11 +315,11 @@ document.addEventListener('DOMContentLoaded', () => {
         this.updateUI();
         console.log('🔍 [DEBUG-FRONTEND] UI atualizada após conclusão');
         
-        // Agendar remoção automática após 8 segundos (um pouco antes do backend)
+        // Agendar remoção automática após 5 segundos (um pouco antes do backend)
         setTimeout(() => {
-          console.log('🔍 [DEBUG-FRONTEND] Removendo processo automaticamente após 8 segundos:', data.processId);
+          console.log('🔍 [DEBUG-FRONTEND] Removendo processo automaticamente após 5 segundos:', data.processId);
           this.removeProcess(data.processId);
-        }, 8000);
+        }, 5000);
       } else {
         console.log('❌ [DEBUG-FRONTEND] Processo NÃO encontrado no Map local para processId:', data.processId);
         console.log('🔍 [DEBUG-FRONTEND] Processos disponíveis no Map:', Array.from(this.processes.keys()));
@@ -4482,14 +4482,44 @@ ${currentActionPlanData.conteudo}`;
   
   // Salvar variações selecionadas
   async function saveSelectedVariations() {
-    if (selectedVariations.size === 0 || !currentMockupData) return;
+    console.log('🔍 [SAVE-VARIATIONS] ===== INICIANDO SALVAMENTO =====');
+    console.log('🔍 [SAVE-VARIATIONS] Variações selecionadas:', selectedVariations.size);
+    console.log('🔍 [SAVE-VARIATIONS] currentMockupData:', currentMockupData);
+    
+    if (selectedVariations.size === 0) {
+      console.log('❌ [SAVE-VARIATIONS] Nenhuma variação selecionada');
+      alert('Por favor, selecione pelo menos uma variação antes de salvar.');
+      return;
+    }
+    
+    if (!currentMockupData) {
+      console.log('❌ [SAVE-VARIATIONS] currentMockupData não encontrado');
+      alert('Erro: dados do mockup não encontrados. Tente novamente.');
+      return;
+    }
     
     try {
+      console.log('🔍 [SAVE-VARIATIONS] Preparando dados para envio...');
+      
       // Preparar dados das variações selecionadas
-      const variacoesSelecionadas = Array.from(selectedVariations).map((url, index) => ({
-        url: url,
-        seed: index + 1 // Usar índice como seed temporário
-      }));
+      const variacoesSelecionadas = Array.from(selectedVariations).map((url, index) => {
+        console.log(`🔍 [SAVE-VARIATIONS] Variação ${index + 1}: ${url}`);
+        return {
+          url: url,
+          seed: index + 1 // Usar índice como seed temporário
+        };
+      });
+      
+      console.log('🔍 [SAVE-VARIATIONS] Dados preparados:', variacoesSelecionadas);
+      console.log('🔍 [SAVE-VARIATIONS] Mockup ID:', currentMockupData.mockupId);
+      
+      // Mostrar feedback visual
+      const saveBtn = document.getElementById('save-selected-btn');
+      if (saveBtn) {
+        const originalText = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+        saveBtn.disabled = true;
+      }
       
       const response = await fetch(`/api/mockups/${currentMockupData.mockupId}/salvar-multiplas-variacoes`, {
         method: 'POST',
@@ -4501,12 +4531,16 @@ ${currentActionPlanData.conteudo}`;
         })
       });
       
+      console.log('🔍 [SAVE-VARIATIONS] Resposta do servidor:', response.status);
+      
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('❌ [SAVE-VARIATIONS] Erro na resposta:', errorData);
         throw new Error(errorData.message || 'Erro ao salvar variações');
       }
       
       const result = await response.json();
+      console.log('✅ [SAVE-VARIATIONS] Resultado:', result);
       
       // Fechar modal de variações
       closeVariationsModal();
@@ -4523,11 +4557,46 @@ ${currentActionPlanData.conteudo}`;
       showOnlySection('client-details-panel');
       
       // Mostrar feedback de sucesso
-      console.log(`✅ ${result.totalSalvas} variações salvas com sucesso`);
+      console.log(`✅ [SAVE-VARIATIONS] ${result.totalSalvas} variações salvas com sucesso`);
+      
+      // Mostrar notificação de sucesso (opcional)
+      if (result.totalSalvas > 0) {
+        // Criar notificação temporária
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #4CAF50;
+          color: white;
+          padding: 15px 20px;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          z-index: 10000;
+          font-size: 14px;
+          font-weight: 500;
+        `;
+        notification.innerHTML = `<i class="fas fa-check-circle"></i> ${result.totalSalvas} variação(ões) salva(s) com sucesso!`;
+        document.body.appendChild(notification);
+        
+        // Remover após 3 segundos
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        }, 3000);
+      }
       
     } catch (error) {
-      console.error('Erro ao salvar variações:', error);
+      console.error('❌ [SAVE-VARIATIONS] Erro ao salvar variações:', error);
       alert('Não foi possível salvar as variações escolhidas. Tente novamente.');
+      
+      // Restaurar botão
+      const saveBtn = document.getElementById('save-selected-btn');
+      if (saveBtn) {
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Salvar Selecionadas';
+        saveBtn.disabled = selectedVariations.size === 0;
+      }
     }
   }
   
