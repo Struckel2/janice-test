@@ -896,37 +896,71 @@ router.post('/galeria/editar', async (req, res) => {
       console.log('✅ [IMAGE-EDITOR] Edição concluída em', tempoProcessamento + 'ms');
       console.log('✅ [IMAGE-EDITOR] Status:', result.status);
 
+      // 🔍 LOGS INVESTIGATIVOS DETALHADOS
+      console.log('🔍 [DEBUG-OUTPUT] ===== ANÁLISE DETALHADA DO OUTPUT =====');
+      console.log('🔍 [DEBUG-OUTPUT] Tipo exato:', typeof result.output);
+      console.log('🔍 [DEBUG-OUTPUT] É string?', typeof result.output === 'string');
+      console.log('🔍 [DEBUG-OUTPUT] É array?', Array.isArray(result.output));
+      console.log('🔍 [DEBUG-OUTPUT] É null?', result.output === null);
+      console.log('🔍 [DEBUG-OUTPUT] É undefined?', result.output === undefined);
+      console.log('🔍 [DEBUG-OUTPUT] Length (se aplicável):', result.output?.length);
+      console.log('🔍 [DEBUG-OUTPUT] Constructor:', result.output?.constructor?.name);
+      console.log('🔍 [DEBUG-OUTPUT] Valor RAW:', result.output);
+      console.log('🔍 [DEBUG-OUTPUT] JSON stringify:', JSON.stringify(result.output));
+
+      // CONTEXTO DO MODELO
+      console.log('🔍 [DEBUG-MODEL] ===== CONTEXTO DO MODELO =====');
+      console.log('🔍 [DEBUG-MODEL] Modelo usado:', result.model);
+      console.log('🔍 [DEBUG-MODEL] Versão:', result.version);
+      console.log('🔍 [DEBUG-MODEL] Input original:', result.input);
+      console.log('🔍 [DEBUG-MODEL] Metrics:', result.metrics);
+
       // 🔍 LOGS DETALHADOS PROCESSAMENTO
-      console.log('🔍 [DEBUG-PROCESSING] ===== PROCESSANDO RESPOSTA ASSÍNCRONA =====');
+      console.log('🔍 [DEBUG-PROCESSING] ===== PROCESSAMENTO FLEXÍVEL (STRING OU ARRAY) =====');
       console.log('🔍 [DEBUG-PROCESSING] Entrando no processamento...');
       
-      // PADRÃO ASSÍNCRONO: result.output é array de strings (URLs)
+      // VALIDAÇÃO FLEXÍVEL - Aceita string OU array
       let imagemEditadaUrl;
       
-      if (!result.output || !Array.isArray(result.output) || result.output.length === 0) {
-        console.log('🔍 [DEBUG-PROCESSING] ERRO: Output não é array válido');
-        console.log('🔍 [DEBUG-PROCESSING] Output recebido:', result.output);
-        throw new Error('Output inválido da prediction: ' + JSON.stringify(result.output));
+      if (typeof result.output === 'string') {
+        console.log('🔍 [DEBUG-PROCESSING] Output é STRING direta');
+        console.log('🔍 [DEBUG-PROCESSING] Valor da string:', result.output);
+        imagemEditadaUrl = result.output;
+      } else if (Array.isArray(result.output) && result.output.length > 0) {
+        console.log('🔍 [DEBUG-PROCESSING] Output é ARRAY, extraindo primeiro item');
+        console.log('🔍 [DEBUG-PROCESSING] Tamanho do array:', result.output.length);
+        console.log('🔍 [DEBUG-PROCESSING] Primeiro item:', result.output[0]);
+        imagemEditadaUrl = result.output[0];
+      } else {
+        console.log('🔍 [DEBUG-PROCESSING] ERRO: Output não é string nem array válido');
+        console.log('🔍 [DEBUG-PROCESSING] Tipo recebido:', typeof result.output);
+        console.log('🔍 [DEBUG-PROCESSING] É array?', Array.isArray(result.output));
+        console.log('🔍 [DEBUG-PROCESSING] Array length:', Array.isArray(result.output) ? result.output.length : 'N/A');
+        console.log('🔍 [DEBUG-PROCESSING] Output completo:', result.output);
+        throw new Error('Output inválido da prediction - não é string nem array válido: ' + JSON.stringify(result.output));
       }
       
-      // Extrair primeira URL do array
-      imagemEditadaUrl = result.output[0];
-      console.log('🔍 [DEBUG-PROCESSING] Primeira URL extraída:', imagemEditadaUrl);
-      console.log('🔍 [DEBUG-PROCESSING] Tipo da URL:', typeof imagemEditadaUrl);
+      console.log('🔍 [DEBUG-PROCESSING] URL extraída:', imagemEditadaUrl);
+      console.log('🔍 [DEBUG-PROCESSING] Tipo da URL extraída:', typeof imagemEditadaUrl);
       
-      // Validar URL
+      // Validar URL final
       if (!imagemEditadaUrl || typeof imagemEditadaUrl !== 'string') {
-        console.log('🔍 [DEBUG-PROCESSING] ERRO: URL não é string válida');
+        console.log('🔍 [DEBUG-PROCESSING] ERRO: URL extraída não é string válida');
+        console.log('🔍 [DEBUG-PROCESSING] Valor extraído:', imagemEditadaUrl);
+        console.log('🔍 [DEBUG-PROCESSING] Tipo do valor:', typeof imagemEditadaUrl);
         throw new Error('URL inválida extraída: ' + imagemEditadaUrl);
       }
       
       if (!imagemEditadaUrl.startsWith('http')) {
         console.log('🔍 [DEBUG-PROCESSING] ERRO: URL não começa com http');
+        console.log('🔍 [DEBUG-PROCESSING] URL recebida:', imagemEditadaUrl);
         throw new Error('URL malformada: ' + imagemEditadaUrl);
       }
 
+      console.log('🔍 [DEBUG-PROCESSING] ===== VALIDAÇÃO FINAL =====');
       console.log('🔍 [DEBUG-PROCESSING] URL final extraída:', imagemEditadaUrl);
       console.log('🔍 [DEBUG-PROCESSING] URL é válida?', imagemEditadaUrl.startsWith('http'));
+      console.log('🔍 [DEBUG-PROCESSING] Comprimento da URL:', imagemEditadaUrl.length);
       console.log('✅ [IMAGE-EDITOR] URL extraída da imagem editada:', imagemEditadaUrl);
 
       res.json({
