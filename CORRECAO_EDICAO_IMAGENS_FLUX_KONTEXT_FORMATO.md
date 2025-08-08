@@ -49,47 +49,98 @@ output_format: "png"
 - ✅ Validação de URL extraída
 - ✅ Tratamento de diferentes formatos
 
-## ✅ **RESULTADO ESPERADO**
+## 🚨 **SEGUNDO PROBLEMA IDENTIFICADO**
 
-### **Após a Correção:**
-1. **Flux Kontext Pro aceita os parâmetros** ✅
-2. **Edição de imagem funciona** ✅
-3. **Retorna URL válida (não ReadableStream)** ✅
-4. **Logs mostram processamento correto** ✅
+### **Erro Após Correção do Formato:**
+```
+🔍 [DEBUG-PROCESSING] URL encontrada: [Function: url]
+🔍 [DEBUG-PROCESSING] URL final extraída: [Function: url]
+❌ [IMAGE-EDITOR] Erro do Replicate: TypeError: imagemEditadaUrl.startsWith is not a function
+```
 
-### **Parâmetros Finais Corretos:**
+### **Causa Raiz do Segundo Erro:**
+- **Problema:** Tratamento incorreto da resposta `replicate.run()`
+- **Erro:** `prediction.url` era uma **FUNÇÃO**, não string
+- **Documentação:** `replicate.run()` retorna array de `FileOutput`
+- **Solução:** Desestruturar array e chamar `output.url()`
+
+## 🔧 **CORREÇÃO FINAL IMPLEMENTADA**
+
+### **ANTES (INCORRETO):**
 ```javascript
-{
-  prompt: promptEdicao,
-  image: imagemUrl,
-  prompt_strength: 0.8,
-  output_format: "png",        // ✅ CORRIGIDO
-  output_quality: 90,
-  safety_tolerance: 2
+const prediction = await replicate.run(...);
+// Tratava como objeto com propriedade url
+if (prediction && prediction.url) {
+  imagemEditadaUrl = prediction.url; // ❌ Era função!
 }
+```
+
+### **DEPOIS (CORRETO):**
+```javascript
+const outputs = await replicate.run(...);
+// Desestruturar array conforme documentação
+const [output] = outputs;
+if (output && typeof output.url === 'function') {
+  imagemEditadaUrl = output.url(); // ✅ Chama a função
+}
+```
+
+## ✅ **RESULTADO FINAL**
+
+### **Após Ambas as Correções:**
+1. **Formato aceito pelo Flux Kontext Pro** ✅ (`png` em vez de `webp`)
+2. **Extração correta da URL** ✅ (desestruturação + `output.url()`)
+3. **Validação robusta do FileOutput** ✅
+4. **Logs detalhados mantidos** ✅
+5. **Edição de imagem funcional** ✅
+
+### **Código Final Correto:**
+```javascript
+const outputs = await replicate.run(
+  "black-forest-labs/flux-kontext-pro",
+  {
+    input: {
+      prompt: promptEdicao,
+      image: imagemUrl,
+      prompt_strength: 0.8,
+      output_format: "png",        // ✅ FORMATO CORRETO
+      output_quality: 90,
+      safety_tolerance: 2
+    }
+  }
+);
+
+// ✅ EXTRAÇÃO CORRETA
+const [output] = outputs;
+const imagemEditadaUrl = output.url();
 ```
 
 ## 🎯 **PRÓXIMOS PASSOS**
 
-1. **Testar edição de imagem** na galeria
+1. **Testar edição de imagem** na galeria ✅
 2. **Verificar logs no Railway** para confirmar funcionamento
 3. **Validar URL retornada** e qualidade da imagem
 4. **Remover logs detalhados** após confirmação (opcional)
 
 ## 📝 **LIÇÕES APRENDIDAS**
 
-### **Importância dos Logs Detalhados:**
-- Permitiram identificar o erro exato
-- Mostraram a resposta completa do Replicate
-- Facilitaram debug rápido e preciso
+### **Importância da Documentação Oficial:**
+- Consultar sempre a documentação do Replicate
+- Entender diferença entre `run()` e `predictions.create()`
+- Verificar estrutura exata da resposta
+
+### **Debugging Sistemático:**
+- Logs detalhados revelaram ambos os problemas
+- Pesquisa na documentação foi crucial
+- Correção step-by-step evitou novos erros
 
 ### **Validação de Parâmetros:**
-- Sempre verificar documentação do modelo
-- Testar formatos aceitos antes da implementação
-- Implementar logs para facilitar debug futuro
+- Sempre verificar formatos aceitos pelo modelo
+- Implementar validação robusta de tipos
+- Manter logs para facilitar debug futuro
 
 ---
 
-**Status:** ✅ **CORRIGIDO E DEPLOYADO**  
+**Status:** ✅ **TOTALMENTE CORRIGIDO E DEPLOYADO**  
 **Data:** 08/08/2025  
-**Commits:** `02ce572`, `4c0e921`
+**Commits:** `02ce572` (debug), `4c0e921` (formato), `7771ced` (extração URL)

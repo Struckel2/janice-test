@@ -831,73 +831,102 @@ router.post('/galeria/editar', async (req, res) => {
     const startTime = Date.now();
     
     try {
-      // Usar Flux Kontext Pro com a imagem como referência
-      // CORREÇÃO: replicate.run() retorna array de FileOutput, não objeto direto
-      const outputs = await replicate.run(
-        "black-forest-labs/flux-kontext-pro",
-        {
-          input: {
-            prompt: promptEdicao,
-            image: imagemUrl,
-            prompt_strength: 0.8, // Força do prompt (0.1-1.0)
-            output_format: "png",
-            output_quality: 90,
-            safety_tolerance: 2
-          }
+      // MIGRAÇÃO PARA PADRÃO ASSÍNCRONO - Usar predictions.create() + wait()
+      console.log('🔄 [IMAGE-EDITOR] Criando prediction assíncrona...');
+      
+      const prediction = await replicate.predictions.create({
+        model: "black-forest-labs/flux-kontext-pro",
+        input: {
+          prompt: promptEdicao,
+          image: imagemUrl,
+          prompt_strength: 0.8, // Força do prompt (0.1-1.0)
+          output_format: "png",
+          output_quality: 90,
+          safety_tolerance: 2
         }
-      );
+      });
+
+      const createTime = Date.now();
+      const tempoCreate = createTime - startTime;
+
+      // 🔍 LOGS DETALHADOS PÓS-CREATE
+      console.log('🔍 [DEBUG-REPLICATE] ===== PÓS-CREATE PREDICTION =====');
+      console.log('🔍 [DEBUG-REPLICATE] Timestamp create:', new Date().toISOString());
+      console.log('🔍 [DEBUG-REPLICATE] Tempo para create:', tempoCreate + 'ms');
+      console.log('🔍 [DEBUG-REPLICATE] Prediction ID:', prediction.id);
+      console.log('🔍 [DEBUG-REPLICATE] Status inicial:', prediction.status);
+      console.log('🔍 [DEBUG-REPLICATE] Prediction completa:', prediction);
+      
+      console.log('⏳ [IMAGE-EDITOR] Aguardando conclusão da prediction...');
+      
+      // Aguardar conclusão da prediction
+      const result = await replicate.wait(prediction);
 
       const endTime = Date.now();
       const tempoProcessamento = endTime - startTime;
+      const tempoWait = endTime - createTime;
 
-      // 🔍 LOGS DETALHADOS PÓS-CHAMADA
-      console.log('🔍 [DEBUG-REPLICATE] ===== PÓS-CHAMADA REPLICATE =====');
+      // 🔍 LOGS DETALHADOS PÓS-WAIT
+      console.log('🔍 [DEBUG-REPLICATE] ===== PÓS-WAIT PREDICTION =====');
       console.log('🔍 [DEBUG-REPLICATE] Timestamp fim:', new Date().toISOString());
-      console.log('🔍 [DEBUG-REPLICATE] Tempo de processamento:', tempoProcessamento + 'ms');
-      console.log('🔍 [DEBUG-REPLICATE] Tipo da resposta:', typeof outputs);
-      console.log('🔍 [DEBUG-REPLICATE] É array?', Array.isArray(outputs));
-      console.log('🔍 [DEBUG-REPLICATE] Tamanho do array:', Array.isArray(outputs) ? outputs.length : 'N/A');
-      console.log('🔍 [DEBUG-REPLICATE] Resposta COMPLETA:', outputs);
+      console.log('🔍 [DEBUG-REPLICATE] Tempo total:', tempoProcessamento + 'ms');
+      console.log('🔍 [DEBUG-REPLICATE] Tempo wait:', tempoWait + 'ms');
+      console.log('🔍 [DEBUG-REPLICATE] Status final:', result.status);
+      console.log('🔍 [DEBUG-REPLICATE] Tipo do output:', typeof result.output);
+      console.log('🔍 [DEBUG-REPLICATE] É array?', Array.isArray(result.output));
+      console.log('🔍 [DEBUG-REPLICATE] Tamanho do output:', Array.isArray(result.output) ? result.output.length : 'N/A');
+      console.log('🔍 [DEBUG-REPLICATE] Output completo:', result.output);
+      console.log('🔍 [DEBUG-REPLICATE] Result completo:', result);
       
       // 🔍 VERIFICAÇÃO DE ERRO SILENCIOSO
       console.log('🔍 [DEBUG-ERROR] ===== VERIFICAÇÃO DE ERROS =====');
-      console.log('🔍 [DEBUG-ERROR] Outputs tem propriedade error?', outputs?.error);
-      console.log('🔍 [DEBUG-ERROR] É array válido?', Array.isArray(outputs) && outputs.length > 0);
+      console.log('🔍 [DEBUG-ERROR] Status:', result.status);
+      console.log('🔍 [DEBUG-ERROR] Error:', result.error);
+      console.log('🔍 [DEBUG-ERROR] Output válido?', result.output && Array.isArray(result.output) && result.output.length > 0);
       
-      console.log('✅ [IMAGE-EDITOR] Edição concluída em', tempoProcessamento + 'ms');
-      console.log('✅ [IMAGE-EDITOR] Tipo da resposta:', typeof outputs);
-
-      // 🔍 LOGS DETALHADOS PROCESSAMENTO
-      console.log('🔍 [DEBUG-PROCESSING] ===== PROCESSANDO RESPOSTA =====');
-      console.log('🔍 [DEBUG-PROCESSING] Entrando no processamento...');
-      
-      // CORREÇÃO: Processar resposta corretamente baseado na documentação
-      let imagemEditadaUrl;
-      
-      if (!Array.isArray(outputs) || outputs.length === 0) {
-        console.log('🔍 [DEBUG-PROCESSING] ERRO: Resposta não é array válido');
-        throw new Error('Resposta inválida do Replicate: ' + JSON.stringify(outputs));
+      // Verificar se houve erro na prediction
+      if (result.status === 'failed') {
+        throw new Error(`Prediction falhou: ${result.error || 'Erro desconhecido'}`);
       }
       
-      // Desestruturar o primeiro output (FileOutput)
-      const [output] = outputs;
-      console.log('🔍 [DEBUG-PROCESSING] Primeiro output:', output);
-      console.log('🔍 [DEBUG-PROCESSING] Tipo do output:', typeof output);
-      console.log('🔍 [DEBUG-PROCESSING] Output tem método url?', output && typeof output.url === 'function');
+      if (result.status === 'canceled') {
+        throw new Error('Prediction foi cancelada');
+      }
       
-      if (output && typeof output.url === 'function') {
-        console.log('🔍 [DEBUG-PROCESSING] Chamando output.url()...');
-        imagemEditadaUrl = output.url();
-        console.log('🔍 [DEBUG-PROCESSING] URL extraída:', imagemEditadaUrl);
-      } else {
-        console.log('🔍 [DEBUG-PROCESSING] ERRO: Output não tem método url()');
-        console.log('🔍 [DEBUG-PROCESSING] Propriedades do output:', Object.keys(output || {}));
-        throw new Error('Output não possui método url(): ' + JSON.stringify(output));
+      console.log('✅ [IMAGE-EDITOR] Edição concluída em', tempoProcessamento + 'ms');
+      console.log('✅ [IMAGE-EDITOR] Status:', result.status);
+
+      // 🔍 LOGS DETALHADOS PROCESSAMENTO
+      console.log('🔍 [DEBUG-PROCESSING] ===== PROCESSANDO RESPOSTA ASSÍNCRONA =====');
+      console.log('🔍 [DEBUG-PROCESSING] Entrando no processamento...');
+      
+      // PADRÃO ASSÍNCRONO: result.output é array de strings (URLs)
+      let imagemEditadaUrl;
+      
+      if (!result.output || !Array.isArray(result.output) || result.output.length === 0) {
+        console.log('🔍 [DEBUG-PROCESSING] ERRO: Output não é array válido');
+        console.log('🔍 [DEBUG-PROCESSING] Output recebido:', result.output);
+        throw new Error('Output inválido da prediction: ' + JSON.stringify(result.output));
+      }
+      
+      // Extrair primeira URL do array
+      imagemEditadaUrl = result.output[0];
+      console.log('🔍 [DEBUG-PROCESSING] Primeira URL extraída:', imagemEditadaUrl);
+      console.log('🔍 [DEBUG-PROCESSING] Tipo da URL:', typeof imagemEditadaUrl);
+      
+      // Validar URL
+      if (!imagemEditadaUrl || typeof imagemEditadaUrl !== 'string') {
+        console.log('🔍 [DEBUG-PROCESSING] ERRO: URL não é string válida');
+        throw new Error('URL inválida extraída: ' + imagemEditadaUrl);
+      }
+      
+      if (!imagemEditadaUrl.startsWith('http')) {
+        console.log('🔍 [DEBUG-PROCESSING] ERRO: URL não começa com http');
+        throw new Error('URL malformada: ' + imagemEditadaUrl);
       }
 
       console.log('🔍 [DEBUG-PROCESSING] URL final extraída:', imagemEditadaUrl);
-      console.log('🔍 [DEBUG-PROCESSING] Tipo da URL extraída:', typeof imagemEditadaUrl);
-      console.log('🔍 [DEBUG-PROCESSING] URL é válida?', imagemEditadaUrl && typeof imagemEditadaUrl === 'string' && imagemEditadaUrl.startsWith('http'));
+      console.log('🔍 [DEBUG-PROCESSING] URL é válida?', imagemEditadaUrl.startsWith('http'));
       console.log('✅ [IMAGE-EDITOR] URL extraída da imagem editada:', imagemEditadaUrl);
 
       res.json({
