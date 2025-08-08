@@ -5007,6 +5007,9 @@ ${currentActionPlanData.conteudo}`;
             </div>
             <div class="mockup-item-actions">
               ${actionButton}
+              <button class="regenerate-mockup-btn" data-id="${mockup._id}" title="Regenerar usando as mesmas configurações">
+                <i class="fas fa-redo"></i> Regenerar
+              </button>
               <button class="delete-mockup-btn" data-id="${mockup._id}" title="Excluir mockup">
                 <i class="fas fa-trash"></i>
               </button>
@@ -5030,6 +5033,15 @@ ${currentActionPlanData.conteudo}`;
           e.stopPropagation();
           const mockupId = btn.dataset.id;
           showMockupVariationsForSelection(mockupId);
+        });
+      });
+      
+      // Adicionar eventos para botões de regenerar
+      mockupsList.querySelectorAll('.regenerate-mockup-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const mockupId = btn.dataset.id;
+          regenerateFromList(mockupId);
         });
       });
       
@@ -5103,16 +5115,239 @@ ${currentActionPlanData.conteudo}`;
     }
   }
   
-  // Regenerar mockup
-  function regenerateMockup() {
+  // Regenerar mockup (do modal de variações)
+  async function regenerateMockup() {
     if (!currentMockupData) return;
     
-    // Fechar modal de variações
-    closeVariationsModal();
+    try {
+      // Buscar configurações completas do mockup
+      const response = await fetch(`/api/mockups/${currentMockupData.mockupId}/configuracoes`);
+      if (!response.ok) {
+        throw new Error('Erro ao buscar configurações do mockup');
+      }
+      
+      const data = await response.json();
+      const configuracoes = data.data;
+      
+      // Fechar modal de variações
+      closeVariationsModal();
+      
+      // Pré-preencher formulário com as configurações
+      preencherFormularioComMockup(configuracoes);
+      
+      // Mostrar modal de criação
+      showMockupModal();
+      
+    } catch (error) {
+      console.error('Erro ao regenerar mockup:', error);
+      alert('Não foi possível carregar as configurações do mockup. Tente novamente.');
+    }
+  }
+  
+  // Regenerar mockup da lista
+  async function regenerateFromList(mockupId) {
+    try {
+      console.log('🔄 [REGENERAR] Iniciando regeneração do mockup:', mockupId);
+      
+      // Buscar configurações completas do mockup
+      const response = await fetch(`/api/mockups/${mockupId}/configuracoes`);
+      if (!response.ok) {
+        throw new Error('Erro ao buscar configurações do mockup');
+      }
+      
+      const data = await response.json();
+      const configuracoes = data.data;
+      
+      console.log('✅ [REGENERAR] Configurações carregadas:', configuracoes);
+      
+      // Pré-preencher formulário com as configurações
+      preencherFormularioComMockup(configuracoes);
+      
+      // Mostrar modal de criação
+      showMockupModal();
+      
+    } catch (error) {
+      console.error('❌ [REGENERAR] Erro ao regenerar mockup:', error);
+      alert('Não foi possível carregar as configurações do mockup. Tente novamente.');
+    }
+  }
+  
+  // Pré-preencher formulário com dados do mockup
+  function preencherFormularioComMockup(configuracoes) {
+    console.log('📝 [PREENCHER] ===== INICIANDO PREENCHIMENTO =====');
+    console.log('📝 [PREENCHER] Configurações recebidas:', configuracoes);
     
-    // Reabrir modal de criação com dados preenchidos
-    // (implementação futura)
-    showMockupModal();
+    // 🚀 CORREÇÃO: Validar se configurações existem
+    if (!configuracoes) {
+      console.error('❌ [PREENCHER] Configurações não fornecidas');
+      return;
+    }
+    
+    // Preencher campos básicos
+    const tituloInput = document.getElementById('mockup-title');
+    if (tituloInput && configuracoes.titulo) {
+      tituloInput.value = configuracoes.titulo;
+      console.log('✅ [PREENCHER] Título preenchido:', configuracoes.titulo);
+    } else {
+      console.log('⚠️ [PREENCHER] Título não preenchido - Input:', !!tituloInput, 'Valor:', configuracoes.titulo);
+    }
+    
+    const promptInput = document.getElementById('mockup-prompt');
+    if (promptInput && configuracoes.prompt) {
+      promptInput.value = configuracoes.prompt;
+      console.log('✅ [PREENCHER] Prompt preenchido:', configuracoes.prompt.substring(0, 50) + '...');
+    } else {
+      console.log('⚠️ [PREENCHER] Prompt não preenchido - Input:', !!promptInput, 'Valor:', !!configuracoes.prompt);
+    }
+    
+    // 🚀 CORREÇÃO: Preencher configurações com validação detalhada
+    if (configuracoes.configuracao) {
+      const config = configuracoes.configuracao;
+      console.log('📝 [PREENCHER] Processando configurações:', config);
+      
+      // Tipo de arte
+      const tipoSelect = document.getElementById('mockup-type');
+      if (tipoSelect && config.tipoArte) {
+        tipoSelect.value = config.tipoArte;
+        console.log('✅ [PREENCHER] Tipo de arte preenchido:', config.tipoArte);
+      } else {
+        console.log('⚠️ [PREENCHER] Tipo de arte não preenchido - Select:', !!tipoSelect, 'Valor:', config.tipoArte);
+      }
+      
+      // Proporção
+      const aspectRatioSelect = document.getElementById('mockup-aspect-ratio');
+      if (aspectRatioSelect && config.aspectRatio) {
+        aspectRatioSelect.value = config.aspectRatio;
+        console.log('✅ [PREENCHER] Aspect ratio preenchido:', config.aspectRatio);
+      } else {
+        console.log('⚠️ [PREENCHER] Aspect ratio não preenchido - Select:', !!aspectRatioSelect, 'Valor:', config.aspectRatio);
+      }
+      
+      // 🚀 CORREÇÃO CRÍTICA: Estilo visual (era 'estilo', agora verificar ambos)
+      const estiloSelect = document.getElementById('mockup-style');
+      if (estiloSelect && (config.estilo || config.estiloVisual)) {
+        const estiloValue = config.estilo || config.estiloVisual;
+        estiloSelect.value = estiloValue;
+        console.log('✅ [PREENCHER] Estilo visual preenchido:', estiloValue);
+      } else {
+        console.log('⚠️ [PREENCHER] Estilo visual não preenchido - Select:', !!estiloSelect, 'Estilo:', config.estilo, 'EstiloVisual:', config.estiloVisual);
+      }
+      
+      // Paleta de cores
+      const coresSelect = document.getElementById('mockup-colors');
+      if (coresSelect && config.paletaCores) {
+        coresSelect.value = config.paletaCores;
+        console.log('✅ [PREENCHER] Paleta de cores preenchida:', config.paletaCores);
+      } else {
+        console.log('⚠️ [PREENCHER] Paleta de cores não preenchida - Select:', !!coresSelect, 'Valor:', config.paletaCores);
+      }
+      
+      // Elementos visuais
+      const elementosSelect = document.getElementById('mockup-elements');
+      if (elementosSelect && config.elementosVisuais) {
+        elementosSelect.value = config.elementosVisuais;
+        console.log('✅ [PREENCHER] Elementos visuais preenchidos:', config.elementosVisuais);
+      } else {
+        console.log('⚠️ [PREENCHER] Elementos visuais não preenchidos - Select:', !!elementosSelect, 'Valor:', config.elementosVisuais);
+      }
+      
+      // Setor
+      const setorSelect = document.getElementById('mockup-sector');
+      if (setorSelect && config.setor) {
+        setorSelect.value = config.setor;
+        console.log('✅ [PREENCHER] Setor preenchido:', config.setor);
+      } else {
+        console.log('⚠️ [PREENCHER] Setor não preenchido - Select:', !!setorSelect, 'Valor:', config.setor);
+      }
+      
+      // Público-alvo
+      const audienciaSelect = document.getElementById('mockup-audience');
+      if (audienciaSelect && config.publicoAlvo) {
+        audienciaSelect.value = config.publicoAlvo;
+        console.log('✅ [PREENCHER] Público-alvo preenchido:', config.publicoAlvo);
+      } else {
+        console.log('⚠️ [PREENCHER] Público-alvo não preenchido - Select:', !!audienciaSelect, 'Valor:', config.publicoAlvo);
+      }
+      
+      // Mood
+      const moodSelect = document.getElementById('mockup-mood');
+      if (moodSelect && config.mood) {
+        moodSelect.value = config.mood;
+        console.log('✅ [PREENCHER] Mood preenchido:', config.mood);
+      } else {
+        console.log('⚠️ [PREENCHER] Mood não preenchido - Select:', !!moodSelect, 'Valor:', config.mood);
+      }
+      
+      // Estilo de renderização
+      const renderSelect = document.getElementById('mockup-render-style');
+      if (renderSelect && config.estiloRenderizacao) {
+        renderSelect.value = config.estiloRenderizacao;
+        console.log('✅ [PREENCHER] Estilo de renderização preenchido:', config.estiloRenderizacao);
+      } else {
+        console.log('⚠️ [PREENCHER] Estilo de renderização não preenchido - Select:', !!renderSelect, 'Valor:', config.estiloRenderizacao);
+      }
+    } else {
+      console.log('⚠️ [PREENCHER] Nenhuma configuração encontrada');
+    }
+    
+    // 🚀 CORREÇÃO: Preencher configurações técnicas com validação
+    if (configuracoes.configuracaoTecnica) {
+      const configTec = configuracoes.configuracaoTecnica;
+      console.log('📝 [PREENCHER] Processando configurações técnicas:', configTec);
+      
+      // CFG
+      if (cfgRange && cfgValue && configTec.cfg) {
+        cfgRange.value = configTec.cfg;
+        cfgValue.textContent = configTec.cfg;
+        console.log('✅ [PREENCHER] CFG preenchido:', configTec.cfg);
+      } else {
+        console.log('⚠️ [PREENCHER] CFG não preenchido - Range:', !!cfgRange, 'Value:', !!cfgValue, 'Valor:', configTec.cfg);
+      }
+      
+      // Steps
+      if (stepsRange && stepsValue && configTec.steps) {
+        stepsRange.value = configTec.steps;
+        stepsValue.textContent = configTec.steps;
+        console.log('✅ [PREENCHER] Steps preenchido:', configTec.steps);
+      } else {
+        console.log('⚠️ [PREENCHER] Steps não preenchido - Range:', !!stepsRange, 'Value:', !!stepsValue, 'Valor:', configTec.steps);
+      }
+      
+      // Formato
+      const formatoSelect = document.getElementById('mockup-format');
+      if (formatoSelect && configTec.outputFormat) {
+        formatoSelect.value = configTec.outputFormat;
+        console.log('✅ [PREENCHER] Formato preenchido:', configTec.outputFormat);
+      } else {
+        console.log('⚠️ [PREENCHER] Formato não preenchido - Select:', !!formatoSelect, 'Valor:', configTec.outputFormat);
+      }
+      
+      // Qualidade
+      if (qualityRange && qualityValue && configTec.outputQuality) {
+        qualityRange.value = configTec.outputQuality;
+        qualityValue.textContent = configTec.outputQuality;
+        console.log('✅ [PREENCHER] Qualidade preenchida:', configTec.outputQuality);
+      } else {
+        console.log('⚠️ [PREENCHER] Qualidade não preenchida - Range:', !!qualityRange, 'Value:', !!qualityValue, 'Valor:', configTec.outputQuality);
+      }
+      
+      // Se há configurações técnicas, mostrar seção avançada
+      if (toggleAdvancedBtn && advancedContent) {
+        toggleAdvancedBtn.classList.add('active');
+        advancedContent.classList.add('show');
+        console.log('✅ [PREENCHER] Seção avançada expandida');
+      }
+    } else {
+      console.log('⚠️ [PREENCHER] Nenhuma configuração técnica encontrada');
+    }
+    
+    // 🚀 CORREÇÃO: Gerar sugestões de prompt baseadas no tipo
+    if (configuracoes.configuracao?.tipoArte) {
+      generatePromptSuggestions();
+      console.log('✅ [PREENCHER] Sugestões de prompt geradas');
+    }
+    
+    console.log('✅ [PREENCHER] ===== PREENCHIMENTO CONCLUÍDO =====');
   }
   
   // Iniciar polling para verificar mockups concluídos

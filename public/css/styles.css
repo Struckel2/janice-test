@@ -4127,3 +4127,367 @@ textarea.required-field {
 .gallery-item:hover::before {
   opacity: 1;
 }
+
+/* ===== MODAL DE VISUALIZAÇÃO AMPLIADA DA GALERIA ===== */
+
+/* Modal de visualização em tela cheia */
+.gallery-fullscreen-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+}
+
+.gallery-fullscreen-modal.show {
+  display: flex;
+}
+
+.gallery-fullscreen-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gallery-fullscreen-image {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: var(--border-radius);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.gallery-fullscreen-info {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 15px 20px;
+  border-radius: var(--border-radius);
+  margin-top: 20px;
+  text-align: center;
+  min-width: 300px;
+}
+
+.gallery-fullscreen-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 8px;
+}
+
+.gallery-fullscreen-meta {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  font-size: 0.9rem;
+  color: var(--light-text);
+  flex-wrap: wrap;
+}
+
+.gallery-fullscreen-meta span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.gallery-fullscreen-meta i {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+/* Controles do modal */
+.gallery-fullscreen-controls {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.gallery-fullscreen-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: var(--transition);
+  backdrop-filter: blur(10px);
+}
+
+.gallery-fullscreen-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.gallery-fullscreen-close {
+  background: rgba(233, 30, 99, 0.8);
+  border-color: var(--error-color);
+}
+
+.gallery-fullscreen-close:hover {
+  background: var(--error-color);
+}
+
+.gallery-fullscreen-download {
+  background: rgba(76, 175, 80, 0.8);
+  border-color: var(--success-color);
+}
+
+.gallery-fullscreen-download:hover {
+  background: var(--success-color);
+}
+
+/* Navegação entre imagens */
+.gallery-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  transition: var(--transition);
+  backdrop-filter: blur(10px);
+}
+
+.gallery-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.gallery-nav-prev {
+  left: 20px;
+}
+
+.gallery-nav-next {
+  right: 20px;
+}
+
+/* Indicador de posição */
+.gallery-position-indicator {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  backdrop-filter: blur(10px);
+}
+
+/* Zoom controls */
+.gallery-zoom-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.gallery-zoom-btn {
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: var(--transition);
+  backdrop-filter: blur(10px);
+}
+
+.gallery-zoom-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+  transform: scale(1.1);
+}
+
+/* Responsividade para modal fullscreen */
+@media (max-width: 768px) {
+  .gallery-fullscreen-content {
+    max-width: 95vw;
+    max-height: 95vh;
+  }
+  
+  .gallery-fullscreen-image {
+    max-height: 70vh;
+  }
+  
+  .gallery-fullscreen-info {
+    min-width: 250px;
+    padding: 12px 15px;
+  }
+  
+  .gallery-fullscreen-meta {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .gallery-fullscreen-controls {
+    top: 10px;
+    right: 10px;
+  }
+  
+  .gallery-fullscreen-btn {
+    width: 45px;
+    height: 45px;
+    font-size: 1.1rem;
+  }
+  
+  .gallery-nav-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 1.3rem;
+  }
+  
+  .gallery-nav-prev {
+    left: 10px;
+  }
+  
+  .gallery-nav-next {
+    right: 10px;
+  }
+  
+  .gallery-zoom-controls {
+    bottom: 10px;
+    right: 10px;
+  }
+  
+  .gallery-zoom-btn {
+    width: 35px;
+    height: 35px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Animações para modal fullscreen */
+@keyframes gallery-modal-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.gallery-fullscreen-modal.show .gallery-fullscreen-content {
+  animation: gallery-modal-appear 0.3s ease-out;
+}
+
+/* Suporte a gestos de toque */
+.gallery-fullscreen-image {
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
+/* Indicador de loading para imagens grandes */
+.gallery-image-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 1.2rem;
+}
+
+.gallery-image-loading .loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 10px;
+}
+
+/* Botão "Ver Grande" nos thumbnails */
+.gallery-view-large-btn {
+  background: rgba(106, 90, 205, 0.9);
+  border: 1px solid var(--primary-color);
+  color: white;
+  padding: 6px 12px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.gallery-view-large-btn:hover {
+  background: var(--primary-color);
+  transform: translateY(-1px);
+}
+
+.gallery-view-large-btn i {
+  font-size: 0.9rem;
+}
+
+/* Melhorar overlay dos thumbnails */
+.gallery-item-overlay {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 15px;
+}
+
+.gallery-overlay-top {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.gallery-overlay-bottom {
+  display: flex;
+  justify-content: center;
+}
+
+/* Atalhos de teclado */
+.gallery-keyboard-hint {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px 15px;
+  border-radius: var(--border-radius);
+  font-size: 0.8rem;
+  opacity: 0.8;
+  backdrop-filter: blur(10px);
+}
+
+.gallery-keyboard-hint kbd {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.9em;
+}

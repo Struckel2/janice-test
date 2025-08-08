@@ -367,6 +367,59 @@ router.get('/:id', async (req, res) => {
 });
 
 /**
+ * GET /api/mockups/:id/configuracoes
+ * Busca configurações completas de um mockup para regeneração
+ */
+router.get('/:id/configuracoes', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log('🔧 [REGENERAR] Buscando configurações do mockup:', id);
+
+    const mockup = await mockupService.buscarPorId(id);
+
+    if (!mockup) {
+      return res.status(404).json({
+        success: false,
+        message: 'Mockup não encontrado'
+      });
+    }
+
+    // Verificar se o usuário tem permissão (criador ou admin)
+    if (mockup.criadoPor._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Sem permissão para acessar as configurações deste mockup'
+      });
+    }
+
+    // Retornar apenas as configurações necessárias para regeneração
+    const configuracoes = {
+      titulo: mockup.titulo + ' - Cópia',
+      configuracao: mockup.configuracao,
+      prompt: mockup.prompt,
+      configuracaoTecnica: mockup.configuracaoTecnica
+    };
+
+    console.log('✅ [REGENERAR] Configurações encontradas:', configuracoes);
+
+    res.json({
+      success: true,
+      data: configuracoes
+    });
+
+  } catch (error) {
+    console.error('❌ [REGENERAR] Erro ao buscar configurações:', error);
+    
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao buscar configurações do mockup',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
  * DELETE /api/mockups/:id
  * Deleta mockup
  */
