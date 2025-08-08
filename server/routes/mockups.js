@@ -808,38 +808,80 @@ router.post('/galeria/editar', async (req, res) => {
       auth: process.env.REPLICATE_API_TOKEN,
     });
 
-    console.log('🔄 [IMAGE-EDITOR] Iniciando edição com Flux 1.1 Pro...');
+    console.log('🔄 [IMAGE-EDITOR] Iniciando edição com Flux Kontext Pro...');
+    console.log('🔄 [IMAGE-EDITOR] Modelo: black-forest-labs/flux-kontext-pro');
+    console.log('🔄 [IMAGE-EDITOR] Prompt:', promptEdicao);
+    console.log('🔄 [IMAGE-EDITOR] Imagem URL:', imagemUrl.substring(0, 100) + '...');
     
     const startTime = Date.now();
     
-    // Usar Flux 1.1 Pro com a imagem como referência
-    const prediction = await replicate.run(
-      "black-forest-labs/flux-1.1-pro",
-      {
-        input: {
-          prompt: promptEdicao,
-          image: imagemUrl,
-          prompt_strength: 0.8, // Força do prompt (0.1-1.0)
-          output_format: "webp",
-          output_quality: 90,
-          safety_tolerance: 2
+    try {
+      // Usar Flux Kontext Pro com a imagem como referência
+      const prediction = await replicate.run(
+        "black-forest-labs/flux-kontext-pro",
+        {
+          input: {
+            prompt: promptEdicao,
+            image: imagemUrl,
+            prompt_strength: 0.8, // Força do prompt (0.1-1.0)
+            output_format: "webp",
+            output_quality: 90,
+            safety_tolerance: 2
+          }
         }
+      );
+
+      const endTime = Date.now();
+      const tempoProcessamento = endTime - startTime;
+
+      console.log('✅ [IMAGE-EDITOR] Edição concluída em', tempoProcessamento + 'ms');
+      console.log('✅ [IMAGE-EDITOR] Tipo da resposta:', typeof prediction);
+      console.log('✅ [IMAGE-EDITOR] Resposta completa:', prediction);
+
+      // Processar a resposta do Replicate
+      let imagemEditadaUrl;
+      
+      if (typeof prediction === 'string') {
+        // Se for uma string, é a URL direta
+        imagemEditadaUrl = prediction;
+      } else if (Array.isArray(prediction) && prediction.length > 0) {
+        // Se for um array, pegar o primeiro item
+        imagemEditadaUrl = prediction[0];
+      } else if (prediction && prediction.url) {
+        // Se for um objeto com propriedade url
+        imagemEditadaUrl = prediction.url;
+      } else {
+        throw new Error('Formato de resposta inesperado do Replicate: ' + JSON.stringify(prediction));
       }
-    );
 
-    const endTime = Date.now();
-    const tempoProcessamento = endTime - startTime;
+      console.log('✅ [IMAGE-EDITOR] URL extraída da imagem editada:', imagemEditadaUrl);
 
-    console.log('✅ [IMAGE-EDITOR] Edição concluída em', tempoProcessamento + 'ms');
-    console.log('✅ [IMAGE-EDITOR] URL da imagem editada:', prediction);
+      res.json({
+        success: true,
+        message: 'Imagem editada com sucesso',
+        imagemEditada: imagemEditadaUrl,
+        promptUsado: promptEdicao,
+        tempoProcessamento: tempoProcessamento
+      });
 
-    res.json({
-      success: true,
-      message: 'Imagem editada com sucesso',
-      imagemEditada: prediction,
-      promptUsado: promptEdicao,
-      tempoProcessamento: tempoProcessamento
-    });
+    } catch (replicateError) {
+      const endTime = Date.now();
+      const tempoProcessamento = endTime - startTime;
+      
+      console.error('❌ [IMAGE-EDITOR] Erro do Replicate:', replicateError);
+      console.error('❌ [IMAGE-EDITOR] Detalhes do erro:', {
+        message: replicateError.message,
+        stack: replicateError.stack,
+        tempoProcessamento: tempoProcessamento
+      });
+
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao processar edição da imagem',
+        error: replicateError.message,
+        tempoProcessamento: tempoProcessamento
+      });
+    }
 
   } catch (error) {
     console.error('❌ [IMAGE-EDITOR] Erro ao editar imagem:', error);
