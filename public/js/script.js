@@ -4179,29 +4179,31 @@ ${currentActionPlanData.conteudo}`;
   let selectedVariation = null;
   
   // Mostrar modal de criação de mockup
-  function showMockupModal() {
-    // Limpar formulário
-    mockupForm.reset();
-    selectedVariation = null;
-    
-    // Resetar configurações avançadas
-    if (advancedContent) {
-      advancedContent.classList.remove('show');
-      toggleAdvancedBtn.classList.remove('active');
-    }
-    
-    // Resetar valores dos ranges
-    if (cfgRange && cfgValue) {
-      cfgRange.value = 3.5;
-      cfgValue.textContent = '3.5';
-    }
-    if (stepsRange && stepsValue) {
-      stepsRange.value = 28;
-      stepsValue.textContent = '28';
-    }
-    if (qualityRange && qualityValue) {
-      qualityRange.value = 90;
-      qualityValue.textContent = '90';
+  function showMockupModal(isRegeneration = false) {
+    if (!isRegeneration) {
+      // Limpar formulário apenas se não for regeneração
+      mockupForm.reset();
+      selectedVariation = null;
+      
+      // Resetar configurações avançadas
+      if (advancedContent) {
+        advancedContent.classList.remove('show');
+        toggleAdvancedBtn.classList.remove('active');
+      }
+      
+      // Resetar valores dos ranges
+      if (cfgRange && cfgValue) {
+        cfgRange.value = 3.5;
+        cfgValue.textContent = '3.5';
+      }
+      if (stepsRange && stepsValue) {
+        stepsRange.value = 28;
+        stepsValue.textContent = '28';
+      }
+      if (qualityRange && qualityValue) {
+        qualityRange.value = 90;
+        qualityValue.textContent = '90';
+      }
     }
     
     // Mostrar modal
@@ -5160,11 +5162,14 @@ ${currentActionPlanData.conteudo}`;
       
       console.log('✅ [REGENERAR] Configurações carregadas:', configuracoes);
       
-      // Pré-preencher formulário com as configurações
-      preencherFormularioComMockup(configuracoes);
+      // 🚀 CORREÇÃO: Mostrar modal PRIMEIRO (sem resetar)
+      showMockupModal(true); // true = isRegeneration
       
-      // Mostrar modal de criação
-      showMockupModal();
+      // Aguardar um pequeno delay para garantir que o modal esteja renderizado
+      setTimeout(() => {
+        // Depois preencher formulário com as configurações
+        preencherFormularioComMockup(configuracoes);
+      }, 100);
       
     } catch (error) {
       console.error('❌ [REGENERAR] Erro ao regenerar mockup:', error);
