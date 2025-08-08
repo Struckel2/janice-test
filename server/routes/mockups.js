@@ -1072,9 +1072,9 @@ router.post('/galeria/salvar-edicao', async (req, res) => {
     // Criar nova entrada de imagem editada
     const novaImagemEditada = {
       url: imagemEditadaUrl,
-      seed: `edit_${Date.now()}`, // Seed único para edição
-      dataSalvamento: new Date(),
-      publicId: null // Será preenchido se salvar no Cloudinary
+      seed: Date.now(), // ✅ NUMBER - Schema exige Number
+      publicId: `edit_${Date.now()}`, // ✅ STRING - Schema exige String obrigatório
+      dataSalvamento: new Date()
     };
 
     // Adicionar à lista de imagens salvas
