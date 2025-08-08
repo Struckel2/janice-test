@@ -832,6 +832,234 @@ a<!DOCTYPE html>
         </div>
     </div>
 
+    <!-- Modal para edição de imagens -->
+    <div id="image-editor-modal" class="modal">
+        <div class="modal-content extra-large-modal">
+            <div class="modal-header">
+                <h3>🎨 Editor de Imagem</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="editor-layout">
+                    <div class="editor-preview">
+                        <div class="original-image">
+                            <h4>Original</h4>
+                            <img id="original-preview" src="" alt="Imagem original">
+                        </div>
+                        <div class="edited-image">
+                            <h4>Resultado</h4>
+                            <div id="edited-preview-container">
+                                <div class="editor-placeholder">
+                                    <i class="fas fa-magic"></i>
+                                    <p>O resultado aparecerá aqui</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="editor-controls">
+                        <div class="edit-categories">
+                            <h4>Categorias de Edição</h4>
+                            
+                            <div class="category-section">
+                                <h5>📝 Textos (Impacto: Crítico)</h5>
+                                <div class="category-options">
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-text" value="alterar-titulo">
+                                        <span>✏️ Alterar título principal</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-text" value="modificar-subtitulos">
+                                        <span>🏷️ Modificar subtítulos</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-text" value="editar-botoes">
+                                        <span>🔘 Editar textos de botões</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-text" value="ajustar-menus">
+                                        <span>📋 Ajustar menus/navegação</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-text" value="adicionar-remover-textos">
+                                        <span>📝 Adicionar/remover textos</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="category-section">
+                                <h5>🎨 Cores (Impacto: Alto)</h5>
+                                <div class="category-options">
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-colors" value="mudar-paleta">
+                                        <span>🎨 Mudar paleta principal</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-colors" value="ajustar-destaque">
+                                        <span>🌈 Ajustar cores de destaque</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-colors" value="modificar-background">
+                                        <span>🖌️ Modificar background</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-colors" value="alterar-contraste">
+                                        <span>💡 Alterar contraste</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-colors" value="aplicar-branding">
+                                        <span>🎯 Aplicar branding específico</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="category-section">
+                                <h5>📐 Layout (Impacto: Alto)</h5>
+                                <div class="category-options">
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-layout" value="reorganizar-elementos">
+                                        <span>📱 Reorganizar elementos</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-layout" value="ajustar-espacamentos">
+                                        <span>📏 Ajustar espaçamentos</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-layout" value="reposicionar-secoes">
+                                        <span>🔄 Reposicionar seções</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-layout" value="modificar-proporcoes">
+                                        <span>📐 Modificar proporções</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-layout" value="otimizar-hierarquia">
+                                        <span>🎯 Otimizar hierarquia visual</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="category-section">
+                                <h5>➕ Elementos (Impacto: Crítico)</h5>
+                                <div class="category-options">
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-elements" value="adicionar-secoes">
+                                        <span>➕ Adicionar seções</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-elements" value="remover-elementos">
+                                        <span>🗑️ Remover elementos</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-elements" value="substituir-componentes">
+                                        <span>🔄 Substituir componentes</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-elements" value="inserir-graficos">
+                                        <span>📊 Inserir gráficos/dados</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-elements" value="adicionar-decoracoes">
+                                        <span>🎨 Adicionar decorações</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="category-section">
+                                <h5>🖼️ Imagens (Impacto: Médio)</h5>
+                                <div class="category-options">
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-images" value="trocar-imagens">
+                                        <span>🖼️ Trocar imagens principais</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-images" value="modificar-fotos">
+                                        <span>👤 Modificar fotos de pessoas</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-images" value="alterar-backgrounds">
+                                        <span>🏢 Alterar backgrounds</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-images" value="ajustar-qualidade">
+                                        <span>📸 Ajustar qualidade/filtros</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-images" value="aplicar-efeitos">
+                                        <span>🎭 Aplicar efeitos visuais</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="category-section">
+                                <h5>✨ Estilo (Impacto: Médio)</h5>
+                                <div class="category-options">
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-style" value="mudar-estilo-geral">
+                                        <span>🎨 Mudar estilo geral (moderno/clássico)</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-style" value="ajustar-dispositivo">
+                                        <span>📱 Ajustar para mobile/desktop</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-style" value="aplicar-tema">
+                                        <span>🎯 Aplicar tema específico</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-style" value="adicionar-efeitos-especiais">
+                                        <span>✨ Adicionar efeitos especiais</span>
+                                    </label>
+                                    <label class="edit-option">
+                                        <input type="checkbox" name="edit-style" value="modificar-atmosfera">
+                                        <span>🎪 Modificar atmosfera geral</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="custom-instructions">
+                            <h4>💬 Instruções Personalizadas</h4>
+                            <textarea id="custom-edit-instructions" rows="4" 
+                                    placeholder="Descreva outras modificações específicas que você gostaria de fazer na imagem..."></textarea>
+                            <small>Seja específico sobre as mudanças desejadas para melhores resultados</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="action-button secondary" id="close-editor-btn">❌ Fechar</button>
+                <button type="button" class="action-button" id="process-edit-btn">
+                    <i class="fas fa-magic"></i> 🔄 Processar Edição
+                </button>
+                <button type="button" class="action-button" id="save-edit-btn" style="display: none;">
+                    <i class="fas fa-save"></i> 💾 Salvar Edição
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de loading para edição -->
+    <div id="edit-loading-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="loading-container">
+                    <div class="loading-animation">
+                        <div class="spinner"></div>
+                    </div>
+                    <p class="loading-text">Processando edição...</p>
+                    <p class="loading-subtext" id="edit-loading-status">Aplicando modificações na imagem...</p>
+                    
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="edit-progress-fill"></div>
+                        </div>
+                        <div class="progress-text" id="edit-progress-text">0%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Inputs de arquivo ocultos para upload de logo -->
     <input type="file" id="central-logo-input" class="logo-file-input" accept="image/*">
     <input type="file" id="detail-logo-input" class="logo-file-input" accept="image/*">

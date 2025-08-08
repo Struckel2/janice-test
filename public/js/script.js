@@ -315,11 +315,19 @@ document.addEventListener('DOMContentLoaded', () => {
         this.updateUI();
         console.log('🔍 [DEBUG-FRONTEND] UI atualizada após conclusão');
         
-        // Agendar remoção automática após 5 segundos (um pouco antes do backend)
-        setTimeout(() => {
-          console.log('🔍 [DEBUG-FRONTEND] Removendo processo automaticamente após 5 segundos:', data.processId);
-          this.removeProcess(data.processId);
-        }, 5000);
+        // 🚀 CORREÇÃO: Para mockups, remover imediatamente pois não há navegação automática
+        if (process.tipo === 'mockup') {
+          console.log('🔍 [DEBUG-FRONTEND] Mockup concluído - removendo processo imediatamente');
+          setTimeout(() => {
+            this.removeProcess(data.processId);
+          }, 2000); // Remover após 2 segundos para dar tempo de ver a conclusão
+        } else {
+          // Para outros tipos, manter o comportamento original (5 segundos)
+          setTimeout(() => {
+            console.log('🔍 [DEBUG-FRONTEND] Removendo processo automaticamente após 5 segundos:', data.processId);
+            this.removeProcess(data.processId);
+          }, 5000);
+        }
       } else {
         console.log('❌ [DEBUG-FRONTEND] Processo NÃO encontrado no Map local para processId:', data.processId);
         console.log('🔍 [DEBUG-FRONTEND] Processos disponíveis no Map:', Array.from(this.processes.keys()));
@@ -3931,6 +3939,9 @@ ${currentActionPlanData.conteudo}`;
               <button class="gallery-view-btn" title="Visualizar">
                 <i class="fas fa-eye"></i>
               </button>
+              <button class="gallery-edit-btn" title="Editar imagem">
+                <i class="fas fa-edit"></i>
+              </button>
               <button class="gallery-download-btn" title="Download">
                 <i class="fas fa-download"></i>
               </button>
@@ -3964,6 +3975,16 @@ ${currentActionPlanData.conteudo}`;
         const galleryItem = e.target.closest('.gallery-item');
         const imageId = galleryItem.dataset.imageId;
         viewGalleryImage(imageId);
+      });
+    });
+    
+    // Eventos de edição
+    galleryGrid.querySelectorAll('.gallery-edit-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const galleryItem = e.target.closest('.gallery-item');
+        const imageId = galleryItem.dataset.imageId;
+        editGalleryImage(imageId);
       });
     });
     
@@ -4046,6 +4067,344 @@ ${currentActionPlanData.conteudo}`;
     
     // Mostrar modal
     galleryModal.classList.add('show');
+  }
+  
+  // Editar imagem da galeria
+  function editGalleryImage(imageId) {
+    const image = currentGalleryImages.find(img => img.id === imageId);
+    if (!image) return;
+    
+    console.log('🎨 [IMAGE-EDITOR] Iniciando edição da imagem:', image);
+    
+    // Configurar modal de edição
+    setupImageEditor(image);
+    
+    // Mostrar modal de edição
+    const imageEditorModal = document.getElementById('image-editor-modal');
+    if (imageEditorModal) {
+      imageEditorModal.classList.add('show');
+    }
+  }
+  
+  // Configurar modal de edição de imagem
+  function setupImageEditor(image) {
+    console.log('🎨 [IMAGE-EDITOR] Configurando editor para:', image.titulo);
+    
+    // Preencher imagem original
+    const originalPreview = document.getElementById('original-preview');
+    if (originalPreview) {
+      originalPreview.src = image.url;
+      originalPreview.alt = image.titulo;
+    }
+    
+    // Limpar resultado anterior
+    const editedPreviewContainer = document.getElementById('edited-preview-container');
+    if (editedPreviewContainer) {
+      editedPreviewContainer.innerHTML = `
+        <div class="editor-placeholder">
+          <i class="fas fa-magic"></i>
+          <p>O resultado aparecerá aqui</p>
+        </div>
+      `;
+    }
+    
+    // Resetar todas as seleções
+    document.querySelectorAll('.edit-option input[type="checkbox"]').forEach(checkbox => {
+      checkbox.checked = false;
+    });
+    
+    // Limpar instruções personalizadas
+    const customInstructions = document.getElementById('custom-edit-instructions');
+    if (customInstructions) {
+      customInstructions.value = '';
+    }
+    
+    // Armazenar dados da imagem atual para edição
+    window.currentEditingImage = image;
+    
+    // Esconder botão de salvar edição
+    const saveEditBtn = document.getElementById('save-edit-btn');
+    if (saveEditBtn) {
+      saveEditBtn.style.display = 'none';
+    }
+    
+    console.log('✅ [IMAGE-EDITOR] Editor configurado com sucesso');
+  }
+  
+  // Processar edição da imagem
+  async function processImageEdit() {
+    if (!window.currentEditingImage) {
+      alert('Erro: Nenhuma imagem selecionada para edição');
+      return;
+    }
+    
+    console.log('🔄 [IMAGE-EDITOR] Iniciando processamento da edição...');
+    
+    // Coletar categorias selecionadas
+    const selectedCategories = [];
+    
+    // Textos
+    const textEdits = Array.from(document.querySelectorAll('input[name="edit-text"]:checked'))
+      .map(input => input.value);
+    if (textEdits.length > 0) {
+      selectedCategories.push({
+        categoria: 'textos',
+        modificacoes: textEdits
+      });
+    }
+    
+    // Cores
+    const colorEdits = Array.from(document.querySelectorAll('input[name="edit-colors"]:checked'))
+      .map(input => input.value);
+    if (colorEdits.length > 0) {
+      selectedCategories.push({
+        categoria: 'cores',
+        modificacoes: colorEdits
+      });
+    }
+    
+    // Layout
+    const layoutEdits = Array.from(document.querySelectorAll('input[name="edit-layout"]:checked'))
+      .map(input => input.value);
+    if (layoutEdits.length > 0) {
+      selectedCategories.push({
+        categoria: 'layout',
+        modificacoes: layoutEdits
+      });
+    }
+    
+    // Elementos
+    const elementEdits = Array.from(document.querySelectorAll('input[name="edit-elements"]:checked'))
+      .map(input => input.value);
+    if (elementEdits.length > 0) {
+      selectedCategories.push({
+        categoria: 'elementos',
+        modificacoes: elementEdits
+      });
+    }
+    
+    // Imagens
+    const imageEdits = Array.from(document.querySelectorAll('input[name="edit-images"]:checked'))
+      .map(input => input.value);
+    if (imageEdits.length > 0) {
+      selectedCategories.push({
+        categoria: 'imagens',
+        modificacoes: imageEdits
+      });
+    }
+    
+    // Estilo
+    const styleEdits = Array.from(document.querySelectorAll('input[name="edit-style"]:checked'))
+      .map(input => input.value);
+    if (styleEdits.length > 0) {
+      selectedCategories.push({
+        categoria: 'estilo',
+        modificacoes: styleEdits
+      });
+    }
+    
+    // Instruções personalizadas
+    const customInstructions = document.getElementById('custom-edit-instructions')?.value?.trim();
+    
+    // Validar se há pelo menos uma modificação
+    if (selectedCategories.length === 0 && !customInstructions) {
+      alert('Por favor, selecione pelo menos uma categoria de edição ou forneça instruções personalizadas.');
+      return;
+    }
+    
+    console.log('🎨 [IMAGE-EDITOR] Categorias selecionadas:', selectedCategories);
+    console.log('🎨 [IMAGE-EDITOR] Instruções personalizadas:', customInstructions);
+    
+    try {
+      // Mostrar modal de loading
+      showEditLoadingModal();
+      
+      // Preparar dados para envio
+      const editData = {
+        imagemId: window.currentEditingImage.id,
+        imagemUrl: window.currentEditingImage.url,
+        categorias: selectedCategories,
+        instrucoes: customInstructions || '',
+        metadados: {
+          tituloOriginal: window.currentEditingImage.titulo,
+          tipoOriginal: window.currentEditingImage.tipo,
+          promptOriginal: window.currentEditingImage.prompt
+        }
+      };
+      
+      console.log('📤 [IMAGE-EDITOR] Enviando dados para edição:', editData);
+      
+      // Enviar requisição para o backend
+      const response = await fetch('/api/mockups/galeria/editar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(editData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao processar edição');
+      }
+      
+      const result = await response.json();
+      console.log('✅ [IMAGE-EDITOR] Edição processada com sucesso:', result);
+      
+      // Esconder modal de loading
+      hideEditLoadingModal();
+      
+      // Mostrar resultado
+      showEditResult(result.imagemEditada);
+      
+    } catch (error) {
+      console.error('❌ [IMAGE-EDITOR] Erro ao processar edição:', error);
+      
+      // Esconder modal de loading
+      hideEditLoadingModal();
+      
+      alert(`Erro ao processar edição: ${error.message}`);
+    }
+  }
+  
+  // Mostrar modal de loading para edição
+  function showEditLoadingModal() {
+    const editLoadingModal = document.getElementById('edit-loading-modal');
+    if (editLoadingModal) {
+      editLoadingModal.classList.add('show');
+      
+      // Iniciar simulação de progresso
+      simulateEditProgress();
+    }
+  }
+  
+  // Esconder modal de loading para edição
+  function hideEditLoadingModal() {
+    const editLoadingModal = document.getElementById('edit-loading-modal');
+    if (editLoadingModal) {
+      editLoadingModal.classList.remove('show');
+    }
+  }
+  
+  // Simular progresso da edição
+  function simulateEditProgress() {
+    const progressFill = document.getElementById('edit-progress-fill');
+    const progressText = document.getElementById('edit-progress-text');
+    const statusText = document.getElementById('edit-loading-status');
+    
+    if (!progressFill || !progressText || !statusText) return;
+    
+    const steps = [
+      { percentage: 20, message: 'Analisando imagem original...' },
+      { percentage: 40, message: 'Processando instruções de edição...' },
+      { percentage: 60, message: 'Aplicando modificações...' },
+      { percentage: 80, message: 'Renderizando resultado...' },
+      { percentage: 95, message: 'Finalizando edição...' }
+    ];
+    
+    let currentStep = 0;
+    
+    const interval = setInterval(() => {
+      if (currentStep < steps.length) {
+        const step = steps[currentStep];
+        progressFill.style.width = `${step.percentage}%`;
+        progressText.textContent = `${step.percentage}%`;
+        statusText.textContent = step.message;
+        currentStep++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 1500);
+  }
+  
+  // Mostrar resultado da edição
+  function showEditResult(imagemEditada) {
+    console.log('🎨 [IMAGE-EDITOR] Mostrando resultado da edição:', imagemEditada);
+    
+    const editedPreviewContainer = document.getElementById('edited-preview-container');
+    if (editedPreviewContainer) {
+      editedPreviewContainer.innerHTML = `
+        <img src="${imagemEditada}" alt="Imagem editada" class="edited-result-image">
+      `;
+    }
+    
+    // Mostrar botão de salvar
+    const saveEditBtn = document.getElementById('save-edit-btn');
+    if (saveEditBtn) {
+      saveEditBtn.style.display = 'inline-block';
+      
+      // Armazenar URL da imagem editada
+      window.currentEditedImageUrl = imagemEditada;
+    }
+    
+    // Atualizar progresso para 100%
+    const progressFill = document.getElementById('edit-progress-fill');
+    const progressText = document.getElementById('edit-progress-text');
+    const statusText = document.getElementById('edit-loading-status');
+    
+    if (progressFill && progressText && statusText) {
+      progressFill.style.width = '100%';
+      progressText.textContent = '100%';
+      statusText.textContent = 'Edição concluída com sucesso!';
+    }
+  }
+  
+  // Salvar imagem editada na galeria
+  async function saveEditedImage() {
+    if (!window.currentEditingImage || !window.currentEditedImageUrl) {
+      alert('Erro: Dados da edição não encontrados');
+      return;
+    }
+    
+    try {
+      console.log('💾 [IMAGE-EDITOR] Salvando imagem editada na galeria...');
+      
+      const saveData = {
+        imagemOriginalId: window.currentEditingImage.id,
+        imagemEditadaUrl: window.currentEditedImageUrl,
+        titulo: `${window.currentEditingImage.titulo} (Editada)`,
+        tipo: window.currentEditingImage.tipo,
+        prompt: `Edição de: ${window.currentEditingImage.prompt || 'Imagem original'}`
+      };
+      
+      const response = await fetch('/api/mockups/galeria/salvar-edicao', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(saveData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao salvar imagem editada');
+      }
+      
+      const result = await response.json();
+      console.log('✅ [IMAGE-EDITOR] Imagem editada salva com sucesso:', result);
+      
+      // Fechar modal de edição
+      const imageEditorModal = document.getElementById('image-editor-modal');
+      if (imageEditorModal) {
+        imageEditorModal.classList.remove('show');
+      }
+      
+      // Recarregar galeria
+      if (currentClientId) {
+        await loadClientGallery(currentClientId);
+      }
+      
+      // Mostrar feedback de sucesso
+      alert('Imagem editada salva na galeria com sucesso!');
+      
+      // Limpar dados temporários
+      window.currentEditingImage = null;
+      window.currentEditedImageUrl = null;
+      
+    } catch (error) {
+      console.error('❌ [IMAGE-EDITOR] Erro ao salvar imagem editada:', error);
+      alert(`Erro ao salvar imagem editada: ${error.message}`);
+    }
   }
   
   // Download de imagem da galeria
@@ -5607,11 +5966,14 @@ ${currentActionPlanData.conteudo}`;
     // Configurar eventos de mockups
     setupMockupEvents();
     
-  // Configurar eventos da galeria
-  setupGalleryModalEvents();
-  
-  // Configurar botão de refresh da galeria
-  setupGalleryRefreshButton();
+    // Configurar eventos da galeria
+    setupGalleryModalEvents();
+    
+    // Configurar botão de refresh da galeria
+    setupGalleryRefreshButton();
+    
+    // Configurar eventos do editor de imagens
+    setupImageEditorEvents();
     
     // Mostrar tela de boas-vindas
     welcomeContainer.style.display = 'block';
@@ -5657,6 +6019,107 @@ ${currentActionPlanData.conteudo}`;
           }, 2000);
         }
       });
+    }
+  }
+  
+  // ===== CONFIGURAR EVENTOS DO MODAL DE EDIÇÃO DE IMAGENS =====
+  
+  function setupImageEditorEvents() {
+    // Botão de processar edição
+    const processEditBtn = document.getElementById('process-edit-btn');
+    if (processEditBtn) {
+      processEditBtn.addEventListener('click', processImageEdit);
+    }
+    
+    // Botão de salvar edição
+    const saveEditBtn = document.getElementById('save-edit-btn');
+    if (saveEditBtn) {
+      saveEditBtn.addEventListener('click', saveEditedImage);
+    }
+    
+    // Botão de fechar editor
+    const closeEditorBtn = document.getElementById('close-editor-btn');
+    if (closeEditorBtn) {
+      closeEditorBtn.addEventListener('click', () => {
+        const imageEditorModal = document.getElementById('image-editor-modal');
+        if (imageEditorModal) {
+          imageEditorModal.classList.remove('show');
+        }
+        
+        // Limpar dados temporários
+        window.currentEditingImage = null;
+        window.currentEditedImageUrl = null;
+      });
+    }
+    
+    // Fechar modal de edição ao clicar fora
+    const imageEditorModal = document.getElementById('image-editor-modal');
+    if (imageEditorModal) {
+      imageEditorModal.addEventListener('click', (e) => {
+        if (e.target === imageEditorModal) {
+          imageEditorModal.classList.remove('show');
+          
+          // Limpar dados temporários
+          window.currentEditingImage = null;
+          window.currentEditedImageUrl = null;
+        }
+      });
+    }
+    
+    // Fechar modal de loading de edição ao clicar fora (não permitir)
+    const editLoadingModal = document.getElementById('edit-loading-modal');
+    if (editLoadingModal) {
+      editLoadingModal.addEventListener('click', (e) => {
+        // Não permitir fechar modal de loading clicando fora
+        e.stopPropagation();
+      });
+    }
+    
+    // Configurar eventos dos checkboxes de categorias
+    document.querySelectorAll('.edit-option input[type="checkbox"]').forEach(checkbox => {
+      checkbox.addEventListener('change', () => {
+        // Atualizar preview das seleções (opcional)
+        updateEditPreview();
+      });
+    });
+    
+    // Configurar evento do textarea de instruções personalizadas
+    const customInstructions = document.getElementById('custom-edit-instructions');
+    if (customInstructions) {
+      customInstructions.addEventListener('input', () => {
+        // Atualizar preview das instruções (opcional)
+        updateEditPreview();
+      });
+    }
+  }
+  
+  // Atualizar preview das edições selecionadas (opcional)
+  function updateEditPreview() {
+    // Esta função pode ser expandida para mostrar um preview das modificações selecionadas
+    // Por enquanto, apenas log para debug
+    const selectedCategories = [];
+    
+    // Contar categorias selecionadas
+    document.querySelectorAll('.edit-option input[type="checkbox"]:checked').forEach(checkbox => {
+      selectedCategories.push(checkbox.value);
+    });
+    
+    const customInstructions = document.getElementById('custom-edit-instructions')?.value?.trim();
+    
+    console.log('🎨 [EDIT-PREVIEW] Categorias selecionadas:', selectedCategories.length);
+    console.log('🎨 [EDIT-PREVIEW] Instruções personalizadas:', !!customInstructions);
+    
+    // Atualizar botão de processar baseado nas seleções
+    const processBtn = document.getElementById('process-edit-btn');
+    if (processBtn) {
+      const hasSelections = selectedCategories.length > 0 || customInstructions;
+      processBtn.disabled = !hasSelections;
+      
+      if (hasSelections) {
+        processBtn.innerHTML = '<i class="fas fa-magic"></i> 🔄 Processar Edição';
+      } else {
+        processBtn.innerHTML = '<i class="fas fa-magic"></i> 🔄 Selecione modificações';
+      }
     }
   }
 

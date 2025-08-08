@@ -732,4 +732,235 @@ router.get('/galeria/:clienteId', async (req, res) => {
     }
 });
 
+// Rota para editar imagem da galeria
+router.post('/galeria/editar', async (req, res) => {
+  try {
+    const {
+      imagemId,
+      imagemUrl,
+      categorias,
+      instrucoes,
+      metadados
+    } = req.body;
+
+    console.log('🎨 [IMAGE-EDITOR] ===== INICIANDO EDIÇÃO DE IMAGEM =====');
+    console.log('🎨 [IMAGE-EDITOR] Dados recebidos:', {
+      imagemId,
+      imagemUrl: imagemUrl ? imagemUrl.substring(0, 50) + '...' : 'VAZIO',
+      categorias: categorias?.length || 0,
+      instrucoes: instrucoes ? instrucoes.substring(0, 50) + '...' : 'VAZIO',
+      metadados
+    });
+
+    // Validações básicas
+    if (!imagemId) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID da imagem é obrigatório'
+      });
+    }
+
+    if (!imagemUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'URL da imagem original é obrigatória'
+      });
+    }
+
+    if ((!categorias || categorias.length === 0) && (!instrucoes || instrucoes.trim() === '')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Pelo menos uma categoria de edição ou instruções personalizadas devem ser fornecidas'
+      });
+    }
+
+    // Construir prompt de edição baseado nas categorias e instruções
+    let promptEdicao = '';
+
+    // Processar categorias selecionadas
+    if (categorias && categorias.length > 0) {
+      const modificacoes = [];
+      categorias.forEach(categoria => {
+        categoria.modificacoes.forEach(mod => {
+          modificacoes.push(mod);
+        });
+      });
+      promptEdicao = modificacoes.join(', ');
+    }
+
+    // Adicionar instruções personalizadas
+    if (instrucoes && instrucoes.trim() !== '') {
+      if (promptEdicao) {
+        promptEdicao += ', ' + instrucoes.trim();
+      } else {
+        promptEdicao = instrucoes.trim();
+      }
+    }
+
+    // Garantir que o prompt seja conciso e direto
+    promptEdicao = promptEdicao.replace(/\n/g, ' ').trim();
+
+    console.log('🎨 [IMAGE-EDITOR] Prompt de edição otimizado:', promptEdicao);
+
+    // Integração real com Replicate usando Flux 1.1 Pro para edição
+    const Replicate = require('replicate');
+    const replicate = new Replicate({
+      auth: process.env.REPLICATE_API_TOKEN,
+    });
+
+    console.log('🔄 [IMAGE-EDITOR] Iniciando edição com Flux 1.1 Pro...');
+    
+    const startTime = Date.now();
+    
+    // Usar Flux 1.1 Pro com a imagem como referência
+    const prediction = await replicate.run(
+      "black-forest-labs/flux-1.1-pro",
+      {
+        input: {
+          prompt: promptEdicao,
+          image: imagemUrl,
+          prompt_strength: 0.8, // Força do prompt (0.1-1.0)
+          output_format: "webp",
+          output_quality: 90,
+          safety_tolerance: 2
+        }
+      }
+    );
+
+    const endTime = Date.now();
+    const tempoProcessamento = endTime - startTime;
+
+    console.log('✅ [IMAGE-EDITOR] Edição concluída em', tempoProcessamento + 'ms');
+    console.log('✅ [IMAGE-EDITOR] URL da imagem editada:', prediction);
+
+    res.json({
+      success: true,
+      message: 'Imagem editada com sucesso',
+      imagemEditada: prediction,
+      promptUsado: promptEdicao,
+      tempoProcessamento: tempoProcessamento
+    });
+
+  } catch (error) {
+    console.error('❌ [IMAGE-EDITOR] Erro ao editar imagem:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor ao editar imagem',
+      error: error.message
+    });
+  }
+});
+
+// Rota para salvar imagem editada na galeria
+router.post('/galeria/salvar-edicao', async (req, res) => {
+  try {
+    const {
+      imagemOriginalId,
+      imagemEditadaUrl,
+      titulo,
+      tipo,
+      prompt
+    } = req.body;
+
+    console.log('💾 [SAVE-EDIT] ===== SALVANDO IMAGEM EDITADA =====');
+    console.log('💾 [SAVE-EDIT] Dados recebidos:', {
+      imagemOriginalId,
+      imagemEditadaUrl: imagemEditadaUrl ? imagemEditadaUrl.substring(0, 50) + '...' : 'VAZIO',
+      titulo,
+      tipo,
+      prompt: prompt ? prompt.substring(0, 50) + '...' : 'VAZIO'
+    });
+
+    // Validações básicas
+    if (!imagemOriginalId) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID da imagem original é obrigatório'
+      });
+    }
+
+    if (!imagemEditadaUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'URL da imagem editada é obrigatória'
+      });
+    }
+
+    if (!titulo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Título é obrigatório'
+      });
+    }
+
+    // Extrair mockupId e seed do imagemOriginalId
+    const [mockupId, seedOriginal] = imagemOriginalId.split('_');
+    
+    if (!mockupId || !seedOriginal) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID da imagem original inválido'
+      });
+    }
+
+    // Buscar o mockup original
+    const mockupOriginal = await Mockup.findById(mockupId);
+    if (!mockupOriginal) {
+      return res.status(404).json({
+        success: false,
+        message: 'Mockup original não encontrado'
+      });
+    }
+
+    // Verificar permissões
+    if (mockupOriginal.criadoPor.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Sem permissão para editar este mockup'
+      });
+    }
+
+    // Criar nova entrada de imagem editada
+    const novaImagemEditada = {
+      url: imagemEditadaUrl,
+      seed: `edit_${Date.now()}`, // Seed único para edição
+      dataSalvamento: new Date(),
+      publicId: null // Será preenchido se salvar no Cloudinary
+    };
+
+    // Adicionar à lista de imagens salvas
+    if (!mockupOriginal.metadados) {
+      mockupOriginal.metadados = {};
+    }
+    if (!mockupOriginal.metadados.imagensSalvas) {
+      mockupOriginal.metadados.imagensSalvas = [];
+    }
+
+    mockupOriginal.metadados.imagensSalvas.push(novaImagemEditada);
+
+    // Salvar alterações
+    await mockupOriginal.save();
+
+    console.log('✅ [SAVE-EDIT] Imagem editada salva com sucesso');
+
+    res.json({
+      success: true,
+      message: 'Imagem editada salva na galeria com sucesso',
+      data: {
+        mockupId: mockupOriginal._id,
+        imagemSalva: novaImagemEditada,
+        totalImagens: mockupOriginal.metadados.imagensSalvas.length
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ [SAVE-EDIT] Erro ao salvar imagem editada:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor ao salvar imagem editada',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

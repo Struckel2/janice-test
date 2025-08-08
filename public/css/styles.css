@@ -3589,6 +3589,479 @@ footer {
   color: var(--error-color);
 }
 
+/* ===== ESTILOS PARA EDITOR DE IMAGENS ===== */
+
+/* Botão de editar na galeria */
+.gallery-edit-btn {
+  background: rgba(255, 152, 0, 0.8);
+  border: 1px solid var(--warning-color);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: var(--transition);
+  backdrop-filter: blur(5px);
+}
+
+.gallery-edit-btn:hover {
+  background: var(--warning-color);
+  transform: scale(1.1);
+}
+
+/* Layout do editor */
+.editor-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  min-height: 500px;
+}
+
+/* Preview das imagens */
+.editor-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.original-image,
+.edited-image {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.original-image h4,
+.edited-image h4 {
+  margin-bottom: 10px;
+  color: var(--primary-color);
+  font-size: 1rem;
+  text-align: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.original-image img,
+.edited-image img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  background: #f9f9f9;
+}
+
+#edited-preview-container {
+  width: 100%;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: #f9f9f9;
+}
+
+.editor-placeholder {
+  text-align: center;
+  color: var(--lighter-text);
+  padding: 40px 20px;
+}
+
+.editor-placeholder i {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  opacity: 0.5;
+  color: var(--primary-color);
+}
+
+.editor-placeholder p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Controles do editor */
+.editor-controls {
+  overflow-y: auto;
+  max-height: 500px;
+  padding-right: 10px;
+}
+
+.edit-categories h4 {
+  color: var(--primary-dark);
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.edit-categories h4::before {
+  content: '🎛️';
+  font-size: 1.2rem;
+}
+
+/* Seções de categorias */
+.category-section {
+  margin-bottom: 25px;
+  background: #f9f9f9;
+  border-radius: var(--border-radius);
+  padding: 15px;
+  border-left: 4px solid var(--primary-color);
+}
+
+.category-section h5 {
+  margin-bottom: 12px;
+  color: var(--primary-dark);
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.category-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edit-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+  background: white;
+  border: 1px solid transparent;
+}
+
+.edit-option:hover {
+  background: rgba(106, 90, 205, 0.05);
+  border-color: rgba(106, 90, 205, 0.2);
+}
+
+.edit-option input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary-color);
+  cursor: pointer;
+}
+
+.edit-option span {
+  font-size: 0.9rem;
+  color: var(--text-color);
+  line-height: 1.3;
+  flex: 1;
+}
+
+.edit-option:has(input:checked) {
+  background: rgba(106, 90, 205, 0.1);
+  border-color: var(--primary-color);
+}
+
+.edit-option:has(input:checked) span {
+  color: var(--primary-dark);
+  font-weight: 500;
+}
+
+/* Instruções personalizadas */
+.custom-instructions {
+  margin-top: 25px;
+  padding: 20px;
+  background: rgba(106, 90, 205, 0.05);
+  border-radius: var(--border-radius);
+  border: 1px solid rgba(106, 90, 205, 0.2);
+}
+
+.custom-instructions h4 {
+  margin-bottom: 12px;
+  color: var(--primary-dark);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.custom-instructions textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+  background: white;
+}
+
+.custom-instructions textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(106, 90, 205, 0.1);
+}
+
+.custom-instructions small {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: var(--light-text);
+  font-style: italic;
+}
+
+/* Estados de loading para edição */
+.editor-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--border-radius);
+  z-index: 10;
+}
+
+.editor-loading .loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(106, 90, 205, 0.2);
+  border-radius: 50%;
+  border-top-color: var(--primary-color);
+  margin-bottom: 15px;
+  animation: spin 1s linear infinite;
+}
+
+.editor-loading p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+/* Resultado da edição */
+.edit-result {
+  position: relative;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsividade para editor */
+@media (max-width: 768px) {
+  .editor-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .editor-preview {
+    order: 2;
+  }
+  
+  .editor-controls {
+    order: 1;
+    max-height: 300px;
+  }
+  
+  .original-image img,
+  .edited-image img {
+    max-height: 150px;
+  }
+  
+  #edited-preview-container {
+    min-height: 150px;
+  }
+  
+  .category-section {
+    padding: 12px;
+  }
+  
+  .edit-option {
+    padding: 6px 10px;
+  }
+  
+  .custom-instructions {
+    padding: 15px;
+  }
+}
+
+/* Animações específicas para editor */
+@keyframes editor-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+#image-editor-modal.show .modal-content {
+  animation: editor-appear 0.3s ease-out;
+}
+
+/* Indicadores visuais */
+.category-section.has-selections {
+  border-left-color: var(--success-color);
+  background: rgba(76, 175, 80, 0.05);
+}
+
+.category-section.has-selections h5 {
+  color: var(--success-color);
+}
+
+/* Tooltip para opções de edição */
+.edit-option {
+  position: relative;
+}
+
+.edit-option::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  z-index: 1000;
+  margin-left: 10px;
+}
+
+.edit-option:hover::after {
+  opacity: 1;
+}
+
+/* Contador de seleções */
+.selection-summary {
+  position: sticky;
+  top: 0;
+  background: white;
+  padding: 10px 15px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  margin-bottom: 15px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--primary-color);
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.selection-summary.has-selections {
+  background: rgba(106, 90, 205, 0.1);
+  border-color: var(--primary-color);
+}
+
+/* Botões do editor */
+#process-edit-btn {
+  background: var(--primary-color);
+  position: relative;
+  overflow: hidden;
+}
+
+#process-edit-btn:disabled {
+  background: #ccc;
+  color: #999;
+  cursor: not-allowed;
+}
+
+#process-edit-btn.processing {
+  background: var(--warning-color);
+  animation: pulse 2s infinite;
+}
+
+#save-edit-btn {
+  background: var(--success-color);
+  border-color: #3d9a41;
+}
+
+#save-edit-btn:hover {
+  background: #3d9a41;
+}
+
+/* Efeito de processamento */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* Scroll customizado para controles */
+.editor-controls::-webkit-scrollbar {
+  width: 8px;
+}
+
+.editor-controls::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.editor-controls::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+.editor-controls::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}
+
+/* Melhorias visuais para categorias */
+.category-section:nth-child(1) { border-left-color: #e74c3c; } /* Textos - Vermelho */
+.category-section:nth-child(2) { border-left-color: #f39c12; } /* Cores - Laranja */
+.category-section:nth-child(3) { border-left-color: #3498db; } /* Layout - Azul */
+.category-section:nth-child(4) { border-left-color: #2ecc71; } /* Elementos - Verde */
+.category-section:nth-child(5) { border-left-color: #9b59b6; } /* Imagens - Roxo */
+.category-section:nth-child(6) { border-left-color: #1abc9c; } /* Estilo - Turquesa */
+
+/* Estados especiais */
+.editor-success {
+  border: 2px solid var(--success-color);
+  background: rgba(76, 175, 80, 0.05);
+}
+
+.editor-error {
+  border: 2px solid var(--error-color);
+  background: rgba(233, 30, 99, 0.05);
+}
+
+/* Informações de custo para edição */
+.edit-cost-info {
+  background: rgba(255, 152, 0, 0.1);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  border-radius: var(--border-radius);
+  padding: 12px 15px;
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--warning-color);
+}
+
+.edit-cost-info i {
+  font-size: 1rem;
+}
+
 /* ===== ESTILOS PARA CAMPOS OBRIGATÓRIOS ===== */
 
 /* Asterisco vermelho para campos obrigatórios */
