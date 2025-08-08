@@ -813,6 +813,21 @@ router.post('/galeria/editar', async (req, res) => {
     console.log('🔄 [IMAGE-EDITOR] Prompt:', promptEdicao);
     console.log('🔄 [IMAGE-EDITOR] Imagem URL:', imagemUrl.substring(0, 100) + '...');
     
+    // 🔍 LOGS DETALHADOS PRÉ-CHAMADA
+    console.log('🔍 [DEBUG-REPLICATE] ===== PRÉ-CHAMADA REPLICATE =====');
+    console.log('🔍 [DEBUG-REPLICATE] Modelo exato:', "black-forest-labs/flux-kontext-pro");
+    console.log('🔍 [DEBUG-REPLICATE] Input completo:', JSON.stringify({
+      prompt: promptEdicao,
+      image: imagemUrl,
+      prompt_strength: 0.8,
+      output_format: "webp",
+      output_quality: 90,
+      safety_tolerance: 2
+    }, null, 2));
+    console.log('🔍 [DEBUG-REPLICATE] Timestamp início:', new Date().toISOString());
+    console.log('🔍 [DEBUG-REPLICATE] Replicate instance:', replicate ? 'PRESENTE' : 'AUSENTE');
+    console.log('🔍 [DEBUG-REPLICATE] API Token presente:', process.env.REPLICATE_API_TOKEN ? 'SIM' : 'NÃO');
+    
     const startTime = Date.now();
     
     try {
@@ -834,26 +849,62 @@ router.post('/galeria/editar', async (req, res) => {
       const endTime = Date.now();
       const tempoProcessamento = endTime - startTime;
 
+      // 🔍 LOGS DETALHADOS PÓS-CHAMADA
+      console.log('🔍 [DEBUG-REPLICATE] ===== PÓS-CHAMADA REPLICATE =====');
+      console.log('🔍 [DEBUG-REPLICATE] Timestamp fim:', new Date().toISOString());
+      console.log('🔍 [DEBUG-REPLICATE] Tempo de processamento:', tempoProcessamento + 'ms');
+      console.log('🔍 [DEBUG-REPLICATE] Tipo da resposta:', typeof prediction);
+      console.log('🔍 [DEBUG-REPLICATE] É array?', Array.isArray(prediction));
+      console.log('🔍 [DEBUG-REPLICATE] É string?', typeof prediction === 'string');
+      console.log('🔍 [DEBUG-REPLICATE] É ReadableStream?', prediction && prediction.constructor && prediction.constructor.name === 'ReadableStream');
+      console.log('🔍 [DEBUG-REPLICATE] É objeto?', typeof prediction === 'object' && prediction !== null);
+      console.log('🔍 [DEBUG-REPLICATE] Resposta RAW (primeiros 500 chars):', 
+        JSON.stringify(prediction).substring(0, 500));
+      console.log('🔍 [DEBUG-REPLICATE] Resposta COMPLETA:', prediction);
+      
+      // 🔍 VERIFICAÇÃO DE ERRO SILENCIOSO
+      console.log('🔍 [DEBUG-ERROR] ===== VERIFICAÇÃO DE ERROS =====');
+      console.log('🔍 [DEBUG-ERROR] Prediction tem propriedade error?', prediction?.error);
+      console.log('🔍 [DEBUG-ERROR] Prediction tem propriedade status?', prediction?.status);
+      console.log('🔍 [DEBUG-ERROR] Prediction tem propriedade message?', prediction?.message);
+      console.log('🔍 [DEBUG-ERROR] Todas as propriedades:', prediction && typeof prediction === 'object' ? Object.keys(prediction) : 'N/A');
+      
       console.log('✅ [IMAGE-EDITOR] Edição concluída em', tempoProcessamento + 'ms');
       console.log('✅ [IMAGE-EDITOR] Tipo da resposta:', typeof prediction);
       console.log('✅ [IMAGE-EDITOR] Resposta completa:', prediction);
 
+      // 🔍 LOGS DETALHADOS PROCESSAMENTO
+      console.log('🔍 [DEBUG-PROCESSING] ===== PROCESSANDO RESPOSTA =====');
+      console.log('🔍 [DEBUG-PROCESSING] Entrando no processamento...');
+      
       // Processar a resposta do Replicate
       let imagemEditadaUrl;
       
       if (typeof prediction === 'string') {
-        // Se for uma string, é a URL direta
+        console.log('🔍 [DEBUG-PROCESSING] Resposta é STRING');
+        console.log('🔍 [DEBUG-PROCESSING] Valor da string:', prediction);
         imagemEditadaUrl = prediction;
       } else if (Array.isArray(prediction) && prediction.length > 0) {
-        // Se for um array, pegar o primeiro item
+        console.log('🔍 [DEBUG-PROCESSING] Resposta é ARRAY');
+        console.log('🔍 [DEBUG-PROCESSING] Tamanho do array:', prediction.length);
+        console.log('🔍 [DEBUG-PROCESSING] Primeiro item:', prediction[0]);
         imagemEditadaUrl = prediction[0];
       } else if (prediction && prediction.url) {
-        // Se for um objeto com propriedade url
+        console.log('🔍 [DEBUG-PROCESSING] Resposta é OBJETO com URL');
+        console.log('🔍 [DEBUG-PROCESSING] URL encontrada:', prediction.url);
         imagemEditadaUrl = prediction.url;
       } else {
+        console.log('🔍 [DEBUG-PROCESSING] FORMATO INESPERADO!');
+        console.log('🔍 [DEBUG-PROCESSING] Tipo:', typeof prediction);
+        console.log('🔍 [DEBUG-PROCESSING] É array?', Array.isArray(prediction));
+        console.log('🔍 [DEBUG-PROCESSING] Tem propriedade url?', prediction && prediction.url);
+        console.log('🔍 [DEBUG-PROCESSING] Valor completo:', prediction);
         throw new Error('Formato de resposta inesperado do Replicate: ' + JSON.stringify(prediction));
       }
 
+      console.log('🔍 [DEBUG-PROCESSING] URL final extraída:', imagemEditadaUrl);
+      console.log('🔍 [DEBUG-PROCESSING] Tipo da URL extraída:', typeof imagemEditadaUrl);
+      console.log('🔍 [DEBUG-PROCESSING] URL é válida?', imagemEditadaUrl && imagemEditadaUrl.startsWith('http'));
       console.log('✅ [IMAGE-EDITOR] URL extraída da imagem editada:', imagemEditadaUrl);
 
       res.json({
