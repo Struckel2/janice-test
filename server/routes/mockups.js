@@ -820,7 +820,7 @@ router.post('/galeria/editar', async (req, res) => {
       prompt: promptEdicao,
       image: imagemUrl,
       prompt_strength: 0.8,
-      output_format: "webp",
+      output_format: "png",
       output_quality: 90,
       safety_tolerance: 2
     }, null, 2));
@@ -839,7 +839,7 @@ router.post('/galeria/editar', async (req, res) => {
             prompt: promptEdicao,
             image: imagemUrl,
             prompt_strength: 0.8, // Força do prompt (0.1-1.0)
-            output_format: "webp",
+            output_format: "png",
             output_quality: 90,
             safety_tolerance: 2
           }
