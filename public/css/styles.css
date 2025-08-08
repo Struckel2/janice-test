@@ -2994,7 +2994,7 @@ footer {
 .extra-large-modal {
   max-width: 1200px;
   width: 95%;
-  max-height: 90vh;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
 }
@@ -3002,7 +3002,62 @@ footer {
 .extra-large-modal .modal-body {
   overflow-y: auto;
   flex: 1;
-  max-height: calc(90vh - 120px);
+  max-height: calc(85vh - 140px);
+  padding-right: 5px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-color) #f1f1f1;
+}
+
+/* Scroll bar customizada para webkit browsers */
+.extra-large-modal .modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.extra-large-modal .modal-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.extra-large-modal .modal-body::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+.extra-large-modal .modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}
+
+/* Responsividade melhorada para modais */
+@media (max-height: 800px) {
+  .extra-large-modal {
+    max-height: 80vh;
+  }
+  
+  .extra-large-modal .modal-body {
+    max-height: calc(80vh - 140px);
+  }
+}
+
+@media (max-height: 600px) {
+  .extra-large-modal {
+    max-height: 95vh;
+  }
+  
+  .extra-large-modal .modal-body {
+    max-height: calc(95vh - 120px);
+  }
+}
+
+@media (max-width: 768px) {
+  .extra-large-modal {
+    width: 98%;
+    max-height: 90vh;
+  }
+  
+  .extra-large-modal .modal-body {
+    max-height: calc(90vh - 120px);
+    padding-right: 3px;
+  }
 }
 
 .form-row {
