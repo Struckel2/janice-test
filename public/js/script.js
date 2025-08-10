@@ -315,12 +315,12 @@ document.addEventListener('DOMContentLoaded', () => {
         this.updateUI();
         console.log('🔍 [DEBUG-FRONTEND] UI atualizada após conclusão');
         
-        // 🚀 CORREÇÃO: Para mockups, remover imediatamente pois não há navegação automática
+        // 🚀 CORREÇÃO: Para mockups, remover imediatamente após conclusão
         if (process.tipo === 'mockup') {
-          console.log('🔍 [DEBUG-FRONTEND] Mockup concluído - removendo processo imediatamente');
+          console.log('🔍 [DEBUG-FRONTEND] Mockup concluído - removendo processo após 3 segundos');
           setTimeout(() => {
             this.removeProcess(data.processId);
-          }, 2000); // Remover após 2 segundos para dar tempo de ver a conclusão
+          }, 3000); // Remover após 3 segundos para dar tempo de ver a conclusão
         } else {
           // Para outros tipos, manter o comportamento original (5 segundos)
           setTimeout(() => {
@@ -6093,10 +6093,8 @@ ${currentActionPlanData.conteudo}`;
     }
   }
   
-  // Atualizar preview das edições selecionadas (opcional)
+  // 🚀 VALIDAÇÃO RIGOROSA: Atualizar preview das edições com validação obrigatória avançada
   function updateEditPreview() {
-    // Esta função pode ser expandida para mostrar um preview das modificações selecionadas
-    // Por enquanto, apenas log para debug
     const selectedCategories = [];
     
     // Contar categorias selecionadas
@@ -6107,18 +6105,102 @@ ${currentActionPlanData.conteudo}`;
     const customInstructions = document.getElementById('custom-edit-instructions')?.value?.trim();
     
     console.log('🎨 [EDIT-PREVIEW] Categorias selecionadas:', selectedCategories.length);
-    console.log('🎨 [EDIT-PREVIEW] Instruções personalizadas:', !!customInstructions);
+    console.log('🎨 [EDIT-PREVIEW] Instruções personalizadas:', customInstructions);
     
-    // Atualizar botão de processar baseado nas seleções
+    // 🚀 VALIDAÇÃO CRÍTICA: Análise rigorosa das instruções
     const processBtn = document.getElementById('process-edit-btn');
     if (processBtn) {
-      const hasSelections = selectedCategories.length > 0 || customInstructions;
-      processBtn.disabled = !hasSelections;
       
-      if (hasSelections) {
-        processBtn.innerHTML = '<i class="fas fa-magic"></i> 🔄 Processar Edição';
+      // ✅ CRITÉRIOS DE VALIDAÇÃO RIGOROSOS
+      const hasCategories = selectedCategories.length > 0;
+      const hasInstructions = customInstructions && customInstructions.length >= 15; // Mínimo 15 caracteres
+      
+      // 🚨 DETECTAR INSTRUÇÕES VAGAS (palavras proibidas sem contexto)
+      const vagueTerms = [
+        'mudar', 'alterar', 'modificar', 'trocar', 'ajustar', 'melhorar', 
+        'arrumar', 'corrigir', 'atualizar', 'editar', 'refazer'
+      ];
+      
+      let isVague = false;
+      let vagueReason = '';
+      
+      if (customInstructions) {
+        const instructionsLower = customInstructions.toLowerCase();
+        
+        // Verificar se contém apenas termos vagos
+        const containsVagueTerms = vagueTerms.some(term => instructionsLower.includes(term));
+        
+        // Verificar se é muito curto (menos de 30 caracteres)
+        const isTooShort = customInstructions.length < 30;
+        
+        // Verificar se não contém especificações (cores, posições, textos específicos)
+        const hasSpecifics = /(?:cor|texto|fonte|posição|tamanho|"[^"]+"|'[^']+'|\d+|px|%|esquerda|direita|centro|cima|baixo|azul|verde|vermelho|amarelo|preto|branco)/i.test(customInstructions);
+        
+        // Verificar se contém apenas uma palavra vaga
+        const words = customInstructions.split(/\s+/).filter(w => w.length > 2);
+        const isOnlyVagueWords = words.length <= 3 && containsVagueTerms;
+        
+        if (isTooShort && containsVagueTerms) {
+          isVague = true;
+          vagueReason = 'Instruções muito curtas e vagas';
+        } else if (isOnlyVagueWords) {
+          isVague = true;
+          vagueReason = 'Instruções contêm apenas termos genéricos';
+        } else if (containsVagueTerms && !hasSpecifics) {
+          isVague = true;
+          vagueReason = 'Faltam detalhes específicos (cores, textos, posições)';
+        }
+      }
+      
+      // 🎯 VALIDAÇÃO FINAL
+      const isValid = hasInstructions && !isVague;
+      
+      processBtn.disabled = !isValid;
+      
+      // 🚨 MENSAGENS DE FEEDBACK ESPECÍFICAS
+      if (!hasInstructions) {
+        processBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ⚠️ Descreva ESPECIFICAMENTE o que editar';
+        processBtn.classList.add('warning');
+        processBtn.title = 'Exemplo: "Alterar o título de \'ABC\' para \'XYZ\' mantendo a mesma fonte e posição"';
+      } else if (isVague) {
+        processBtn.innerHTML = `<i class="fas fa-ban"></i> ❌ ${vagueReason}`;
+        processBtn.classList.add('warning');
+        processBtn.title = 'Seja específico! Mencione cores exatas, textos específicos, posições detalhadas, etc.';
       } else {
-        processBtn.innerHTML = '<i class="fas fa-magic"></i> 🔄 Selecione modificações';
+        processBtn.innerHTML = '<i class="fas fa-magic"></i> ✅ Processar Edição';
+        processBtn.classList.remove('warning');
+        processBtn.title = 'Instruções válidas - pronto para processar';
+      }
+      
+      // 💡 ADICIONAR EXEMPLOS DINÂMICOS
+      const examplesContainer = document.getElementById('edit-examples');
+      if (!examplesContainer) {
+        const examples = document.createElement('div');
+        examples.id = 'edit-examples';
+        examples.className = 'edit-examples';
+        examples.style.cssText = `
+          margin-top: 10px;
+          padding: 10px;
+          background: #f8f9fa;
+          border-radius: 6px;
+          border-left: 4px solid #007bff;
+          font-size: 13px;
+          line-height: 1.4;
+        `;
+        
+        examples.innerHTML = `
+          <strong>💡 Exemplos de instruções específicas:</strong><br>
+          ✅ "Alterar o título principal de 'Empresa ABC' para 'Nova Empresa XYZ' mantendo a mesma fonte e cor azul"<br>
+          ✅ "Mudar a cor do botão 'Comprar Agora' de azul para verde #28a745, mantendo o mesmo tamanho e posição"<br>
+          ✅ "Substituir a imagem do produto pela foto de um smartphone, mantendo o mesmo enquadramento"<br>
+          ❌ "mudar cores" (muito vago)<br>
+          ❌ "alterar textos" (não específico)
+        `;
+        
+        const instructionsTextarea = document.getElementById('custom-edit-instructions');
+        if (instructionsTextarea && instructionsTextarea.parentNode) {
+          instructionsTextarea.parentNode.appendChild(examples);
+        }
       }
     }
   }

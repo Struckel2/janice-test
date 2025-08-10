@@ -774,31 +774,54 @@ router.post('/galeria/editar', async (req, res) => {
       });
     }
 
-    // Construir prompt de edição baseado nas categorias e instruções
+    // 🚀 CORREÇÃO AVANÇADA: Construir prompt de edição contextual e específico
     let promptEdicao = '';
 
-    // Processar categorias selecionadas
-    if (categorias && categorias.length > 0) {
-      const modificacoes = [];
-      categorias.forEach(categoria => {
-        categoria.modificacoes.forEach(mod => {
-          modificacoes.push(mod);
-        });
-      });
-      promptEdicao = modificacoes.join(', ');
+    // 🎯 CONTEXTO DETALHADO DA IMAGEM ORIGINAL
+    if (metadados?.promptOriginal) {
+      promptEdicao += `ORIGINAL IMAGE CONTEXT: "${metadados.promptOriginal}"\n\n`;
+      promptEdicao += `You are editing an existing image that was created with the above description. `;
+    } else {
+      promptEdicao += `You are editing an existing image. `;
     }
 
-    // Adicionar instruções personalizadas
+    promptEdicao += `Your task is to make ONLY the specific changes requested below while preserving ALL other visual elements, layout, composition, and style exactly as they are.\n\n`;
+
+    // 🔧 INSTRUÇÕES ESPECÍFICAS PRIMEIRO (mais importantes)
     if (instrucoes && instrucoes.trim() !== '') {
-      if (promptEdicao) {
-        promptEdicao += ', ' + instrucoes.trim();
-      } else {
-        promptEdicao = instrucoes.trim();
-      }
+      promptEdicao += `PRIMARY EDITING INSTRUCTIONS:\n`;
+      promptEdicao += `${instrucoes.trim()}\n\n`;
+      
+      // Adicionar diretrizes de preservação específicas
+      promptEdicao += `PRESERVATION GUIDELINES:\n`;
+      promptEdicao += `- Keep the exact same layout and composition\n`;
+      promptEdicao += `- Maintain all existing visual elements not mentioned in the instructions\n`;
+      promptEdicao += `- Preserve the original style, colors, and atmosphere unless specifically requested to change\n`;
+      promptEdicao += `- Only modify what is explicitly described in the instructions above\n\n`;
     }
 
-    // Garantir que o prompt seja conciso e direto
-    promptEdicao = promptEdicao.replace(/\n/g, ' ').trim();
+    // 🏷️ CATEGORIAS SELECIONADAS (como contexto adicional)
+    if (categorias && categorias.length > 0) {
+      promptEdicao += `ADDITIONAL CONTEXT - Categories selected for editing:\n`;
+      categorias.forEach(categoria => {
+        promptEdicao += `${categoria.categoria.toUpperCase()} modifications:\n`;
+        categoria.modificacoes.forEach(mod => {
+          promptEdicao += `- ${mod} (preserve existing positioning and style)\n`;
+        });
+        promptEdicao += '\n';
+      });
+    }
+
+    // 🎯 DIRETRIZES FINAIS RIGOROSAS
+    promptEdicao += `CRITICAL REQUIREMENTS:\n`;
+    promptEdicao += `- This is an EDIT, not a new creation\n`;
+    promptEdicao += `- Preserve the original image's core identity and visual structure\n`;
+    promptEdicao += `- Make changes seamlessly integrated with the existing design\n`;
+    promptEdicao += `- Maintain professional quality and visual coherence\n`;
+    promptEdicao += `- Only alter elements specifically mentioned in the instructions`;
+
+    // Garantir que o prompt seja bem formatado
+    promptEdicao = promptEdicao.replace(/\n\n\n+/g, '\n\n').trim();
 
     console.log('🎨 [IMAGE-EDITOR] Prompt de edição otimizado:', promptEdicao);
 
