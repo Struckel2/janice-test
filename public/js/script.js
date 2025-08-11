@@ -4086,9 +4086,104 @@ ${currentActionPlanData.conteudo}`;
     }
   }
   
+  // 🚀 CORREÇÃO: Função para resetar todas as seções de edição
+  function resetEditSections() {
+    console.log('🔄 [RESET-SECTIONS] Resetando todas as seções de edição...');
+    
+    // Lista de todas as seções de edição
+    const editSections = [
+      'color-section-header',
+      'artistic-section-header'
+    ];
+    
+    editSections.forEach(sectionId => {
+      const headerSection = document.getElementById(sectionId);
+      const contentSectionId = sectionId.replace('-header', '-content');
+      const contentSection = document.getElementById(contentSectionId);
+      
+      if (headerSection && contentSection) {
+        // Contrair seção
+        headerSection.classList.remove('expanded');
+        contentSection.style.display = 'none';
+        
+        // Resetar seta
+        const arrow = headerSection.querySelector('.section-toggle i');
+        if (arrow) arrow.className = 'fas fa-chevron-down';
+        
+        console.log('✅ [RESET-SECTIONS] Seção resetada:', sectionId);
+      }
+    });
+    
+    // Resetar especificamente o container de instruções de cores
+    const colorInstructionsContainer = document.getElementById('color-instructions-container');
+    if (colorInstructionsContainer) {
+      colorInstructionsContainer.style.display = 'none';
+      
+      // Resetar seta do botão de edição de cores
+      const colorEditButton = document.getElementById('color-edit-button');
+      if (colorEditButton) {
+        const arrow = colorEditButton.querySelector('.color-edit-arrow i');
+        if (arrow) arrow.className = 'fas fa-chevron-down';
+      }
+      
+      console.log('✅ [RESET-SECTIONS] Container de instruções de cores resetado');
+    }
+    
+    // 🚀 CORREÇÃO: Reset completo de todos os controles e seleções
+    
+    // Limpar seleções de estilo artístico
+    document.querySelectorAll('.style-option').forEach(option => {
+      option.classList.remove('selected');
+    });
+    console.log('✅ [RESET-SECTIONS] Seleções de estilo artístico removidas');
+    
+    // Resetar slider de intensidade de estilo
+    const styleIntensityRange = document.getElementById('style-intensity');
+    const styleIntensityValue = document.getElementById('style-intensity-value');
+    if (styleIntensityRange && styleIntensityValue) {
+      styleIntensityRange.value = 50;
+      styleIntensityValue.textContent = '50%';
+      console.log('✅ [RESET-SECTIONS] Slider de intensidade resetado para 50%');
+    }
+    
+    // Limpar checkboxes de preservação
+    document.querySelectorAll('.preservation-options input[type="checkbox"]').forEach(checkbox => {
+      checkbox.checked = false;
+    });
+    console.log('✅ [RESET-SECTIONS] Checkboxes de preservação desmarcados');
+    
+    // Limpar textarea de instruções personalizadas
+    const customInstructions = document.getElementById('custom-edit-instructions');
+    if (customInstructions) {
+      customInstructions.value = '';
+      console.log('✅ [RESET-SECTIONS] Textarea de instruções limpo');
+    }
+    
+    // Resetar estado das variáveis globais de estilo artístico
+    if (typeof currentSelectedStyle !== 'undefined') {
+      currentSelectedStyle = null;
+      console.log('✅ [RESET-SECTIONS] Estado do estilo artístico resetado');
+    }
+    
+    // Resetar botão de processar edição
+    const processBtn = document.getElementById('process-edit-btn');
+    if (processBtn) {
+      processBtn.disabled = true;
+      processBtn.innerHTML = '<i class="fas fa-magic"></i> 🔄 Processar Edição';
+      processBtn.className = processBtn.className.replace(/\bwarning\b/g, '');
+      processBtn.title = 'Descreva o que você quer editar na imagem';
+      console.log('✅ [RESET-SECTIONS] Botão de processar edição resetado');
+    }
+    
+    console.log('✅ [RESET-SECTIONS] Reset completo das seções concluído');
+  }
+  
   // Configurar modal de edição de imagem
   function setupImageEditor(image) {
     console.log('🎨 [IMAGE-EDITOR] Configurando editor para:', image.titulo);
+    
+    // 🚀 CORREÇÃO: Reset completo das seções de edição
+    resetEditSections();
     
     // Preencher imagem original
     const originalPreview = document.getElementById('original-preview');
@@ -6133,7 +6228,7 @@ ${currentActionPlanData.conteudo}`;
       return;
     }
     
-    const arrow = headerSection.querySelector('.section-arrow i');
+    const arrow = headerSection.querySelector('.section-toggle i');
     
     // Verificar estado atual baseado no header
     const isExpanded = headerSection.classList.contains('expanded');
@@ -6150,6 +6245,33 @@ ${currentActionPlanData.conteudo}`;
       contentSection.style.display = 'block';
       if (arrow) arrow.className = 'fas fa-chevron-up';
       console.log('🎨 [TOGGLE-SECTION] Seção expandida:', headerSectionId);
+      
+      // 🚀 CORREÇÃO: Fluxo direto para modificação de cores
+      if (headerSectionId === 'color-section-header') {
+        // Automaticamente mostrar o campo de instruções de cores
+        const colorInstructionsContainer = document.getElementById('color-instructions-container');
+        const colorEditButton = document.getElementById('color-edit-button');
+        
+        if (colorInstructionsContainer && colorEditButton) {
+          // Mostrar container de instruções
+          colorInstructionsContainer.style.display = 'block';
+          
+          // Atualizar seta do botão
+          const arrow = colorEditButton.querySelector('.color-edit-arrow i');
+          if (arrow) arrow.className = 'fas fa-chevron-up';
+          
+          // Focar no textarea após um pequeno delay
+          setTimeout(() => {
+            const textarea = document.getElementById('custom-edit-instructions');
+            if (textarea) {
+              textarea.focus();
+              console.log('✅ [TOGGLE-SECTION] Foco aplicado no textarea de cores');
+            }
+          }, 100);
+          
+          console.log('✅ [TOGGLE-SECTION] Fluxo direto para cores ativado');
+        }
+      }
     }
   }
   
@@ -7142,6 +7264,101 @@ ${currentActionPlanData.conteudo}`;
     }
   }
   
+  // 🚀 CORREÇÃO: Configurar event listeners para seções de edição
+  function setupEditSectionEventListeners() {
+    console.log('🎨 [SETUP-EVENTS] Configurando event listeners para seções de edição...');
+    
+    // Event listener para seção de modificação de cores
+    const colorSectionHeader = document.getElementById('color-section-header');
+    if (colorSectionHeader) {
+      colorSectionHeader.addEventListener('click', () => {
+        console.log('🎨 [DEBUG] Clique na seção de modificação de cores');
+        toggleEditSection('color-section-header');
+      });
+      console.log('✅ [SETUP-EVENTS] Event listener para seção de cores configurado');
+    } else {
+      console.log('⚠️ [SETUP-EVENTS] Seção de cores não encontrada');
+    }
+    
+    // Event listener para seção de estilo artístico
+    const artisticSectionHeader = document.getElementById('artistic-section-header');
+    if (artisticSectionHeader) {
+      artisticSectionHeader.addEventListener('click', () => {
+        console.log('🎨 [DEBUG] Clique na seção de estilo artístico');
+        toggleEditSection('artistic-section-header');
+      });
+      console.log('✅ [SETUP-EVENTS] Event listener para seção artística configurado');
+    } else {
+      console.log('⚠️ [SETUP-EVENTS] Seção artística não encontrada');
+    }
+    
+    // Event listener para botão de edição de cores
+    const colorEditButton = document.getElementById('color-edit-button');
+    if (colorEditButton) {
+      colorEditButton.addEventListener('click', () => {
+        console.log('🎨 [DEBUG] Clique no botão de edição de cores');
+        toggleColorInstructions();
+      });
+      console.log('✅ [SETUP-EVENTS] Event listener para botão de cores configurado');
+    } else {
+      console.log('⚠️ [SETUP-EVENTS] Botão de edição de cores não encontrado');
+    }
+    
+    // Event listener para textarea de instruções
+    const customInstructions = document.getElementById('custom-edit-instructions');
+    if (customInstructions) {
+      customInstructions.addEventListener('input', () => {
+        updateColorEditPreview();
+      });
+      console.log('✅ [SETUP-EVENTS] Event listener para textarea configurado');
+    } else {
+      console.log('⚠️ [SETUP-EVENTS] Textarea de instruções não encontrado');
+    }
+    
+    console.log('✅ [SETUP-EVENTS] Todos os event listeners configurados');
+  }
+  
+  // Função para alternar instruções de cores
+  function toggleColorInstructions() {
+    console.log('🎨 [TOGGLE-COLOR] Alternando instruções de cores');
+    
+    const colorInstructionsContainer = document.getElementById('color-instructions-container');
+    const colorEditButton = document.getElementById('color-edit-button');
+    
+    if (!colorInstructionsContainer || !colorEditButton) {
+      console.error('🎨 [TOGGLE-COLOR] Elementos não encontrados:', {
+        container: !!colorInstructionsContainer,
+        button: !!colorEditButton
+      });
+      return;
+    }
+    
+    const isVisible = colorInstructionsContainer.style.display !== 'none';
+    
+    if (isVisible) {
+      // Esconder container
+      colorInstructionsContainer.style.display = 'none';
+      const arrow = colorEditButton.querySelector('.color-edit-arrow i');
+      if (arrow) arrow.className = 'fas fa-chevron-down';
+      console.log('🎨 [TOGGLE-COLOR] Container escondido');
+    } else {
+      // Mostrar container
+      colorInstructionsContainer.style.display = 'block';
+      const arrow = colorEditButton.querySelector('.color-edit-arrow i');
+      if (arrow) arrow.className = 'fas fa-chevron-up';
+      
+      // Focar no textarea
+      const textarea = document.getElementById('custom-edit-instructions');
+      if (textarea) {
+        setTimeout(() => {
+          textarea.focus();
+          console.log('🎨 [TOGGLE-COLOR] Foco aplicado no textarea');
+        }, 100);
+      }
+      console.log('🎨 [TOGGLE-COLOR] Container mostrado');
+    }
+  }
+  
   // Adicionar botão de estilo artístico na galeria
   function addArtisticStyleButtonToGallery() {
     // Esta função será chamada quando a galeria for renderizada
@@ -7232,6 +7449,9 @@ ${currentActionPlanData.conteudo}`;
     
     // Configurar eventos de estilo artístico
     setupArtisticStyleEvents();
+    
+    // 🚀 CORREÇÃO: Configurar event listeners para seções de edição
+    setupEditSectionEventListeners();
   };
 
   // Carregar clientes ao iniciar e mostrar tela de boas-vindas
