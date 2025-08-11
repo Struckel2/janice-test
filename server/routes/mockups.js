@@ -744,13 +744,19 @@ router.post('/galeria/editar', async (req, res) => {
     } = req.body;
 
     console.log('🎨 [IMAGE-EDITOR] ===== INICIANDO EDIÇÃO DE IMAGEM =====');
-    console.log('🎨 [IMAGE-EDITOR] Dados recebidos:', {
-      imagemId,
-      imagemUrl: imagemUrl ? imagemUrl.substring(0, 50) + '...' : 'VAZIO',
-      categorias: categorias?.length || 0,
-      instrucoes: instrucoes ? instrucoes.substring(0, 50) + '...' : 'VAZIO',
-      metadados
-    });
+    console.log('🎨 [IMAGE-EDITOR] Timestamp:', new Date().toISOString());
+    console.log('🎨 [IMAGE-EDITOR] ===== DADOS RECEBIDOS DO FRONTEND =====');
+    console.log('🎨 [IMAGE-EDITOR] imagemId:', imagemId);
+    console.log('🎨 [IMAGE-EDITOR] imagemUrl completa:', imagemUrl);
+    console.log('🎨 [IMAGE-EDITOR] imagemUrl length:', imagemUrl?.length || 0);
+    console.log('🎨 [IMAGE-EDITOR] imagemUrl válida?', imagemUrl?.startsWith('http'));
+    console.log('🎨 [IMAGE-EDITOR] categorias:', JSON.stringify(categorias, null, 2));
+    console.log('🎨 [IMAGE-EDITOR] categorias count:', categorias?.length || 0);
+    console.log('🎨 [IMAGE-EDITOR] instrucoes RAW:', `"${instrucoes}"`);
+    console.log('🎨 [IMAGE-EDITOR] instrucoes length:', instrucoes?.length || 0);
+    console.log('🎨 [IMAGE-EDITOR] instrucoes trimmed:', `"${instrucoes?.trim()}"`);
+    console.log('🎨 [IMAGE-EDITOR] metadados:', JSON.stringify(metadados, null, 2));
+    console.log('🎨 [IMAGE-EDITOR] ===== FIM DADOS RECEBIDOS =====');
 
     // Validações básicas
     if (!imagemId) {
@@ -775,39 +781,79 @@ router.post('/galeria/editar', async (req, res) => {
     }
 
     // 🚀 CORREÇÃO SIMPLIFICADA: Prompt direto e eficaz para preservação
+    console.log('🎨 [PROMPT-BUILD] ===== INICIANDO CONSTRUÇÃO DO PROMPT =====');
     let promptEdicao = '';
 
     // 🎯 PROMPT SIMPLES E DIRETO
+    console.log('🎨 [PROMPT-BUILD] Verificando instruções...');
+    console.log('🎨 [PROMPT-BUILD] instrucoes existe?', !!instrucoes);
+    console.log('🎨 [PROMPT-BUILD] instrucoes.trim() !== ""?', instrucoes && instrucoes.trim() !== '');
+    
     if (instrucoes && instrucoes.trim() !== '') {
+      console.log('🎨 [PROMPT-BUILD] Usando instruções do usuário como base');
       // Usar apenas as instruções do usuário, de forma simples e direta
       promptEdicao = instrucoes.trim();
+      console.log('🎨 [PROMPT-BUILD] Prompt inicial:', `"${promptEdicao}"`);
+      
+      // Verificar se já tem palavras de preservação
+      const temKeep = promptEdicao.toLowerCase().includes('keep');
+      const temMaintain = promptEdicao.toLowerCase().includes('maintain');
+      const temPreserve = promptEdicao.toLowerCase().includes('preserve');
+      const temSame = promptEdicao.toLowerCase().includes('same');
+      
+      console.log('🎨 [PROMPT-BUILD] Verificação de palavras de preservação:');
+      console.log('🎨 [PROMPT-BUILD] - tem "keep"?', temKeep);
+      console.log('🎨 [PROMPT-BUILD] - tem "maintain"?', temMaintain);
+      console.log('🎨 [PROMPT-BUILD] - tem "preserve"?', temPreserve);
+      console.log('🎨 [PROMPT-BUILD] - tem "same"?', temSame);
       
       // Adicionar contexto mínimo para preservação apenas se necessário
-      if (!promptEdicao.toLowerCase().includes('keep') && 
-          !promptEdicao.toLowerCase().includes('maintain') && 
-          !promptEdicao.toLowerCase().includes('preserve') &&
-          !promptEdicao.toLowerCase().includes('same')) {
+      if (!temKeep && !temMaintain && !temPreserve && !temSame) {
+        console.log('🎨 [PROMPT-BUILD] Adicionando contexto de preservação');
         promptEdicao += '. Keep the same shape, design and composition';
+        console.log('🎨 [PROMPT-BUILD] Prompt após preservação:', `"${promptEdicao}"`);
+      } else {
+        console.log('🎨 [PROMPT-BUILD] Preservação já presente, não adicionando');
       }
     }
 
     // 🏷️ CATEGORIAS COMO CONTEXTO ADICIONAL (apenas se não há instruções)
-    if ((!instrucoes || instrucoes.trim() === '') && categorias && categorias.length > 0) {
+    console.log('🎨 [PROMPT-BUILD] Verificando categorias...');
+    const semInstrucoes = !instrucoes || instrucoes.trim() === '';
+    const temCategorias = categorias && categorias.length > 0;
+    console.log('🎨 [PROMPT-BUILD] Sem instruções?', semInstrucoes);
+    console.log('🎨 [PROMPT-BUILD] Tem categorias?', temCategorias);
+    
+    if (semInstrucoes && temCategorias) {
+      console.log('🎨 [PROMPT-BUILD] Usando categorias como base');
       let modificacoes = [];
-      categorias.forEach(categoria => {
-        categoria.modificacoes.forEach(mod => {
+      categorias.forEach((categoria, index) => {
+        console.log(`🎨 [PROMPT-BUILD] Categoria ${index}:`, categoria);
+        categoria.modificacoes.forEach((mod, modIndex) => {
+          console.log(`🎨 [PROMPT-BUILD] - Modificação ${modIndex}:`, mod);
           modificacoes.push(mod);
         });
       });
+      console.log('🎨 [PROMPT-BUILD] Modificações coletadas:', modificacoes);
       promptEdicao = modificacoes.join(', ') + '. Keep the same shape, design and composition';
+      console.log('🎨 [PROMPT-BUILD] Prompt de categorias:', `"${promptEdicao}"`);
     }
 
     // Fallback se não há instruções nem categorias
-    if (!promptEdicao || promptEdicao.trim() === '') {
+    console.log('🎨 [PROMPT-BUILD] Verificando fallback...');
+    const promptVazio = !promptEdicao || promptEdicao.trim() === '';
+    console.log('🎨 [PROMPT-BUILD] Prompt está vazio?', promptVazio);
+    
+    if (promptVazio) {
+      console.log('🎨 [PROMPT-BUILD] Usando fallback padrão');
       promptEdicao = 'Make subtle improvements while keeping the same shape, design and composition';
+      console.log('🎨 [PROMPT-BUILD] Prompt fallback:', `"${promptEdicao}"`);
     }
 
-    console.log('🎨 [IMAGE-EDITOR] Prompt de edição otimizado:', promptEdicao);
+    console.log('🎨 [PROMPT-BUILD] ===== PROMPT FINAL CONSTRUÍDO =====');
+    console.log('🎨 [PROMPT-BUILD] Prompt final:', `"${promptEdicao}"`);
+    console.log('🎨 [PROMPT-BUILD] Comprimento:', promptEdicao.length);
+    console.log('🎨 [PROMPT-BUILD] ===== FIM CONSTRUÇÃO PROMPT =====');
 
     // Integração real com Replicate usando Flux 1.1 Pro para edição
     const Replicate = require('replicate');
@@ -823,17 +869,34 @@ router.post('/galeria/editar', async (req, res) => {
     // 🔍 LOGS DETALHADOS PRÉ-CHAMADA
     console.log('🔍 [DEBUG-REPLICATE] ===== PRÉ-CHAMADA REPLICATE =====');
     console.log('🔍 [DEBUG-REPLICATE] Modelo exato:', "black-forest-labs/flux-kontext-pro");
-    console.log('🔍 [DEBUG-REPLICATE] Input completo:', JSON.stringify({
+    
+    // Preparar input object para logs detalhados
+    const inputObject = {
       prompt: promptEdicao,
       image: imagemUrl,
-      prompt_strength: 0.8,
+      prompt_strength: 0.5, // 🔧 REDUZIDO: Menos agressivo para preservar forma original
       output_format: "png",
       output_quality: 90,
       safety_tolerance: 2
-    }, null, 2));
+    };
+    
+    console.log('🔍 [DEBUG-REPLICATE] ===== INPUT DETALHADO =====');
+    console.log('🔍 [DEBUG-REPLICATE] prompt:', `"${inputObject.prompt}"`);
+    console.log('🔍 [DEBUG-REPLICATE] prompt length:', inputObject.prompt.length);
+    console.log('🔍 [DEBUG-REPLICATE] image URL:', inputObject.image);
+    console.log('🔍 [DEBUG-REPLICATE] image URL length:', inputObject.image.length);
+    console.log('🔍 [DEBUG-REPLICATE] image URL válida?', inputObject.image.startsWith('http'));
+    console.log('🔍 [DEBUG-REPLICATE] prompt_strength:', inputObject.prompt_strength);
+    console.log('🔍 [DEBUG-REPLICATE] output_format:', inputObject.output_format);
+    console.log('🔍 [DEBUG-REPLICATE] output_quality:', inputObject.output_quality);
+    console.log('🔍 [DEBUG-REPLICATE] safety_tolerance:', inputObject.safety_tolerance);
+    console.log('🔍 [DEBUG-REPLICATE] Input completo JSON:', JSON.stringify(inputObject, null, 2));
+    console.log('🔍 [DEBUG-REPLICATE] ===== FIM INPUT DETALHADO =====');
+    
     console.log('🔍 [DEBUG-REPLICATE] Timestamp início:', new Date().toISOString());
     console.log('🔍 [DEBUG-REPLICATE] Replicate instance:', replicate ? 'PRESENTE' : 'AUSENTE');
     console.log('🔍 [DEBUG-REPLICATE] API Token presente:', process.env.REPLICATE_API_TOKEN ? 'SIM' : 'NÃO');
+    console.log('🔍 [DEBUG-REPLICATE] API Token length:', process.env.REPLICATE_API_TOKEN?.length || 0);
     
     const startTime = Date.now();
     
@@ -843,14 +906,7 @@ router.post('/galeria/editar', async (req, res) => {
       
       const prediction = await replicate.predictions.create({
         model: "black-forest-labs/flux-kontext-pro",
-        input: {
-          prompt: promptEdicao,
-          image: imagemUrl,
-          prompt_strength: 0.5, // 🔧 REDUZIDO: Menos agressivo para preservar forma original
-          output_format: "png",
-          output_quality: 90,
-          safety_tolerance: 2
-        }
+        input: inputObject
       });
 
       const createTime = Date.now();
