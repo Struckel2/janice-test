@@ -7349,31 +7349,27 @@ ${currentActionPlanData.conteudo}`;
   function setupEditSectionEventListeners() {
     console.log('🎨 [SETUP-EVENTS] Configurando event listeners para seções de edição...');
     
-    // Event listener para seção de modificação de cores
+    // Configurar cliques nas seções de edição
     const colorSectionHeader = document.getElementById('color-section-header');
+    const artisticSectionHeader = document.getElementById('artistic-section-header');
+    
     if (colorSectionHeader) {
       colorSectionHeader.addEventListener('click', () => {
         console.log('🎨 [DEBUG] Clique na seção de modificação de cores');
         toggleEditSection('color-section-header');
       });
       console.log('✅ [SETUP-EVENTS] Event listener para seção de cores configurado');
-    } else {
-      console.log('⚠️ [SETUP-EVENTS] Seção de cores não encontrada');
     }
     
-    // Event listener para seção de estilo artístico
-    const artisticSectionHeader = document.getElementById('artistic-section-header');
     if (artisticSectionHeader) {
       artisticSectionHeader.addEventListener('click', () => {
         console.log('🎨 [DEBUG] Clique na seção de estilo artístico');
         toggleEditSection('artistic-section-header');
       });
       console.log('✅ [SETUP-EVENTS] Event listener para seção artística configurado');
-    } else {
-      console.log('⚠️ [SETUP-EVENTS] Seção artística não encontrada');
     }
     
-    // Event listener para botão de edição de cores
+    // Configurar clique no botão de edição de cores
     const colorEditButton = document.getElementById('color-edit-button');
     if (colorEditButton) {
       colorEditButton.addEventListener('click', () => {
@@ -7381,8 +7377,6 @@ ${currentActionPlanData.conteudo}`;
         toggleColorInstructions();
       });
       console.log('✅ [SETUP-EVENTS] Event listener para botão de cores configurado');
-    } else {
-      console.log('⚠️ [SETUP-EVENTS] Botão de edição de cores não encontrado');
     }
     
     // Event listener para textarea de instruções
@@ -7392,8 +7386,6 @@ ${currentActionPlanData.conteudo}`;
         updateProcessButtonValidation();
       });
       console.log('✅ [SETUP-EVENTS] Event listener para textarea configurado');
-    } else {
-      console.log('⚠️ [SETUP-EVENTS] Textarea de instruções não encontrado');
     }
     
     // Event listeners para checkboxes de preservação
