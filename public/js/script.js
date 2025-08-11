@@ -6093,7 +6093,7 @@ ${currentActionPlanData.conteudo}`;
     }
   }
   
-  // 🚀 VALIDAÇÃO RIGOROSA: Atualizar preview das edições com validação obrigatória avançada
+  // 🚀 VALIDAÇÃO INTELIGENTE: Atualizar preview das edições com validação balanceada
   function updateEditPreview() {
     const selectedCategories = [];
     
@@ -6107,70 +6107,89 @@ ${currentActionPlanData.conteudo}`;
     console.log('🎨 [EDIT-PREVIEW] Categorias selecionadas:', selectedCategories.length);
     console.log('🎨 [EDIT-PREVIEW] Instruções personalizadas:', customInstructions);
     
-    // 🚀 VALIDAÇÃO CRÍTICA: Análise rigorosa das instruções
+    // 🚀 VALIDAÇÃO INTELIGENTE: Análise balanceada das instruções
     const processBtn = document.getElementById('process-edit-btn');
     if (processBtn) {
       
-      // ✅ CRITÉRIOS DE VALIDAÇÃO RIGOROSOS
+      // ✅ CRITÉRIOS DE VALIDAÇÃO INTELIGENTES
       const hasCategories = selectedCategories.length > 0;
-      const hasInstructions = customInstructions && customInstructions.length >= 15; // Mínimo 15 caracteres
+      const hasInstructions = customInstructions && customInstructions.length >= 10; // Reduzido para 10 caracteres
       
-      // 🚨 DETECTAR INSTRUÇÕES VAGAS (palavras proibidas sem contexto)
-      const vagueTerms = [
-        'mudar', 'alterar', 'modificar', 'trocar', 'ajustar', 'melhorar', 
-        'arrumar', 'corrigir', 'atualizar', 'editar', 'refazer'
-      ];
+      let isValid = false;
+      let buttonText = '';
+      let buttonClass = '';
+      let buttonTitle = '';
       
-      let isVague = false;
-      let vagueReason = '';
-      
-      if (customInstructions) {
+      if (!hasInstructions) {
+        // Sem instruções
+        buttonText = '<i class="fas fa-exclamation-triangle"></i> ⚠️ Descreva o que editar';
+        buttonClass = 'warning';
+        buttonTitle = 'Exemplo: "Mudar para branco e azul. Manter exatamente a mesma figura"';
+        isValid = false;
+      } else {
+        // Tem instruções - validar inteligentemente
         const instructionsLower = customInstructions.toLowerCase();
         
-        // Verificar se contém apenas termos vagos
-        const containsVagueTerms = vagueTerms.some(term => instructionsLower.includes(term));
+        // 🎯 TERMOS DE PRESERVAÇÃO (indicam que o usuário quer manter elementos)
+        const preservationTerms = [
+          'manter', 'preservar', 'conservar', 'exatamente', 'mesmo', 'mesma', 
+          'igual', 'idêntico', 'sem alterar', 'não mudar', 'manter o'
+        ];
         
-        // Verificar se é muito curto (menos de 30 caracteres)
-        const isTooShort = customInstructions.length < 30;
+        // 🎨 ESPECIFICAÇÕES VISUAIS (cores, elementos específicos)
+        const hasColorSpecs = /(?:branco|azul|verde|vermelho|amarelo|preto|cinza|rosa|roxo|laranja|#[0-9a-f]{3,6})/i.test(customInstructions);
+        const hasTextSpecs = /(?:"[^"]+"|'[^']+'|título|texto|palavra|frase)/i.test(customInstructions);
+        const hasPositionSpecs = /(?:esquerda|direita|centro|cima|baixo|superior|inferior|lateral)/i.test(customInstructions);
+        const hasElementSpecs = /(?:botão|logo|imagem|figura|elemento|ícone|símbolo)/i.test(customInstructions);
         
-        // Verificar se não contém especificações (cores, posições, textos específicos)
-        const hasSpecifics = /(?:cor|texto|fonte|posição|tamanho|"[^"]+"|'[^']+'|\d+|px|%|esquerda|direita|centro|cima|baixo|azul|verde|vermelho|amarelo|preto|branco)/i.test(customInstructions);
+        // 🔍 DETECTAR CONTEXTO DE PRESERVAÇÃO
+        const hasPreservationContext = preservationTerms.some(term => instructionsLower.includes(term));
         
-        // Verificar se contém apenas uma palavra vaga
-        const words = customInstructions.split(/\s+/).filter(w => w.length > 2);
-        const isOnlyVagueWords = words.length <= 3 && containsVagueTerms;
+        // 🔍 DETECTAR ESPECIFICAÇÕES VÁLIDAS
+        const hasValidSpecs = hasColorSpecs || hasTextSpecs || hasPositionSpecs || hasElementSpecs;
         
-        if (isTooShort && containsVagueTerms) {
-          isVague = true;
-          vagueReason = 'Instruções muito curtas e vagas';
-        } else if (isOnlyVagueWords) {
-          isVague = true;
-          vagueReason = 'Instruções contêm apenas termos genéricos';
-        } else if (containsVagueTerms && !hasSpecifics) {
-          isVague = true;
-          vagueReason = 'Faltam detalhes específicos (cores, textos, posições)';
+        // 🚨 DETECTAR INSTRUÇÕES REALMENTE VAGAS (sem contexto nem especificações)
+        const vagueOnlyTerms = ['mudar', 'alterar', 'modificar', 'trocar'];
+        const isOnlyVagueTerms = vagueOnlyTerms.some(term => 
+          instructionsLower === term || instructionsLower === term + ' cores' || instructionsLower === term + ' cor'
+        );
+        
+        // 🎯 LÓGICA DE VALIDAÇÃO INTELIGENTE
+        if (isOnlyVagueTerms) {
+          // Realmente vago - apenas "mudar" ou "mudar cores"
+          buttonText = '<i class="fas fa-ban"></i> ❌ Seja mais específico';
+          buttonClass = 'warning';
+          buttonTitle = 'Exemplo: "Mudar para azul e branco" ou "Alterar título para \'Novo Texto\'"';
+          isValid = false;
+        } else if (hasPreservationContext || hasValidSpecs) {
+          // Tem contexto de preservação OU especificações válidas
+          buttonText = '<i class="fas fa-magic"></i> ✅ Processar Edição';
+          buttonClass = '';
+          buttonTitle = 'Instruções válidas - pronto para processar';
+          isValid = true;
+        } else if (customInstructions.length >= 20) {
+          // Instruções longas o suficiente (provavelmente têm contexto)
+          buttonText = '<i class="fas fa-magic"></i> ✅ Processar Edição';
+          buttonClass = '';
+          buttonTitle = 'Instruções aceitas - pronto para processar';
+          isValid = true;
+        } else {
+          // Instruções curtas sem contexto claro
+          buttonText = '<i class="fas fa-exclamation-triangle"></i> ⚠️ Adicione mais detalhes';
+          buttonClass = 'warning';
+          buttonTitle = 'Seja mais específico sobre o que alterar e o que manter';
+          isValid = false;
         }
       }
       
-      // 🎯 VALIDAÇÃO FINAL
-      const isValid = hasInstructions && !isVague;
-      
+      // Aplicar estado do botão
       processBtn.disabled = !isValid;
-      
-      // 🚨 MENSAGENS DE FEEDBACK ESPECÍFICAS
-      if (!hasInstructions) {
-        processBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ⚠️ Descreva ESPECIFICAMENTE o que editar';
-        processBtn.classList.add('warning');
-        processBtn.title = 'Exemplo: "Alterar o título de \'ABC\' para \'XYZ\' mantendo a mesma fonte e posição"';
-      } else if (isVague) {
-        processBtn.innerHTML = `<i class="fas fa-ban"></i> ❌ ${vagueReason}`;
-        processBtn.classList.add('warning');
-        processBtn.title = 'Seja específico! Mencione cores exatas, textos específicos, posições detalhadas, etc.';
-      } else {
-        processBtn.innerHTML = '<i class="fas fa-magic"></i> ✅ Processar Edição';
-        processBtn.classList.remove('warning');
-        processBtn.title = 'Instruções válidas - pronto para processar';
+      processBtn.innerHTML = buttonText;
+      processBtn.className = processBtn.className.replace(/\bwarning\b/g, '');
+      if (buttonClass) {
+        processBtn.classList.add(buttonClass);
       }
+      processBtn.title = buttonTitle;
       
       // 💡 ADICIONAR EXEMPLOS DINÂMICOS
       const examplesContainer = document.getElementById('edit-examples');
