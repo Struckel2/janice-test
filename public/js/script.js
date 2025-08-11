@@ -6019,6 +6019,66 @@ ${currentActionPlanData.conteudo}`;
       });
     }
     
+    // ===== EVENTOS PARA ESTILO ARTÍSTICO =====
+    
+    // Botão de aplicar estilo artístico
+    const applyStyleBtn = document.getElementById('apply-style-btn');
+    if (applyStyleBtn) {
+      applyStyleBtn.addEventListener('click', applyArtisticStyle);
+    }
+    
+    // Botão de salvar imagem estilizada
+    const saveStyledImageBtn = document.getElementById('save-styled-image-btn');
+    if (saveStyledImageBtn) {
+      saveStyledImageBtn.addEventListener('click', saveStyledImage);
+    }
+    
+    // Botão de resetar estilo
+    const resetStyleBtn = document.getElementById('reset-style-btn');
+    if (resetStyleBtn) {
+      resetStyleBtn.addEventListener('click', resetArtisticStyleState);
+    }
+    
+    // Configurar seleção de estilos artísticos
+    document.querySelectorAll('.style-option').forEach(option => {
+      option.addEventListener('click', () => selectArtisticStyle(option));
+    });
+    
+    // Configurar slider de intensidade de estilo
+    const styleIntensityRange = document.getElementById('style-intensity');
+    const styleIntensityValue = document.getElementById('style-intensity-value');
+    if (styleIntensityRange && styleIntensityValue) {
+      styleIntensityRange.addEventListener('input', (e) => {
+        styleIntensityValue.textContent = `${e.target.value}%`;
+      });
+    }
+    
+    // Configurar navegação entre categorias de estilos
+    const categoryTabs = document.querySelectorAll('.category-tab');
+    const styleGrids = document.querySelectorAll('.style-grid');
+    
+    categoryTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Remover classe active de todas as abas
+        categoryTabs.forEach(t => t.classList.remove('active'));
+        
+        // Adicionar classe active à aba clicada
+        tab.classList.add('active');
+        
+        // Esconder todos os grids
+        styleGrids.forEach(grid => grid.classList.remove('active'));
+        
+        // Mostrar grid correspondente
+        const category = tab.dataset.category;
+        const targetGrid = document.querySelector(`[data-category="${category}"]`);
+        if (targetGrid) {
+          targetGrid.classList.add('active');
+        }
+        
+        console.log('🎨 [STYLE-CATEGORY] Categoria alterada para:', category);
+      });
+    });
+    
     // Fechar modal de edição ao clicar fora
     const imageEditorModal = document.getElementById('image-editor-modal');
     if (imageEditorModal) {
