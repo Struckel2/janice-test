@@ -6159,14 +6159,14 @@ ${currentActionPlanData.conteudo}`;
   if (colorSectionHeader) {
     colorSectionHeader.addEventListener('click', () => {
       console.log('🎨 [DEBUG] Clique na seção de modificação de cores');
-      toggleEditSection('color-section');
+      toggleEditSection('color-section-content');
     });
   }
   
   if (artisticSectionHeader) {
     artisticSectionHeader.addEventListener('click', () => {
       console.log('🎨 [DEBUG] Clique na seção de estilo artístico');
-      toggleEditSection('artistic-section');
+      toggleEditSection('artistic-section-content');
     });
   }
     
