@@ -6042,21 +6042,77 @@ ${currentActionPlanData.conteudo}`;
       });
     }
     
-    // Configurar eventos dos checkboxes de categorias
-    document.querySelectorAll('.edit-option input[type="checkbox"]').forEach(checkbox => {
-      checkbox.addEventListener('change', () => {
-        // Atualizar preview das seleções (opcional)
-        updateEditPreview();
-      });
-    });
+    // Configurar botão de modificação de cores
+    const colorEditButton = document.getElementById('color-edit-button');
+    const colorInstructionsContainer = document.getElementById('color-instructions-container');
     
-    // Configurar evento do textarea de instruções personalizadas
+    if (colorEditButton && colorInstructionsContainer) {
+      colorEditButton.addEventListener('click', () => {
+        const isVisible = colorInstructionsContainer.style.display !== 'none';
+        
+        if (isVisible) {
+          // Esconder container
+          colorInstructionsContainer.style.display = 'none';
+          colorEditButton.querySelector('.color-edit-arrow i').className = 'fas fa-chevron-down';
+        } else {
+          // Mostrar container
+          colorInstructionsContainer.style.display = 'block';
+          colorEditButton.querySelector('.color-edit-arrow i').className = 'fas fa-chevron-up';
+          
+          // Focar no textarea
+          const textarea = document.getElementById('custom-edit-instructions');
+          if (textarea) {
+            setTimeout(() => textarea.focus(), 100);
+          }
+        }
+      });
+    }
+    
+    // Configurar evento do textarea de instruções de cores
     const customInstructions = document.getElementById('custom-edit-instructions');
     if (customInstructions) {
       customInstructions.addEventListener('input', () => {
-        // Atualizar preview das instruções (opcional)
-        updateEditPreview();
+        // Atualizar preview das instruções
+        updateColorEditPreview();
       });
+    }
+  }
+  
+  // Atualizar preview das instruções de cores
+  function updateColorEditPreview() {
+    const customInstructions = document.getElementById('custom-edit-instructions')?.value?.trim();
+    const processBtn = document.getElementById('process-edit-btn');
+    
+    if (!processBtn) return;
+    
+    // Validação específica para modificação de cores
+    if (!customInstructions || customInstructions.length < 10) {
+      processBtn.disabled = true;
+      processBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Descreva a modificação de cores';
+      processBtn.title = 'Exemplo: "Mudar roxo para azul e laranja para branco. Manter EXATAMENTE a mesma figura"';
+    } else {
+      // Analisar se as instruções são adequadas para modificação de cores
+      const instructionsLower = customInstructions.toLowerCase();
+      
+      // Termos relacionados a cores
+      const hasColorTerms = /(?:cor|cores|azul|verde|vermelho|amarelo|preto|branco|cinza|rosa|roxo|laranja|#[0-9a-f]{3,6}|mudar.*para|alterar.*para)/i.test(customInstructions);
+      
+      // Termos de preservação
+      const hasPreservationTerms = /(?:manter|preservar|exatamente|mesmo|mesma|igual|idêntico|figura|forma|estrutura)/i.test(customInstructions);
+      
+      if (hasColorTerms && hasPreservationTerms) {
+        processBtn.disabled = false;
+        processBtn.innerHTML = '<i class="fas fa-magic"></i> 🔄 Processar Edição';
+        processBtn.title = 'Instruções adequadas para modificação de cores';
+      } else if (hasColorTerms) {
+        processBtn.disabled = false;
+        processBtn.innerHTML = '<i class="fas fa-magic"></i> 🔄 Processar Edição';
+        processBtn.title = 'Processará a modificação de cores';
+      } else {
+        processBtn.disabled = true;
+        processBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Especifique as cores';
+        processBtn.title = 'Mencione quais cores alterar. Ex: "Mudar roxo para azul"';
+      }
     }
   }
   

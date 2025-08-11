@@ -857,171 +857,56 @@ a<!DOCTYPE html>
                         </div>
                     </div>
                     <div class="editor-controls">
-                        <div class="edit-categories">
-                            <h4>Categorias de Edição</h4>
+                        <div class="color-modification-section">
+                            <div class="edit-type-header">
+                                <div class="edit-type-icon">🎨</div>
+                                <div class="edit-type-info">
+                                    <h4>Modificação de Cores</h4>
+                                    <p>Altere as cores da imagem mantendo exatamente a mesma forma e estrutura</p>
+                                </div>
+                            </div>
                             
-                            <div class="category-section">
-                                <h5>📝 Textos (Impacto: Crítico)</h5>
-                                <div class="category-options">
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-text" value="alterar-titulo">
-                                        <span>✏️ Alterar título principal</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-text" value="modificar-subtitulos">
-                                        <span>🏷️ Modificar subtítulos</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-text" value="editar-botoes">
-                                        <span>🔘 Editar textos de botões</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-text" value="ajustar-menus">
-                                        <span>📋 Ajustar menus/navegação</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-text" value="adicionar-remover-textos">
-                                        <span>📝 Adicionar/remover textos</span>
-                                    </label>
+                            <div class="color-edit-button" id="color-edit-button">
+                                <div class="color-edit-content">
+                                    <i class="fas fa-palette"></i>
+                                    <span>Clique para especificar as cores que deseja alterar</span>
+                                </div>
+                                <div class="color-edit-arrow">
+                                    <i class="fas fa-chevron-down"></i>
                                 </div>
                             </div>
-
-                            <div class="category-section">
-                                <h5>🎨 Cores (Impacto: Alto)</h5>
-                                <div class="category-options">
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-colors" value="mudar-paleta">
-                                        <span>🎨 Mudar paleta principal</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-colors" value="ajustar-destaque">
-                                        <span>🌈 Ajustar cores de destaque</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-colors" value="modificar-background">
-                                        <span>🖌️ Modificar background</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-colors" value="alterar-contraste">
-                                        <span>💡 Alterar contraste</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-colors" value="aplicar-branding">
-                                        <span>🎯 Aplicar branding específico</span>
-                                    </label>
+                            
+                            <div class="color-instructions-container" id="color-instructions-container" style="display: none;">
+                                <div class="color-instructions-header">
+                                    <h5>💬 Descreva a modificação de cores</h5>
+                                    <div class="example-hint">
+                                        <strong>Exemplo:</strong> "Mudar roxo para azul e laranja para branco. Manter EXATAMENTE a mesma figura"
+                                    </div>
+                                </div>
+                                
+                                <textarea id="custom-edit-instructions" rows="4" 
+                                        placeholder="Ex: Alterar a cor principal de roxo para azul e os detalhes de laranja para branco, mantendo exatamente a mesma forma geométrica..."></textarea>
+                                
+                                <div class="color-tips">
+                                    <div class="tip-item">
+                                        <i class="fas fa-lightbulb"></i>
+                                        <span><strong>Dica:</strong> Seja específico sobre quais cores alterar e para quais cores mudar</span>
+                                    </div>
+                                    <div class="tip-item">
+                                        <i class="fas fa-shield-alt"></i>
+                                        <span><strong>Preservação:</strong> Sempre mencione "manter a mesma forma/figura" para melhores resultados</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="color-examples">
+                                    <h6>✅ Exemplos de instruções eficazes:</h6>
+                                    <div class="example-list">
+                                        <div class="example-item">"Alterar o fundo de azul para verde, mantendo todos os elementos na mesma posição"</div>
+                                        <div class="example-item">"Mudar a cor do logo de vermelho para dourado, preservando exatamente a mesma forma"</div>
+                                        <div class="example-item">"Trocar as cores: azul → branco, laranja → preto. Manter idêntica a estrutura visual"</div>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div class="category-section">
-                                <h5>📐 Layout (Impacto: Alto)</h5>
-                                <div class="category-options">
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-layout" value="reorganizar-elementos">
-                                        <span>📱 Reorganizar elementos</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-layout" value="ajustar-espacamentos">
-                                        <span>📏 Ajustar espaçamentos</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-layout" value="reposicionar-secoes">
-                                        <span>🔄 Reposicionar seções</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-layout" value="modificar-proporcoes">
-                                        <span>📐 Modificar proporções</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-layout" value="otimizar-hierarquia">
-                                        <span>🎯 Otimizar hierarquia visual</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="category-section">
-                                <h5>➕ Elementos (Impacto: Crítico)</h5>
-                                <div class="category-options">
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-elements" value="adicionar-secoes">
-                                        <span>➕ Adicionar seções</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-elements" value="remover-elementos">
-                                        <span>🗑️ Remover elementos</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-elements" value="substituir-componentes">
-                                        <span>🔄 Substituir componentes</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-elements" value="inserir-graficos">
-                                        <span>📊 Inserir gráficos/dados</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-elements" value="adicionar-decoracoes">
-                                        <span>🎨 Adicionar decorações</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="category-section">
-                                <h5>🖼️ Imagens (Impacto: Médio)</h5>
-                                <div class="category-options">
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-images" value="trocar-imagens">
-                                        <span>🖼️ Trocar imagens principais</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-images" value="modificar-fotos">
-                                        <span>👤 Modificar fotos de pessoas</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-images" value="alterar-backgrounds">
-                                        <span>🏢 Alterar backgrounds</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-images" value="ajustar-qualidade">
-                                        <span>📸 Ajustar qualidade/filtros</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-images" value="aplicar-efeitos">
-                                        <span>🎭 Aplicar efeitos visuais</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="category-section">
-                                <h5>✨ Estilo (Impacto: Médio)</h5>
-                                <div class="category-options">
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-style" value="mudar-estilo-geral">
-                                        <span>🎨 Mudar estilo geral (moderno/clássico)</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-style" value="ajustar-dispositivo">
-                                        <span>📱 Ajustar para mobile/desktop</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-style" value="aplicar-tema">
-                                        <span>🎯 Aplicar tema específico</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-style" value="adicionar-efeitos-especiais">
-                                        <span>✨ Adicionar efeitos especiais</span>
-                                    </label>
-                                    <label class="edit-option">
-                                        <input type="checkbox" name="edit-style" value="modificar-atmosfera">
-                                        <span>🎪 Modificar atmosfera geral</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="custom-instructions">
-                            <h4>💬 Instruções Personalizadas</h4>
-                            <textarea id="custom-edit-instructions" rows="4" 
-                                    placeholder="Descreva outras modificações específicas que você gostaria de fazer na imagem..."></textarea>
-                            <small>Seja específico sobre as mudanças desejadas para melhores resultados</small>
                         </div>
                     </div>
                 </div>
