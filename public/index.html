@@ -70,6 +70,9 @@ a<!DOCTYPE html>
                     <button class="tab-button" data-tab="gallery">
                         <i class="fas fa-images"></i> Galeria
                     </button>
+                    <button class="tab-button" data-tab="artistic-style">
+                        <i class="fas fa-paint-brush"></i> Estilo Artístico
+                    </button>
                 </div>
                 
                 <div class="tab-content active" id="analysis-tab">
@@ -175,6 +178,161 @@ a<!DOCTYPE html>
                                 <i class="fas fa-images"></i>
                                 <p>Nenhuma imagem salva</p>
                                 <small>As imagens dos mockups que você salvar aparecerão aqui organizadas por tipo</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="artistic-style-tab">
+                    <div class="client-artistic-style">
+                        <div class="artistic-style-header">
+                            <div class="artistic-style-title-section">
+                                <h3>🎨 Estilo Artístico</h3>
+                                <p>Aplique estilos artísticos às suas imagens da galeria</p>
+                            </div>
+                            <div class="artistic-style-info">
+                                <div class="info-card">
+                                    <i class="fas fa-magic"></i>
+                                    <div class="info-content">
+                                        <h4>Como funciona</h4>
+                                        <p>Selecione uma imagem da galeria e aplique estilos artísticos como aquarela, óleo, sketch, cartoon e muito mais</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="artistic-style-content">
+                            <div class="style-selection-area" id="style-selection-area">
+                                <div class="no-image-selected">
+                                    <i class="fas fa-hand-pointer"></i>
+                                    <h4>Selecione uma imagem</h4>
+                                    <p>Vá para a aba "Galeria" e clique em uma imagem para aplicar estilos artísticos</p>
+                                    <button id="go-to-gallery-btn" class="action-button secondary">
+                                        <i class="fas fa-images"></i> Ir para Galeria
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="style-preview-area" id="style-preview-area" style="display: none;">
+                                <div class="image-preview-section">
+                                    <div class="original-image-preview">
+                                        <h4>Imagem Original</h4>
+                                        <img id="artistic-original-image" src="" alt="Imagem original">
+                                        <div class="image-info">
+                                            <span id="artistic-image-title">Título da imagem</span>
+                                            <span id="artistic-image-type">Tipo</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="style-result-preview">
+                                        <h4>Resultado com Estilo</h4>
+                                        <div id="artistic-result-container">
+                                            <div class="style-placeholder">
+                                                <i class="fas fa-paint-brush"></i>
+                                                <p>O resultado aparecerá aqui</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="style-controls-section">
+                                    <div class="style-selector">
+                                        <h4>🎨 Escolha o Estilo</h4>
+                                        <div class="style-grid">
+                                            <div class="style-option" data-style="aquarela">
+                                                <div class="style-icon">🎨</div>
+                                                <div class="style-name">Aquarela</div>
+                                                <div class="style-description">Efeito de tinta aquarela</div>
+                                            </div>
+                                            <div class="style-option" data-style="oleo">
+                                                <div class="style-icon">🖌️</div>
+                                                <div class="style-name">Óleo</div>
+                                                <div class="style-description">Pintura a óleo clássica</div>
+                                            </div>
+                                            <div class="style-option" data-style="sketch">
+                                                <div class="style-icon">✏️</div>
+                                                <div class="style-name">Sketch</div>
+                                                <div class="style-description">Desenho a lápis</div>
+                                            </div>
+                                            <div class="style-option" data-style="cartoon">
+                                                <div class="style-icon">🎭</div>
+                                                <div class="style-name">Cartoon</div>
+                                                <div class="style-description">Estilo cartoon/animação</div>
+                                            </div>
+                                            <div class="style-option" data-style="anime">
+                                                <div class="style-icon">🌸</div>
+                                                <div class="style-name">Anime</div>
+                                                <div class="style-description">Estilo anime/manga</div>
+                                            </div>
+                                            <div class="style-option" data-style="vintage">
+                                                <div class="style-icon">📸</div>
+                                                <div class="style-name">Vintage</div>
+                                                <div class="style-description">Efeito fotográfico retrô</div>
+                                            </div>
+                                            <div class="style-option" data-style="vetorial">
+                                                <div class="style-icon">🎯</div>
+                                                <div class="style-name">Vetorial</div>
+                                                <div class="style-description">Estilo vetorial limpo</div>
+                                            </div>
+                                            <div class="style-option" data-style="pop-art">
+                                                <div class="style-icon">🌈</div>
+                                                <div class="style-name">Pop Art</div>
+                                                <div class="style-description">Estilo pop art vibrante</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="style-settings">
+                                        <div class="setting-group">
+                                            <label for="style-intensity">Intensidade do Estilo</label>
+                                            <div class="slider-container">
+                                                <input type="range" id="style-intensity" min="10" max="100" value="50">
+                                                <span class="slider-value" id="intensity-value">50%</span>
+                                            </div>
+                                            <small>Controla o quanto o estilo será aplicado</small>
+                                        </div>
+                                        
+                                        <div class="setting-group">
+                                            <label>Preservar Elementos</label>
+                                            <div class="preservation-options">
+                                                <label class="checkbox-option">
+                                                    <input type="checkbox" id="preserve-text" value="texto">
+                                                    <span class="checkmark"></span>
+                                                    <span class="option-text">📝 Texto</span>
+                                                </label>
+                                                <label class="checkbox-option">
+                                                    <input type="checkbox" id="preserve-logos" value="logos">
+                                                    <span class="checkmark"></span>
+                                                    <span class="option-text">🏷️ Logos</span>
+                                                </label>
+                                                <label class="checkbox-option">
+                                                    <input type="checkbox" id="preserve-faces" value="faces">
+                                                    <span class="checkmark"></span>
+                                                    <span class="option-text">👤 Faces</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="style-recommendations" id="style-recommendations">
+                                        <h5>💡 Recomendações</h5>
+                                        <div class="recommendations-list" id="recommendations-list">
+                                            <!-- Recomendações serão inseridas dinamicamente -->
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="style-actions">
+                                        <button id="apply-style-btn" class="action-button" disabled>
+                                            <i class="fas fa-magic"></i> Aplicar Estilo
+                                        </button>
+                                        <button id="save-styled-image-btn" class="action-button secondary" style="display: none;">
+                                            <i class="fas fa-save"></i> Salvar na Galeria
+                                        </button>
+                                        <button id="reset-style-btn" class="action-button secondary">
+                                            <i class="fas fa-undo"></i> Resetar
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -939,6 +1097,37 @@ a<!DOCTYPE html>
                             <div class="progress-fill" id="edit-progress-fill"></div>
                         </div>
                         <div class="progress-text" id="edit-progress-text">0%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de loading para estilo artístico -->
+    <div id="artistic-style-loading-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="loading-container">
+                    <div class="loading-animation">
+                        <div class="spinner artistic-spinner"></div>
+                    </div>
+                    <p class="loading-text">🎨 Aplicando Estilo Artístico...</p>
+                    <p class="loading-subtext" id="artistic-loading-status">Transformando sua imagem com IA...</p>
+                    
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="artistic-progress-fill"></div>
+                        </div>
+                        <div class="progress-text" id="artistic-progress-text">0%</div>
+                    </div>
+                    
+                    <div class="artistic-loading-info">
+                        <div class="style-being-applied">
+                            <span>Estilo: </span><span id="current-style-name">-</span>
+                        </div>
+                        <div class="intensity-being-applied">
+                            <span>Intensidade: </span><span id="current-intensity-value">-</span>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -6406,6 +6406,671 @@ ${currentActionPlanData.conteudo}`;
     return optimizedPrompt;
   }
 
+  // ===== FUNÇÕES PARA ESTILO ARTÍSTICO =====
+  
+  // Elementos específicos para estilo artístico
+  const artisticStyleContainer = document.getElementById('artistic-style-container');
+  const artisticStyleModal = document.getElementById('artistic-style-modal');
+  const artisticStyleLoadingModal = document.getElementById('artistic-style-loading-modal');
+  const goToGalleryBtn = document.getElementById('go-to-gallery-btn');
+  const applyStyleBtn = document.getElementById('apply-style-btn');
+  const saveStyledImageBtn = document.getElementById('save-styled-image-btn');
+  const resetStyleBtn = document.getElementById('reset-style-btn');
+  const artisticOriginalImage = document.getElementById('artistic-original-image');
+  const artisticResultContainer = document.getElementById('artistic-result-container');
+  const styleIntensityRange = document.getElementById('style-intensity');
+  const styleIntensityValue = document.getElementById('style-intensity-value');
+  
+  // Estado do estilo artístico
+  let currentSelectedImage = null;
+  let currentSelectedStyle = null;
+  let currentStyledImageUrl = null;
+  
+  // Mostrar seção de estilo artístico
+  function showArtisticStyleSection() {
+    // Mostrar apenas a seção de estilo artístico
+    showOnlySection('artistic-style-container');
+    
+    // Scroll automático
+    scrollToElement('artistic-style-container');
+    
+    // Verificar se há imagens na galeria
+    checkGalleryForImages();
+  }
+  
+  // Verificar se há imagens na galeria para seleção
+  function checkGalleryForImages() {
+    if (!currentClientId) {
+      showNoImageSelected();
+      return;
+    }
+    
+    // Carregar imagens da galeria
+    loadGalleryForStyleSelection();
+  }
+  
+  // Carregar galeria para seleção de estilo
+  async function loadGalleryForStyleSelection() {
+    try {
+      const response = await fetch(`/api/mockups/galeria/${currentClientId}`);
+      if (!response.ok) {
+        throw new Error('Erro ao carregar galeria');
+      }
+      
+      const data = await response.json();
+      const images = data.imagens || [];
+      
+      if (images.length === 0) {
+        showNoImageSelected();
+        return;
+      }
+      
+      // Mostrar botão para ir à galeria
+      showGoToGalleryOption();
+      
+    } catch (error) {
+      console.error('Erro ao carregar galeria para estilo:', error);
+      showNoImageSelected();
+    }
+  }
+  
+  // Mostrar estado sem imagem selecionada
+  function showNoImageSelected() {
+    const selectionArea = document.querySelector('.style-selection-area');
+    if (selectionArea) {
+      selectionArea.innerHTML = `
+        <div class="no-image-selected">
+          <i class="fas fa-images"></i>
+          <h4>Nenhuma imagem selecionada</h4>
+          <p>Para aplicar estilos artísticos, você precisa primeiro ter imagens salvas na galeria.</p>
+          <p>Crie mockups e salve as variações que mais gostar, depois volte aqui para aplicar estilos artísticos únicos!</p>
+          <button id="go-to-gallery-btn" class="action-button">
+            <i class="fas fa-images"></i> Ir para Galeria
+          </button>
+        </div>
+      `;
+      
+      // Configurar evento do botão
+      const galleryBtn = document.getElementById('go-to-gallery-btn');
+      if (galleryBtn) {
+        galleryBtn.addEventListener('click', () => {
+          // Ir para a aba de galeria
+          const galleryTab = document.querySelector('[data-tab="gallery"]');
+          if (galleryTab) {
+            galleryTab.click();
+          }
+        });
+      }
+    }
+  }
+  
+  // Mostrar opção para ir à galeria
+  function showGoToGalleryOption() {
+    const selectionArea = document.querySelector('.style-selection-area');
+    if (selectionArea) {
+      selectionArea.innerHTML = `
+        <div class="no-image-selected">
+          <i class="fas fa-hand-pointer"></i>
+          <h4>Selecione uma imagem da galeria</h4>
+          <p>Vá até a galeria, clique em uma imagem e depois no botão "Aplicar Estilo Artístico" para começar.</p>
+          <button id="go-to-gallery-btn" class="action-button">
+            <i class="fas fa-images"></i> Ir para Galeria
+          </button>
+        </div>
+      `;
+      
+      // Configurar evento do botão
+      const galleryBtn = document.getElementById('go-to-gallery-btn');
+      if (galleryBtn) {
+        galleryBtn.addEventListener('click', () => {
+          // Ir para a aba de galeria
+          const galleryTab = document.querySelector('[data-tab="gallery"]');
+          if (galleryTab) {
+            galleryTab.click();
+          }
+        });
+      }
+    }
+  }
+  
+  // Configurar imagem para estilo artístico (chamada da galeria)
+  function setupImageForArtisticStyle(image) {
+    console.log('🎨 [ARTISTIC-STYLE] Configurando imagem para estilo:', image);
+    
+    currentSelectedImage = image;
+    
+    // Preencher preview da imagem original
+    if (artisticOriginalImage) {
+      artisticOriginalImage.src = image.url;
+      artisticOriginalImage.alt = image.titulo;
+    }
+    
+    // Preencher informações da imagem
+    const imageTitle = document.getElementById('artistic-image-title');
+    const imageType = document.getElementById('artistic-image-type');
+    
+    if (imageTitle) {
+      imageTitle.textContent = image.titulo;
+    }
+    
+    if (imageType) {
+      imageType.textContent = getTypeLabel(image.tipo);
+    }
+    
+    // Limpar resultado anterior
+    resetArtisticStyleResult();
+    
+    // Mostrar seção de estilo artístico
+    showArtisticStyleSection();
+    
+    console.log('✅ [ARTISTIC-STYLE] Imagem configurada com sucesso');
+  }
+  
+  // Resetar resultado do estilo artístico
+  function resetArtisticStyleResult() {
+    if (artisticResultContainer) {
+      artisticResultContainer.innerHTML = `
+        <div class="style-placeholder">
+          <i class="fas fa-magic"></i>
+          <p>O resultado aparecerá aqui</p>
+        </div>
+      `;
+    }
+    
+    // Esconder botão de salvar
+    if (saveStyledImageBtn) {
+      saveStyledImageBtn.style.display = 'none';
+    }
+    
+    // Limpar dados temporários
+    currentStyledImageUrl = null;
+  }
+  
+  // Selecionar estilo artístico
+  function selectArtisticStyle(styleElement) {
+    // Remover seleção anterior
+    document.querySelectorAll('.style-option').forEach(option => {
+      option.classList.remove('selected');
+    });
+    
+    // Adicionar seleção atual
+    styleElement.classList.add('selected');
+    
+    // Armazenar estilo selecionado
+    currentSelectedStyle = {
+      name: styleElement.dataset.style,
+      label: styleElement.querySelector('.style-name').textContent,
+      description: styleElement.querySelector('.style-description').textContent
+    };
+    
+    // Atualizar recomendações baseadas no estilo
+    updateStyleRecommendations();
+    
+    // Habilitar botão de aplicar
+    updateApplyButtonState();
+    
+    console.log('🎨 [ARTISTIC-STYLE] Estilo selecionado:', currentSelectedStyle);
+  }
+  
+  // Atualizar recomendações de estilo
+  function updateStyleRecommendations() {
+    const recommendationsContainer = document.querySelector('.style-recommendations');
+    if (!recommendationsContainer || !currentSelectedStyle) return;
+    
+    const recommendations = getStyleRecommendations(currentSelectedStyle.name);
+    
+    recommendationsContainer.innerHTML = `
+      <h5><i class="fas fa-lightbulb"></i> Recomendações para ${currentSelectedStyle.label}</h5>
+      <div class="recommendations-list">
+        ${recommendations.map(rec => `
+          <div class="recommendation-item">${rec}</div>
+        `).join('')}
+      </div>
+    `;
+  }
+  
+  // Obter recomendações específicas por estilo
+  function getStyleRecommendations(styleName) {
+    const recommendations = {
+      'oil-painting': [
+        'Funciona melhor com imagens que têm detalhes ricos e texturas',
+        'Intensidade média (50-70%) produz resultados mais naturais',
+        'Ideal para retratos e paisagens'
+      ],
+      'watercolor': [
+        'Perfeito para imagens com cores suaves e transições graduais',
+        'Use intensidade baixa (30-50%) para efeito mais sutil',
+        'Funciona bem com ilustrações e designs delicados'
+      ],
+      'sketch': [
+        'Melhor para imagens com contornos bem definidos',
+        'Intensidade alta (70-90%) cria efeito mais dramático',
+        'Ideal para logos e designs gráficos simples'
+      ],
+      'pop-art': [
+        'Funciona melhor com cores vibrantes e contrastes altos',
+        'Intensidade média-alta (60-80%) para efeito marcante',
+        'Perfeito para designs modernos e criativos'
+      ],
+      'vintage': [
+        'Adiciona charme nostálgico a qualquer imagem',
+        'Intensidade baixa-média (40-60%) mantém sutileza',
+        'Ideal para fotos e designs que precisam de toque retrô'
+      ],
+      'abstract': [
+        'Transforma completamente a aparência da imagem',
+        'Intensidade alta (70-90%) para máximo impacto',
+        'Melhor para designs experimentais e artísticos'
+      ]
+    };
+    
+    return recommendations[styleName] || [
+      'Experimente diferentes intensidades para encontrar o resultado ideal',
+      'Cada imagem responde de forma única aos estilos artísticos',
+      'Preserve elementos importantes para manter a identidade visual'
+    ];
+  }
+  
+  // Atualizar estado do botão aplicar
+  function updateApplyButtonState() {
+    if (applyStyleBtn) {
+      const hasImage = currentSelectedImage !== null;
+      const hasStyle = currentSelectedStyle !== null;
+      
+      applyStyleBtn.disabled = !(hasImage && hasStyle);
+      
+      if (!hasImage) {
+        applyStyleBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Selecione uma imagem';
+      } else if (!hasStyle) {
+        applyStyleBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Escolha um estilo';
+      } else {
+        applyStyleBtn.innerHTML = '<i class="fas fa-magic"></i> Aplicar Estilo';
+      }
+    }
+  }
+  
+  // Aplicar estilo artístico
+  async function applyArtisticStyle() {
+    if (!currentSelectedImage || !currentSelectedStyle) {
+      alert('Selecione uma imagem e um estilo antes de aplicar');
+      return;
+    }
+    
+    try {
+      console.log('🎨 [ARTISTIC-STYLE] Iniciando aplicação de estilo...');
+      
+      // Mostrar modal de loading
+      showArtisticStyleLoadingModal();
+      
+      // Obter configurações
+      const intensity = styleIntensityRange?.value || 50;
+      const preserveColors = document.getElementById('preserve-colors')?.checked || false;
+      const preserveShapes = document.getElementById('preserve-shapes')?.checked || false;
+      const preserveText = document.getElementById('preserve-text')?.checked || false;
+      
+      // Preparar dados para envio
+      const styleData = {
+        imagemId: currentSelectedImage.id,
+        imagemUrl: currentSelectedImage.url,
+        estilo: currentSelectedStyle.name,
+        intensidade: parseInt(intensity),
+        configuracoes: {
+          preservarCores: preserveColors,
+          preservarFormas: preserveShapes,
+          preservarTexto: preserveText
+        },
+        metadados: {
+          tituloOriginal: currentSelectedImage.titulo,
+          tipoOriginal: currentSelectedImage.tipo,
+          estiloAplicado: currentSelectedStyle.label
+        }
+      };
+      
+      console.log('📤 [ARTISTIC-STYLE] Enviando dados:', styleData);
+      
+      // Enviar requisição
+      const response = await fetch('/api/artistic-style/aplicar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(styleData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao aplicar estilo artístico');
+      }
+      
+      const result = await response.json();
+      console.log('✅ [ARTISTIC-STYLE] Estilo aplicado com sucesso:', result);
+      
+      // Esconder modal de loading
+      hideArtisticStyleLoadingModal();
+      
+      // Mostrar resultado
+      showArtisticStyleResult(result.imagemEstilizada);
+      
+    } catch (error) {
+      console.error('❌ [ARTISTIC-STYLE] Erro ao aplicar estilo:', error);
+      
+      // Esconder modal de loading
+      hideArtisticStyleLoadingModal();
+      
+      alert(`Erro ao aplicar estilo artístico: ${error.message}`);
+    }
+  }
+  
+  // Mostrar modal de loading para estilo artístico
+  function showArtisticStyleLoadingModal() {
+    if (artisticStyleLoadingModal) {
+      artisticStyleLoadingModal.classList.add('show');
+      
+      // Atualizar informações no modal
+      const styleBeingApplied = document.querySelector('.style-being-applied span:last-child');
+      const intensityBeingApplied = document.querySelector('.intensity-being-applied span:last-child');
+      
+      if (styleBeingApplied && currentSelectedStyle) {
+        styleBeingApplied.textContent = currentSelectedStyle.label;
+      }
+      
+      if (intensityBeingApplied && styleIntensityRange) {
+        intensityBeingApplied.textContent = `${styleIntensityRange.value}%`;
+      }
+      
+      // Iniciar simulação de progresso
+      simulateArtisticStyleProgress();
+    }
+  }
+  
+  // Esconder modal de loading para estilo artístico
+  function hideArtisticStyleLoadingModal() {
+    if (artisticStyleLoadingModal) {
+      artisticStyleLoadingModal.classList.remove('show');
+    }
+  }
+  
+  // Simular progresso do estilo artístico
+  function simulateArtisticStyleProgress() {
+    const progressFill = document.getElementById('artistic-progress-fill');
+    const progressText = document.getElementById('artistic-progress-text');
+    const statusText = document.getElementById('artistic-loading-status');
+    
+    if (!progressFill || !progressText || !statusText) return;
+    
+    const steps = [
+      { percentage: 25, message: 'Analisando imagem original...' },
+      { percentage: 50, message: 'Aplicando estilo artístico...' },
+      { percentage: 75, message: 'Processando detalhes...' },
+      { percentage: 95, message: 'Finalizando resultado...' }
+    ];
+    
+    let currentStep = 0;
+    
+    const interval = setInterval(() => {
+      if (currentStep < steps.length) {
+        const step = steps[currentStep];
+        progressFill.style.width = `${step.percentage}%`;
+        progressText.textContent = `${step.percentage}%`;
+        statusText.textContent = step.message;
+        currentStep++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 2000);
+  }
+  
+  // Mostrar resultado do estilo artístico
+  function showArtisticStyleResult(imagemEstilizada) {
+    console.log('🎨 [ARTISTIC-STYLE] Mostrando resultado:', imagemEstilizada);
+    
+    if (artisticResultContainer) {
+      artisticResultContainer.innerHTML = `
+        <img src="${imagemEstilizada}" alt="Imagem com estilo aplicado" class="style-result">
+      `;
+    }
+    
+    // Mostrar botão de salvar
+    if (saveStyledImageBtn) {
+      saveStyledImageBtn.style.display = 'inline-block';
+    }
+    
+    // Armazenar URL da imagem estilizada
+    currentStyledImageUrl = imagemEstilizada;
+    
+    // Atualizar progresso para 100%
+    const progressFill = document.getElementById('artistic-progress-fill');
+    const progressText = document.getElementById('artistic-progress-text');
+    const statusText = document.getElementById('artistic-loading-status');
+    
+    if (progressFill && progressText && statusText) {
+      progressFill.style.width = '100%';
+      progressText.textContent = '100%';
+      statusText.textContent = 'Estilo aplicado com sucesso!';
+    }
+  }
+  
+  // Salvar imagem estilizada na galeria
+  async function saveStyledImage() {
+    if (!currentSelectedImage || !currentStyledImageUrl || !currentSelectedStyle) {
+      alert('Erro: Dados do estilo não encontrados');
+      return;
+    }
+    
+    try {
+      console.log('💾 [ARTISTIC-STYLE] Salvando imagem estilizada...');
+      
+      const saveData = {
+        imagemOriginalId: currentSelectedImage.id,
+        imagemEstilizadaUrl: currentStyledImageUrl,
+        titulo: `${currentSelectedImage.titulo} (${currentSelectedStyle.label})`,
+        tipo: currentSelectedImage.tipo,
+        prompt: `Estilo ${currentSelectedStyle.label} aplicado em: ${currentSelectedImage.prompt || 'Imagem original'}`,
+        metadados: {
+          estiloAplicado: currentSelectedStyle.name,
+          estiloLabel: currentSelectedStyle.label,
+          intensidade: styleIntensityRange?.value || 50
+        }
+      };
+      
+      const response = await fetch('/api/artistic-style/salvar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(saveData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao salvar imagem estilizada');
+      }
+      
+      const result = await response.json();
+      console.log('✅ [ARTISTIC-STYLE] Imagem estilizada salva:', result);
+      
+      // Recarregar galeria
+      if (currentClientId) {
+        await loadClientGallery(currentClientId);
+      }
+      
+      // Mostrar feedback de sucesso
+      alert('Imagem com estilo artístico salva na galeria com sucesso!');
+      
+      // Resetar estado
+      resetArtisticStyleState();
+      
+      // Ir para a galeria
+      const galleryTab = document.querySelector('[data-tab="gallery"]');
+      if (galleryTab) {
+        galleryTab.click();
+      }
+      
+    } catch (error) {
+      console.error('❌ [ARTISTIC-STYLE] Erro ao salvar imagem estilizada:', error);
+      alert(`Erro ao salvar imagem estilizada: ${error.message}`);
+    }
+  }
+  
+  // Resetar estado do estilo artístico
+  function resetArtisticStyleState() {
+    currentSelectedImage = null;
+    currentSelectedStyle = null;
+    currentStyledImageUrl = null;
+    
+    // Limpar seleções
+    document.querySelectorAll('.style-option').forEach(option => {
+      option.classList.remove('selected');
+    });
+    
+    // Resetar controles
+    if (styleIntensityRange && styleIntensityValue) {
+      styleIntensityRange.value = 50;
+      styleIntensityValue.textContent = '50%';
+    }
+    
+    // Limpar checkboxes
+    document.querySelectorAll('.preservation-options input[type="checkbox"]').forEach(checkbox => {
+      checkbox.checked = false;
+    });
+    
+    // Resetar resultado
+    resetArtisticStyleResult();
+    
+    // Atualizar botão
+    updateApplyButtonState();
+    
+    // Mostrar estado inicial
+    showNoImageSelected();
+  }
+  
+  // Configurar eventos do estilo artístico
+  function setupArtisticStyleEvents() {
+    // Configurar seleção de estilos
+    document.querySelectorAll('.style-option').forEach(option => {
+      option.addEventListener('click', () => selectArtisticStyle(option));
+    });
+    
+    // Configurar slider de intensidade
+    if (styleIntensityRange && styleIntensityValue) {
+      styleIntensityRange.addEventListener('input', (e) => {
+        styleIntensityValue.textContent = `${e.target.value}%`;
+      });
+    }
+    
+    // Configurar botões
+    if (applyStyleBtn) {
+      applyStyleBtn.addEventListener('click', applyArtisticStyle);
+    }
+    
+    if (saveStyledImageBtn) {
+      saveStyledImageBtn.addEventListener('click', saveStyledImage);
+    }
+    
+    if (resetStyleBtn) {
+      resetStyleBtn.addEventListener('click', resetArtisticStyleState);
+    }
+    
+    // Fechar modal de loading ao clicar fora (não permitir)
+    if (artisticStyleLoadingModal) {
+      artisticStyleLoadingModal.addEventListener('click', (e) => {
+        e.stopPropagation(); // Não permitir fechar clicando fora
+      });
+    }
+  }
+  
+  // Adicionar botão de estilo artístico na galeria
+  function addArtisticStyleButtonToGallery() {
+    // Esta função será chamada quando a galeria for renderizada
+    // O botão será adicionado dinamicamente aos overlays das imagens
+  }
+  
+  // Modificar a função setupGalleryEvents para incluir botão de estilo artístico
+  const originalSetupGalleryEvents = setupGalleryEvents;
+  setupGalleryEvents = function() {
+    // Chamar função original
+    originalSetupGalleryEvents();
+    
+    // Adicionar eventos para botões de estilo artístico
+    galleryGrid.querySelectorAll('.gallery-artistic-style-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const galleryItem = e.target.closest('.gallery-item');
+        const imageId = galleryItem.dataset.imageId;
+        const image = currentGalleryImages.find(img => img.id === imageId);
+        if (image) {
+          setupImageForArtisticStyle(image);
+        }
+      });
+    });
+  };
+  
+  // Modificar a função renderGallery para incluir botão de estilo artístico
+  const originalRenderGallery = renderGallery;
+  renderGallery = function(images) {
+    if (!images.length) {
+      galleryGrid.innerHTML = `
+        <div class="gallery-empty">
+          <i class="fas fa-images"></i>
+          <p>Nenhuma imagem encontrada</p>
+          <small>Tente alterar o filtro ou criar novos mockups</small>
+        </div>
+      `;
+      return;
+    }
+    
+    galleryGrid.innerHTML = images.map(image => {
+      const typeIcon = getGalleryTypeIcon(image.tipo);
+      const formattedDate = new Date(image.dataSalvamento).toLocaleDateString('pt-BR');
+      
+      return `
+        <div class="gallery-item" data-image-id="${image.id}">
+          <div class="gallery-item-image">
+            <img src="${image.url}" alt="${image.titulo}" loading="lazy">
+            <div class="gallery-item-overlay">
+              <button class="gallery-view-btn" title="Visualizar">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="gallery-edit-btn" title="Editar imagem">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="gallery-artistic-style-btn" title="Aplicar estilo artístico">
+                <i class="fas fa-palette"></i>
+              </button>
+              <button class="gallery-download-btn" title="Download">
+                <i class="fas fa-download"></i>
+              </button>
+              <button class="gallery-delete-btn" title="Excluir imagem">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          <div class="gallery-item-info">
+            <div class="gallery-item-type">
+              <i class="${typeIcon}"></i>
+              ${getTypeLabel(image.tipo)}
+            </div>
+            <div class="gallery-item-title">${image.titulo}</div>
+            <div class="gallery-item-date">${formattedDate}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    // Configurar eventos
+    setupGalleryEvents();
+  };
+  
+  // Modificar a função init para incluir eventos de estilo artístico
+  const originalInit = init;
+  init = function() {
+    // Chamar função original
+    originalInit();
+    
+    // Configurar eventos de estilo artístico
+    setupArtisticStyleEvents();
+  };
+
   // Carregar clientes ao iniciar e mostrar tela de boas-vindas
   init();
 });

@@ -1118,4 +1118,497 @@ router.post('/galeria/salvar-edicao', async (req, res) => {
   }
 });
 
+/**
+ * ===== NOVA SEÇÃO: ESTILO ARTÍSTICO =====
+ * Aplica estilos artísticos às imagens da galeria
+ * Reutiliza toda a lógica de análise e otimização existente
+ */
+
+// Funções auxiliares para análise de estilo artístico
+function analyzeStyleInstructions(estilo, intensidade, preservacao) {
+  console.log('🎨 [STYLE-ANALYSIS] Analisando instruções de estilo:', { estilo, intensidade, preservacao });
+  
+  const analysis = {
+    isDestructive: false,
+    compatibilityScore: 100,
+    warnings: [],
+    recommendations: []
+  };
+
+  // Verificar compatibilidade do estilo
+  const destructiveStyles = ['aquarela', 'sketch', 'cartoon'];
+  if (destructiveStyles.includes(estilo) && intensidade > 70) {
+    analysis.isDestructive = true;
+    analysis.warnings.push('Estilo com alta intensidade pode alterar significativamente a imagem');
+  }
+
+  // Verificar preservação
+  if (preservacao.includes('texto') && ['aquarela', 'sketch'].includes(estilo)) {
+    analysis.compatibilityScore -= 20;
+    analysis.warnings.push('Texto pode ficar borrado com este estilo');
+    analysis.recommendations.push('Considere usar intensidade menor para preservar texto');
+  }
+
+  if (preservacao.includes('logos') && estilo === 'cartoon') {
+    analysis.compatibilityScore -= 10;
+    analysis.warnings.push('Logos podem perder características corporativas');
+  }
+
+  return analysis;
+}
+
+function detectArtisticContext(imagemUrl, tipo) {
+  console.log('🎨 [ARTISTIC-CONTEXT] Detectando contexto artístico:', { imagemUrl: imagemUrl.substring(0, 50), tipo });
+  
+  const context = {
+    imageType: 'unknown',
+    hasText: false,
+    hasLogo: false,
+    complexity: 'medium',
+    recommendedStyles: []
+  };
+
+  // Detectar tipo baseado no tipo do mockup
+  if (tipo === 'logo') {
+    context.imageType = 'logo';
+    context.hasLogo = true;
+    context.recommendedStyles = ['vetorial', 'minimalista', 'corporativo'];
+  } else if (tipo === 'post-social') {
+    context.imageType = 'social';
+    context.hasText = true;
+    context.recommendedStyles = ['pop-art', 'cartoon', 'vintage'];
+  } else if (tipo === 'banner') {
+    context.imageType = 'banner';
+    context.hasText = true;
+    context.recommendedStyles = ['moderno', 'corporativo', 'pop-art'];
+  } else {
+    context.recommendedStyles = ['aquarela', 'oleo', 'sketch'];
+  }
+
+  return context;
+}
+
+function generateArtisticPrompt(estilo, intensidade, preservacao, contexto, imagemUrl) {
+  console.log('🎨 [ARTISTIC-PROMPT] Gerando prompt artístico:', { estilo, intensidade, preservacao, contexto });
+  
+  // Mapeamento de estilos para prompts técnicos
+  const stylePrompts = {
+    'aquarela': 'watercolor painting style, soft flowing colors, artistic brush strokes',
+    'oleo': 'oil painting style, rich textures, classical art technique',
+    'sketch': 'pencil sketch style, hand-drawn lines, artistic shading',
+    'cartoon': 'cartoon illustration style, vibrant colors, simplified forms',
+    'anime': 'anime art style, clean lines, cel-shaded colors',
+    'vintage': 'vintage photography style, retro colors, aged effect',
+    'vetorial': 'vector art style, clean geometric shapes, flat colors',
+    'pop-art': 'pop art style, bold colors, high contrast, graphic design'
+  };
+
+  let prompt = stylePrompts[estilo] || 'artistic style transformation';
+
+  // Ajustar intensidade
+  if (intensidade > 80) {
+    prompt += ', strong artistic effect, dramatic transformation';
+  } else if (intensidade > 50) {
+    prompt += ', moderate artistic effect, balanced transformation';
+  } else {
+    prompt += ', subtle artistic effect, gentle transformation';
+  }
+
+  // Adicionar preservação
+  if (preservacao.includes('texto')) {
+    prompt += ', preserve all text clearly readable';
+  }
+  if (preservacao.includes('logos')) {
+    prompt += ', maintain logo integrity and recognition';
+  }
+  if (preservacao.includes('faces')) {
+    prompt += ', preserve facial features and expressions';
+  }
+
+  // Adicionar instruções de preservação estrutural
+  prompt += ', keep the same composition, layout and overall structure';
+
+  // Adicionar contexto específico
+  if (contexto.imageType === 'logo') {
+    prompt += ', maintain professional corporate appearance';
+  } else if (contexto.imageType === 'social') {
+    prompt += ', optimize for social media engagement';
+  }
+
+  console.log('🎨 [ARTISTIC-PROMPT] Prompt gerado:', prompt);
+  return prompt;
+}
+
+// Rota principal para aplicar estilo artístico
+router.post('/galeria/estilo-artistico', async (req, res) => {
+  try {
+    const {
+      imagemId,
+      imagemUrl,
+      estilo,
+      intensidade = 50,
+      preservacao = [],
+      configuracaoAvancada = {}
+    } = req.body;
+
+    console.log('🎨 [ARTISTIC-STYLE] ===== INICIANDO APLICAÇÃO DE ESTILO ARTÍSTICO =====');
+    console.log('🎨 [ARTISTIC-STYLE] Timestamp:', new Date().toISOString());
+    console.log('🎨 [ARTISTIC-STYLE] Dados recebidos:', {
+      imagemId,
+      imagemUrl: imagemUrl ? imagemUrl.substring(0, 50) + '...' : 'VAZIO',
+      estilo,
+      intensidade,
+      preservacao,
+      configuracaoAvancada
+    });
+
+    // Validações básicas
+    if (!imagemId) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID da imagem é obrigatório'
+      });
+    }
+
+    if (!imagemUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'URL da imagem original é obrigatória'
+      });
+    }
+
+    if (!estilo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Estilo artístico é obrigatório'
+      });
+    }
+
+    // Validar estilo suportado
+    const estilosSuportados = ['aquarela', 'oleo', 'sketch', 'cartoon', 'anime', 'vintage', 'vetorial', 'pop-art'];
+    if (!estilosSuportados.includes(estilo)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Estilo artístico não suportado',
+        estilosSuportados
+      });
+    }
+
+    // Extrair informações da imagem
+    const [mockupId, seed] = imagemId.split('_');
+    if (!mockupId || !seed) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID da imagem inválido'
+      });
+    }
+
+    // Buscar mockup para obter contexto
+    const mockup = await Mockup.findById(mockupId);
+    if (!mockup) {
+      return res.status(404).json({
+        success: false,
+        message: 'Mockup não encontrado'
+      });
+    }
+
+    // Verificar permissões
+    if (mockup.criadoPor.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Sem permissão para editar esta imagem'
+      });
+    }
+
+    // ===== REUTILIZAR LÓGICA DE ANÁLISE EXISTENTE =====
+    
+    // 1. Analisar instruções de estilo
+    const styleAnalysis = analyzeStyleInstructions(estilo, intensidade, preservacao);
+    console.log('🎨 [ARTISTIC-STYLE] Análise de estilo:', styleAnalysis);
+
+    // 2. Detectar contexto artístico
+    const artisticContext = detectArtisticContext(imagemUrl, mockup.tipo);
+    console.log('🎨 [ARTISTIC-STYLE] Contexto artístico:', artisticContext);
+
+    // 3. Gerar prompt otimizado
+    const promptOtimizado = generateArtisticPrompt(estilo, intensidade, preservacao, artisticContext, imagemUrl);
+    console.log('🎨 [ARTISTIC-STYLE] Prompt otimizado:', promptOtimizado);
+
+    // 4. Validar compatibilidade
+    if (styleAnalysis.compatibilityScore < 50) {
+      return res.status(400).json({
+        success: false,
+        message: 'Estilo não compatível com esta imagem',
+        warnings: styleAnalysis.warnings,
+        recommendations: styleAnalysis.recommendations
+      });
+    }
+
+    // ===== APLICAR ESTILO COM REPLICATE =====
+    
+    const Replicate = require('replicate');
+    const replicate = new Replicate({
+      auth: process.env.REPLICATE_API_TOKEN,
+    });
+
+    console.log('🎨 [ARTISTIC-STYLE] Iniciando aplicação de estilo com Flux Kontext Pro...');
+    
+    // Configurar parâmetros baseados na intensidade
+    const promptStrength = Math.min(0.3 + (intensidade / 100) * 0.4, 0.7); // 0.3 a 0.7
+    
+    const inputObject = {
+      prompt: promptOtimizado,
+      input_image: imagemUrl,
+      aspect_ratio: "match_input_image",
+      output_format: configuracaoAvancada.outputFormat || "png",
+      safety_tolerance: 2,
+      prompt_upsampling: false,
+      seed: configuracaoAvancada.seed || Math.floor(Math.random() * 1000000)
+    };
+
+    console.log('🎨 [ARTISTIC-STYLE] Parâmetros Replicate:', {
+      prompt: promptOtimizado.substring(0, 100) + '...',
+      promptStrength,
+      outputFormat: inputObject.output_format
+    });
+
+    const startTime = Date.now();
+
+    try {
+      // Criar prediction assíncrona
+      const prediction = await replicate.predictions.create({
+        model: "black-forest-labs/flux-kontext-pro",
+        input: inputObject
+      });
+
+      console.log('🎨 [ARTISTIC-STYLE] Prediction criada:', prediction.id);
+      
+      // Aguardar conclusão
+      const result = await replicate.wait(prediction);
+      
+      const endTime = Date.now();
+      const tempoProcessamento = endTime - startTime;
+
+      console.log('🎨 [ARTISTIC-STYLE] Status final:', result.status);
+      console.log('🎨 [ARTISTIC-STYLE] Tempo total:', tempoProcessamento + 'ms');
+
+      if (result.status === 'failed') {
+        throw new Error(`Prediction falhou: ${result.error || 'Erro desconhecido'}`);
+      }
+
+      if (result.status === 'canceled') {
+        throw new Error('Prediction foi cancelada');
+      }
+
+      // Extrair URL da imagem com estilo aplicado
+      let imagemComEstiloUrl;
+      
+      if (typeof result.output === 'string') {
+        imagemComEstiloUrl = result.output;
+      } else if (Array.isArray(result.output) && result.output.length > 0) {
+        imagemComEstiloUrl = result.output[0];
+      } else {
+        throw new Error('Output inválido da prediction');
+      }
+
+      if (!imagemComEstiloUrl || !imagemComEstiloUrl.startsWith('http')) {
+        throw new Error('URL inválida gerada');
+      }
+
+      console.log('✅ [ARTISTIC-STYLE] Estilo aplicado com sucesso:', imagemComEstiloUrl);
+
+      res.json({
+        success: true,
+        message: `Estilo ${estilo} aplicado com sucesso`,
+        data: {
+          imagemComEstilo: imagemComEstiloUrl,
+          estilo,
+          intensidade,
+          preservacao,
+          promptUsado: promptOtimizado,
+          tempoProcessamento,
+          analysis: styleAnalysis,
+          context: artisticContext
+        }
+      });
+
+    } catch (replicateError) {
+      const endTime = Date.now();
+      const tempoProcessamento = endTime - startTime;
+      
+      console.error('❌ [ARTISTIC-STYLE] Erro do Replicate:', replicateError);
+
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao aplicar estilo artístico',
+        error: replicateError.message,
+        tempoProcessamento
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ [ARTISTIC-STYLE] Erro ao aplicar estilo artístico:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor ao aplicar estilo artístico',
+      error: error.message
+    });
+  }
+});
+
+// Rota para obter recomendações de estilo baseadas na imagem
+router.post('/galeria/recomendacoes-estilo', async (req, res) => {
+  try {
+    const { imagemId, imagemUrl } = req.body;
+
+    if (!imagemId || !imagemUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID e URL da imagem são obrigatórios'
+      });
+    }
+
+    // Extrair informações da imagem
+    const [mockupId] = imagemId.split('_');
+    const mockup = await Mockup.findById(mockupId);
+    
+    if (!mockup) {
+      return res.status(404).json({
+        success: false,
+        message: 'Mockup não encontrado'
+      });
+    }
+
+    // Detectar contexto e gerar recomendações
+    const context = detectArtisticContext(imagemUrl, mockup.tipo);
+    
+    const recomendacoes = {
+      recomendados: context.recommendedStyles,
+      compatibilidade: {
+        'aquarela': context.imageType === 'logo' ? 30 : 85,
+        'oleo': context.imageType === 'logo' ? 40 : 90,
+        'sketch': context.imageType === 'social' ? 80 : 70,
+        'cartoon': context.imageType === 'social' ? 95 : 60,
+        'anime': context.imageType === 'social' ? 90 : 50,
+        'vintage': context.imageType === 'banner' ? 85 : 75,
+        'vetorial': context.imageType === 'logo' ? 95 : 70,
+        'pop-art': context.imageType === 'social' ? 95 : 80
+      },
+      avisos: []
+    };
+
+    if (context.hasText) {
+      recomendacoes.avisos.push('Imagem contém texto - considere preservar legibilidade');
+    }
+
+    if (context.hasLogo) {
+      recomendacoes.avisos.push('Imagem contém logo - mantenha identidade visual');
+    }
+
+    res.json({
+      success: true,
+      data: {
+        contexto: context,
+        recomendacoes,
+        tipoImagem: mockup.tipo
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Erro ao gerar recomendações:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao gerar recomendações de estilo',
+      error: error.message
+    });
+  }
+});
+
+// Rota para salvar imagem com estilo artístico na galeria
+router.post('/galeria/salvar-estilo-artistico', async (req, res) => {
+  try {
+    const {
+      imagemOriginalId,
+      imagemComEstiloUrl,
+      estilo,
+      intensidade,
+      preservacao
+    } = req.body;
+
+    console.log('💾 [SAVE-ARTISTIC] ===== SALVANDO IMAGEM COM ESTILO ARTÍSTICO =====');
+
+    // Validações básicas
+    if (!imagemOriginalId || !imagemComEstiloUrl || !estilo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Dados obrigatórios: imagemOriginalId, imagemComEstiloUrl, estilo'
+      });
+    }
+
+    // Extrair mockupId
+    const [mockupId] = imagemOriginalId.split('_');
+    const mockup = await Mockup.findById(mockupId);
+    
+    if (!mockup) {
+      return res.status(404).json({
+        success: false,
+        message: 'Mockup não encontrado'
+      });
+    }
+
+    // Verificar permissões
+    if (mockup.criadoPor.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Sem permissão para salvar neste mockup'
+      });
+    }
+
+    // Criar nova entrada com estilo artístico
+    const novaImagemComEstilo = {
+      url: imagemComEstiloUrl,
+      seed: Date.now(),
+      publicId: `artistic_${estilo}_${Date.now()}`,
+      dataSalvamento: new Date(),
+      metadadosEstilo: {
+        estilo,
+        intensidade,
+        preservacao,
+        tipoEdicao: 'estilo-artistico'
+      }
+    };
+
+    // Adicionar à galeria
+    if (!mockup.metadados) {
+      mockup.metadados = {};
+    }
+    if (!mockup.metadados.imagensSalvas) {
+      mockup.metadados.imagensSalvas = [];
+    }
+
+    mockup.metadados.imagensSalvas.push(novaImagemComEstilo);
+    await mockup.save();
+
+    console.log('✅ [SAVE-ARTISTIC] Imagem com estilo artístico salva com sucesso');
+
+    res.json({
+      success: true,
+      message: `Imagem com estilo ${estilo} salva na galeria`,
+      data: {
+        mockupId: mockup._id,
+        imagemSalva: novaImagemComEstilo,
+        totalImagens: mockup.metadados.imagensSalvas.length
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ [SAVE-ARTISTIC] Erro ao salvar imagem com estilo:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao salvar imagem com estilo artístico',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
