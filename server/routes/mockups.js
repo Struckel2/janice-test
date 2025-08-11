@@ -855,6 +855,16 @@ router.post('/galeria/editar', async (req, res) => {
     console.log('🎨 [PROMPT-BUILD] Comprimento:', promptEdicao.length);
     console.log('🎨 [PROMPT-BUILD] ===== FIM CONSTRUÇÃO PROMPT =====');
 
+    // 🔍 CHECKPOINT ANTES DA VALIDAÇÃO
+    console.log('🔍 [CHECKPOINT-1] ===== ANTES DA VALIDAÇÃO DE ACESSIBILIDADE =====');
+    console.log('🔍 [CHECKPOINT-1] Timestamp:', new Date().toISOString());
+    console.log('🔍 [CHECKPOINT-1] fetch disponível globalmente?', typeof fetch !== 'undefined');
+    console.log('🔍 [CHECKPOINT-1] globalThis.fetch disponível?', typeof globalThis.fetch !== 'undefined');
+    console.log('🔍 [CHECKPOINT-1] Tipo do fetch:', typeof fetch);
+    console.log('🔍 [CHECKPOINT-1] URL a ser testada:', imagemUrl);
+    console.log('🔍 [CHECKPOINT-1] URL é string?', typeof imagemUrl === 'string');
+    console.log('🔍 [CHECKPOINT-1] URL começa com http?', imagemUrl?.startsWith('http'));
+
     // 🔍 VALIDAÇÃO DE ACESSIBILIDADE DA IMAGEM ORIGINAL
     console.log('🔍 [IMAGE-VALIDATION] ===== VALIDANDO ACESSIBILIDADE DA IMAGEM =====');
     console.log('🔍 [IMAGE-VALIDATION] URL a ser testada:', imagemUrl);
@@ -872,8 +882,17 @@ router.post('/galeria/editar', async (req, res) => {
     
     // Teste de acessibilidade com HEAD request
     console.log('🔍 [HEAD-REQUEST] ===== TESTANDO ACESSIBILIDADE COM HEAD =====');
+    console.log('🔍 [CHECKPOINT-2] Antes do teste HEAD - fetch disponível?', typeof fetch !== 'undefined');
+    
     try {
+      console.log('🔍 [HEAD-REQUEST] Iniciando requisição HEAD...');
       const headStartTime = Date.now();
+      
+      // Verificar se fetch está disponível antes de usar
+      if (typeof fetch === 'undefined') {
+        throw new Error('fetch não está disponível - polyfill falhou');
+      }
+      
       const headResponse = await fetch(imagemUrl, { 
         method: 'HEAD',
         timeout: 10000 // 10 segundos timeout
@@ -881,6 +900,7 @@ router.post('/galeria/editar', async (req, res) => {
       const headEndTime = Date.now();
       const headDuration = headEndTime - headStartTime;
       
+      console.log('🔍 [HEAD-REQUEST] Requisição HEAD concluída com sucesso');
       console.log('🔍 [HEAD-REQUEST] Status da requisição:', headResponse.status);
       console.log('🔍 [HEAD-REQUEST] Status OK?', headResponse.ok);
       console.log('🔍 [HEAD-REQUEST] Tempo de resposta:', headDuration + 'ms');
@@ -908,7 +928,11 @@ router.post('/galeria/editar', async (req, res) => {
     } catch (headError) {
       console.log('❌ [HEAD-REQUEST] ERRO na requisição HEAD:', headError.message);
       console.log('❌ [HEAD-REQUEST] Tipo do erro:', headError.name);
+      console.log('❌ [HEAD-REQUEST] Código do erro:', headError.code);
+      console.log('❌ [HEAD-REQUEST] fetch disponível no catch?', typeof fetch !== 'undefined');
+      console.log('❌ [HEAD-REQUEST] globalThis.fetch disponível?', typeof globalThis.fetch !== 'undefined');
       console.log('❌ [HEAD-REQUEST] Stack do erro:', headError.stack);
+      console.log('❌ [HEAD-REQUEST] CONTINUANDO EXECUÇÃO APESAR DO ERRO...');
     }
     
     // Teste de download parcial
