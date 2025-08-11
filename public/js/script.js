@@ -7345,60 +7345,78 @@ ${currentActionPlanData.conteudo}`;
     }
   }
   
-  // 🚀 CORREÇÃO: Configurar event listeners para seções de edição
+  // 🚀 CORREÇÃO: Configurar event listeners para seções de edição (consolidado)
   function setupEditSectionEventListeners() {
     console.log('🎨 [SETUP-EVENTS] Configurando event listeners para seções de edição...');
     
-    // Configurar cliques nas seções de edição
-    const colorSectionHeader = document.getElementById('color-section-header');
-    const artisticSectionHeader = document.getElementById('artistic-section-header');
+    // Função para configurar um event listener com retry
+    function setupEventListenerWithRetry(elementId, eventType, handler, description, maxRetries = 5) {
+      let retries = 0;
+      
+      function trySetup() {
+        const element = document.getElementById(elementId);
+        if (element) {
+          element.addEventListener(eventType, handler);
+          console.log(`✅ [SETUP-EVENTS] ${description} configurado com sucesso`);
+          return true;
+        } else {
+          retries++;
+          if (retries < maxRetries) {
+            console.log(`⏳ [SETUP-EVENTS] Tentativa ${retries}/${maxRetries} para ${description}...`);
+            setTimeout(trySetup, 200);
+          } else {
+            console.error(`❌ [SETUP-EVENTS] ${description} falhou após ${maxRetries} tentativas - elemento ${elementId} não encontrado`);
+          }
+          return false;
+        }
+      }
+      
+      trySetup();
+    }
     
-    if (colorSectionHeader) {
-      colorSectionHeader.addEventListener('click', () => {
+    // Configurar event listeners com retry
+    setupEventListenerWithRetry(
+      'color-section-header',
+      'click',
+      () => {
         console.log('🎨 [DEBUG] Clique na seção de modificação de cores');
         toggleEditSection('color-section-header');
-      });
-      console.log('✅ [SETUP-EVENTS] Event listener para seção de cores configurado');
-    }
+      },
+      'Event listener para seção de cores'
+    );
     
-    if (artisticSectionHeader) {
-      artisticSectionHeader.addEventListener('click', () => {
+    setupEventListenerWithRetry(
+      'artistic-section-header',
+      'click',
+      () => {
         console.log('🎨 [DEBUG] Clique na seção de estilo artístico');
         toggleEditSection('artistic-section-header');
-      });
-      console.log('✅ [SETUP-EVENTS] Event listener para seção artística configurado');
-    }
+      },
+      'Event listener para seção artística'
+    );
     
-    // Configurar clique no botão de edição de cores
-    const colorEditButton = document.getElementById('color-edit-button');
-    if (colorEditButton) {
-      colorEditButton.addEventListener('click', () => {
-        console.log('🎨 [DEBUG] Clique no botão de edição de cores');
-        toggleColorInstructions();
-      });
-      console.log('✅ [SETUP-EVENTS] Event listener para botão de cores configurado');
-    }
-    
-    // Event listener para textarea de instruções
-    const customInstructions = document.getElementById('custom-edit-instructions');
-    if (customInstructions) {
-      customInstructions.addEventListener('input', () => {
+    setupEventListenerWithRetry(
+      'custom-edit-instructions',
+      'input',
+      () => {
         updateProcessButtonValidation();
-      });
-      console.log('✅ [SETUP-EVENTS] Event listener para textarea configurado');
-    }
+      },
+      'Event listener para textarea de instruções'
+    );
     
-    // Event listeners para checkboxes de preservação
-    const preservationCheckboxes = document.querySelectorAll('.preservation-options input[type="checkbox"]');
-    preservationCheckboxes.forEach(checkbox => {
-      checkbox.addEventListener('change', () => {
-        console.log('🎨 [DEBUG] Checkbox de preservação alterado:', checkbox.value, checkbox.checked);
-        updateProcessButtonValidation();
+    // Configurar checkboxes de preservação com delay
+    setTimeout(() => {
+      const preservationCheckboxes = document.querySelectorAll('.preservation-options input[type="checkbox"]');
+      preservationCheckboxes.forEach((checkbox, index) => {
+        checkbox.addEventListener('change', () => {
+          console.log('🎨 [DEBUG] Checkbox de preservação alterado:', checkbox.value, checkbox.checked);
+          updateProcessButtonValidation();
+        });
       });
-    });
-    console.log(`✅ [SETUP-EVENTS] ${preservationCheckboxes.length} checkboxes de preservação configurados`);
+      console.log(`✅ [SETUP-EVENTS] ${preservationCheckboxes.length} checkboxes de preservação configurados`);
+    }, 1000);
     
-    console.log('✅ [SETUP-EVENTS] Todos os event listeners configurados');
+    console.log('✅ [SETUP-EVENTS] Configuração de event listeners iniciada');
   }
   
   // Função para alternar instruções de cores

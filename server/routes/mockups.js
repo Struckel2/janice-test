@@ -820,18 +820,43 @@ router.post('/galeria/editar', async (req, res) => {
     console.log('✅ [PROMPT-CRITICAL] Comprimento final:', promptEdicao.length);
     console.log('🎨 [PROMPT-CRITICAL] ===== FIM CORREÇÃO CRÍTICA =====');
 
-    // ✅ VALIDAÇÃO SIMPLIFICADA DA IMAGEM
+    // ✅ VALIDAÇÃO ROBUSTA DA IMAGEM COM TRATAMENTO DE ERRO
     console.log('✅ [IMAGE-CHECK] Validando URL da imagem:', imagemUrl.substring(0, 50) + '...');
     
     try {
-      const response = await fetch(imagemUrl, { method: 'HEAD', timeout: 5000 });
-      if (response.ok) {
-        console.log('✅ [IMAGE-CHECK] Imagem acessível');
-      } else {
-        console.log('⚠️ [IMAGE-CHECK] Imagem pode não estar acessível, mas continuando...');
+      const response = await fetch(imagemUrl, { method: 'HEAD', timeout: 10000 });
+      if (!response.ok) {
+        console.error('❌ [IMAGE-CHECK] Imagem não acessível - Status:', response.status);
+        
+        // Retornar erro específico para URLs expiradas
+        if (response.status === 404) {
+          return res.status(400).json({
+            success: false,
+            message: 'A imagem selecionada não está mais disponível (URL expirada)',
+            error: 'IMAGE_URL_EXPIRED',
+            suggestion: 'Por favor, regenere o mockup ou selecione uma imagem mais recente da galeria.'
+          });
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: 'A imagem selecionada não está acessível',
+            error: 'IMAGE_URL_INACCESSIBLE',
+            suggestion: 'Verifique se a imagem ainda existe ou tente novamente.'
+          });
+        }
       }
+      console.log('✅ [IMAGE-CHECK] Imagem acessível e válida');
     } catch (error) {
-      console.log('⚠️ [IMAGE-CHECK] Erro ao validar imagem, mas continuando:', error.message);
+      console.error('❌ [IMAGE-CHECK] Erro ao validar imagem:', error.message);
+      
+      // Retornar erro específico para problemas de conectividade
+      return res.status(400).json({
+        success: false,
+        message: 'Não foi possível acessar a imagem selecionada',
+        error: 'IMAGE_URL_CONNECTION_ERROR',
+        suggestion: 'Verifique sua conexão ou tente selecionar outra imagem.',
+        details: error.message
+      });
     }
 
     // Integração real com Replicate usando Flux 1.1 Pro para edição
