@@ -70,9 +70,6 @@ a<!DOCTYPE html>
                     <button class="tab-button" data-tab="gallery">
                         <i class="fas fa-images"></i> Galeria
                     </button>
-                    <button class="tab-button" data-tab="artistic-style">
-                        <i class="fas fa-paint-brush"></i> Estilo Artístico
-                    </button>
                 </div>
                 
                 <div class="tab-content active" id="analysis-tab">
@@ -183,160 +180,6 @@ a<!DOCTYPE html>
                     </div>
                 </div>
                 
-                <div class="tab-content" id="artistic-style-tab">
-                    <div class="client-artistic-style">
-                        <div class="artistic-style-header">
-                            <div class="artistic-style-title-section">
-                                <h3>🎨 Estilo Artístico</h3>
-                                <p>Aplique estilos artísticos às suas imagens da galeria</p>
-                            </div>
-                            <div class="artistic-style-info">
-                                <div class="info-card">
-                                    <i class="fas fa-magic"></i>
-                                    <div class="info-content">
-                                        <h4>Como funciona</h4>
-                                        <p>Selecione uma imagem da galeria e aplique estilos artísticos como aquarela, óleo, sketch, cartoon e muito mais</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="artistic-style-content">
-                            <div class="style-selection-area" id="style-selection-area">
-                                <div class="no-image-selected">
-                                    <i class="fas fa-hand-pointer"></i>
-                                    <h4>Selecione uma imagem</h4>
-                                    <p>Vá para a aba "Galeria" e clique em uma imagem para aplicar estilos artísticos</p>
-                                    <button id="go-to-gallery-btn" class="action-button secondary">
-                                        <i class="fas fa-images"></i> Ir para Galeria
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <div class="style-preview-area" id="style-preview-area" style="display: none;">
-                                <div class="image-preview-section">
-                                    <div class="original-image-preview">
-                                        <h4>Imagem Original</h4>
-                                        <img id="artistic-original-image" src="" alt="Imagem original">
-                                        <div class="image-info">
-                                            <span id="artistic-image-title">Título da imagem</span>
-                                            <span id="artistic-image-type">Tipo</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="style-result-preview">
-                                        <h4>Resultado com Estilo</h4>
-                                        <div id="artistic-result-container">
-                                            <div class="style-placeholder">
-                                                <i class="fas fa-paint-brush"></i>
-                                                <p>O resultado aparecerá aqui</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="style-controls-section">
-                                    <div class="style-selector">
-                                        <h4>🎨 Escolha o Estilo</h4>
-                                        <div class="style-grid">
-                                            <div class="style-option" data-style="aquarela">
-                                                <div class="style-icon">🎨</div>
-                                                <div class="style-name">Aquarela</div>
-                                                <div class="style-description">Efeito de tinta aquarela</div>
-                                            </div>
-                                            <div class="style-option" data-style="oleo">
-                                                <div class="style-icon">🖌️</div>
-                                                <div class="style-name">Óleo</div>
-                                                <div class="style-description">Pintura a óleo clássica</div>
-                                            </div>
-                                            <div class="style-option" data-style="sketch">
-                                                <div class="style-icon">✏️</div>
-                                                <div class="style-name">Sketch</div>
-                                                <div class="style-description">Desenho a lápis</div>
-                                            </div>
-                                            <div class="style-option" data-style="cartoon">
-                                                <div class="style-icon">🎭</div>
-                                                <div class="style-name">Cartoon</div>
-                                                <div class="style-description">Estilo cartoon/animação</div>
-                                            </div>
-                                            <div class="style-option" data-style="anime">
-                                                <div class="style-icon">🌸</div>
-                                                <div class="style-name">Anime</div>
-                                                <div class="style-description">Estilo anime/manga</div>
-                                            </div>
-                                            <div class="style-option" data-style="vintage">
-                                                <div class="style-icon">📸</div>
-                                                <div class="style-name">Vintage</div>
-                                                <div class="style-description">Efeito fotográfico retrô</div>
-                                            </div>
-                                            <div class="style-option" data-style="vetorial">
-                                                <div class="style-icon">🎯</div>
-                                                <div class="style-name">Vetorial</div>
-                                                <div class="style-description">Estilo vetorial limpo</div>
-                                            </div>
-                                            <div class="style-option" data-style="pop-art">
-                                                <div class="style-icon">🌈</div>
-                                                <div class="style-name">Pop Art</div>
-                                                <div class="style-description">Estilo pop art vibrante</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="style-settings">
-                                        <div class="setting-group">
-                                            <label for="style-intensity">Intensidade do Estilo</label>
-                                            <div class="slider-container">
-                                                <input type="range" id="style-intensity" min="10" max="100" value="50">
-                                                <span class="slider-value" id="intensity-value">50%</span>
-                                            </div>
-                                            <small>Controla o quanto o estilo será aplicado</small>
-                                        </div>
-                                        
-                                        <div class="setting-group">
-                                            <label>Preservar Elementos</label>
-                                            <div class="preservation-options">
-                                                <label class="checkbox-option">
-                                                    <input type="checkbox" id="preserve-text" value="texto">
-                                                    <span class="checkmark"></span>
-                                                    <span class="option-text">📝 Texto</span>
-                                                </label>
-                                                <label class="checkbox-option">
-                                                    <input type="checkbox" id="preserve-logos" value="logos">
-                                                    <span class="checkmark"></span>
-                                                    <span class="option-text">🏷️ Logos</span>
-                                                </label>
-                                                <label class="checkbox-option">
-                                                    <input type="checkbox" id="preserve-faces" value="faces">
-                                                    <span class="checkmark"></span>
-                                                    <span class="option-text">👤 Faces</span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="style-recommendations" id="style-recommendations">
-                                        <h5>💡 Recomendações</h5>
-                                        <div class="recommendations-list" id="recommendations-list">
-                                            <!-- Recomendações serão inseridas dinamicamente -->
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="style-actions">
-                                        <button id="apply-style-btn" class="action-button" disabled>
-                                            <i class="fas fa-magic"></i> Aplicar Estilo
-                                        </button>
-                                        <button id="save-styled-image-btn" class="action-button secondary" style="display: none;">
-                                            <i class="fas fa-save"></i> Salvar na Galeria
-                                        </button>
-                                        <button id="reset-style-btn" class="action-button secondary">
-                                            <i class="fas fa-undo"></i> Resetar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -1015,53 +858,160 @@ a<!DOCTYPE html>
                         </div>
                     </div>
                     <div class="editor-controls">
-                        <div class="color-modification-section">
-                            <div class="edit-type-header">
+                        <!-- Seção de Modificação de Cores -->
+                        <div class="edit-section color-modification-section">
+                            <div class="edit-section-header" id="color-section-header">
                                 <div class="edit-type-icon">🎨</div>
                                 <div class="edit-type-info">
                                     <h4>Modificação de Cores</h4>
                                     <p>Altere as cores da imagem mantendo exatamente a mesma forma e estrutura</p>
                                 </div>
-                            </div>
-                            
-                            <div class="color-edit-button" id="color-edit-button">
-                                <div class="color-edit-content">
-                                    <i class="fas fa-palette"></i>
-                                    <span>Clique para especificar as cores que deseja alterar</span>
-                                </div>
-                                <div class="color-edit-arrow">
+                                <div class="section-toggle">
                                     <i class="fas fa-chevron-down"></i>
                                 </div>
                             </div>
                             
-                            <div class="color-instructions-container" id="color-instructions-container" style="display: none;">
-                                <div class="color-instructions-header">
-                                    <h5>💬 Descreva a modificação de cores</h5>
-                                    <div class="example-hint">
-                                        <strong>Exemplo:</strong> "Mudar roxo para azul e laranja para branco. Manter EXATAMENTE a mesma figura"
+                            <div class="edit-section-content" id="color-section-content">
+                                <div class="color-edit-button" id="color-edit-button">
+                                    <div class="color-edit-content">
+                                        <i class="fas fa-palette"></i>
+                                        <span>Clique para especificar as cores que deseja alterar</span>
+                                    </div>
+                                    <div class="color-edit-arrow">
+                                        <i class="fas fa-chevron-down"></i>
                                     </div>
                                 </div>
                                 
-                                <textarea id="custom-edit-instructions" rows="4" 
-                                        placeholder="Ex: Alterar a cor principal de roxo para azul e os detalhes de laranja para branco, mantendo exatamente a mesma forma geométrica..."></textarea>
-                                
-                                <div class="color-tips">
-                                    <div class="tip-item">
-                                        <i class="fas fa-lightbulb"></i>
-                                        <span><strong>Dica:</strong> Seja específico sobre quais cores alterar e para quais cores mudar</span>
+                                <div class="color-instructions-container" id="color-instructions-container" style="display: none;">
+                                    <div class="color-instructions-header">
+                                        <h5>💬 Descreva a modificação de cores</h5>
+                                        <div class="example-hint">
+                                            <strong>Exemplo:</strong> "Mudar roxo para azul e laranja para branco. Manter EXATAMENTE a mesma figura"
+                                        </div>
                                     </div>
-                                    <div class="tip-item">
-                                        <i class="fas fa-shield-alt"></i>
-                                        <span><strong>Preservação:</strong> Sempre mencione "manter a mesma forma/figura" para melhores resultados</span>
+                                    
+                                    <textarea id="custom-edit-instructions" rows="4" 
+                                            placeholder="Ex: Alterar a cor principal de roxo para azul e os detalhes de laranja para branco, mantendo exatamente a mesma forma geométrica..."></textarea>
+                                    
+                                    <div class="color-tips">
+                                        <div class="tip-item">
+                                            <i class="fas fa-lightbulb"></i>
+                                            <span><strong>Dica:</strong> Seja específico sobre quais cores alterar e para quais cores mudar</span>
+                                        </div>
+                                        <div class="tip-item">
+                                            <i class="fas fa-shield-alt"></i>
+                                            <span><strong>Preservação:</strong> Sempre mencione "manter a mesma forma/figura" para melhores resultados</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="color-examples">
+                                        <h6>✅ Exemplos de instruções eficazes:</h6>
+                                        <div class="example-list">
+                                            <div class="example-item">"Alterar o fundo de azul para verde, mantendo todos os elementos na mesma posição"</div>
+                                            <div class="example-item">"Mudar a cor do logo de vermelho para dourado, preservando exatamente a mesma forma"</div>
+                                            <div class="example-item">"Trocar as cores: azul → branco, laranja → preto. Manter idêntica a estrutura visual"</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Seção de Estilo Artístico -->
+                        <div class="edit-section artistic-style-section">
+                            <div class="edit-section-header" id="artistic-section-header">
+                                <div class="edit-type-icon">🖌️</div>
+                                <div class="edit-type-info">
+                                    <h4>Estilo Artístico</h4>
+                                    <p>Aplique estilos artísticos únicos mantendo a essência da imagem</p>
+                                </div>
+                                <div class="section-toggle">
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="edit-section-content" id="artistic-section-content" style="display: none;">
+                                <div class="style-selector">
+                                    <h5>🎨 Escolha o Estilo</h5>
+                                    <div class="style-grid">
+                                        <div class="style-option" data-style="aquarela">
+                                            <div class="style-icon">🎨</div>
+                                            <div class="style-name">Aquarela</div>
+                                            <div class="style-description">Efeito de tinta aquarela</div>
+                                        </div>
+                                        <div class="style-option" data-style="oleo">
+                                            <div class="style-icon">🖌️</div>
+                                            <div class="style-name">Óleo</div>
+                                            <div class="style-description">Pintura a óleo clássica</div>
+                                        </div>
+                                        <div class="style-option" data-style="sketch">
+                                            <div class="style-icon">✏️</div>
+                                            <div class="style-name">Sketch</div>
+                                            <div class="style-description">Desenho a lápis</div>
+                                        </div>
+                                        <div class="style-option" data-style="cartoon">
+                                            <div class="style-icon">🎭</div>
+                                            <div class="style-name">Cartoon</div>
+                                            <div class="style-description">Estilo cartoon/animação</div>
+                                        </div>
+                                        <div class="style-option" data-style="anime">
+                                            <div class="style-icon">🌸</div>
+                                            <div class="style-name">Anime</div>
+                                            <div class="style-description">Estilo anime/manga</div>
+                                        </div>
+                                        <div class="style-option" data-style="vintage">
+                                            <div class="style-icon">📸</div>
+                                            <div class="style-name">Vintage</div>
+                                            <div class="style-description">Efeito fotográfico retrô</div>
+                                        </div>
+                                        <div class="style-option" data-style="vetorial">
+                                            <div class="style-icon">🎯</div>
+                                            <div class="style-name">Vetorial</div>
+                                            <div class="style-description">Estilo vetorial limpo</div>
+                                        </div>
+                                        <div class="style-option" data-style="pop-art">
+                                            <div class="style-icon">🌈</div>
+                                            <div class="style-name">Pop Art</div>
+                                            <div class="style-description">Estilo pop art vibrante</div>
+                                        </div>
                                     </div>
                                 </div>
                                 
-                                <div class="color-examples">
-                                    <h6>✅ Exemplos de instruções eficazes:</h6>
-                                    <div class="example-list">
-                                        <div class="example-item">"Alterar o fundo de azul para verde, mantendo todos os elementos na mesma posição"</div>
-                                        <div class="example-item">"Mudar a cor do logo de vermelho para dourado, preservando exatamente a mesma forma"</div>
-                                        <div class="example-item">"Trocar as cores: azul → branco, laranja → preto. Manter idêntica a estrutura visual"</div>
+                                <div class="style-settings">
+                                    <div class="setting-group">
+                                        <label for="style-intensity">Intensidade do Estilo</label>
+                                        <div class="slider-container">
+                                            <input type="range" id="style-intensity" min="10" max="100" value="50">
+                                            <span class="slider-value" id="style-intensity-value">50%</span>
+                                        </div>
+                                        <small>Controla o quanto o estilo será aplicado</small>
+                                    </div>
+                                    
+                                    <div class="setting-group">
+                                        <label>Preservar Elementos</label>
+                                        <div class="preservation-options">
+                                            <label class="checkbox-option">
+                                                <input type="checkbox" id="preserve-colors" value="cores">
+                                                <span class="checkmark"></span>
+                                                <span class="option-text">🎨 Cores Originais</span>
+                                            </label>
+                                            <label class="checkbox-option">
+                                                <input type="checkbox" id="preserve-shapes" value="formas">
+                                                <span class="checkmark"></span>
+                                                <span class="option-text">📐 Formas</span>
+                                            </label>
+                                            <label class="checkbox-option">
+                                                <input type="checkbox" id="preserve-text" value="texto">
+                                                <span class="checkmark"></span>
+                                                <span class="option-text">📝 Texto</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="style-recommendations" id="style-recommendations">
+                                    <h5>💡 Recomendações</h5>
+                                    <div class="recommendations-list" id="recommendations-list">
+                                        <div class="recommendation-item">Selecione um estilo para ver recomendações específicas</div>
                                     </div>
                                 </div>
                             </div>
