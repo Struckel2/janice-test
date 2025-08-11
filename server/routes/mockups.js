@@ -855,6 +855,162 @@ router.post('/galeria/editar', async (req, res) => {
     console.log('🎨 [PROMPT-BUILD] Comprimento:', promptEdicao.length);
     console.log('🎨 [PROMPT-BUILD] ===== FIM CONSTRUÇÃO PROMPT =====');
 
+    // 🔍 VALIDAÇÃO DE ACESSIBILIDADE DA IMAGEM ORIGINAL
+    console.log('🔍 [IMAGE-VALIDATION] ===== VALIDANDO ACESSIBILIDADE DA IMAGEM =====');
+    console.log('🔍 [IMAGE-VALIDATION] URL a ser testada:', imagemUrl);
+    console.log('🔍 [IMAGE-VALIDATION] Timestamp validação:', new Date().toISOString());
+    
+    // Análise básica da URL
+    console.log('🔍 [URL-ANALYSIS] ===== ANÁLISE BÁSICA DA URL =====');
+    console.log('🔍 [URL-ANALYSIS] URL completa:', imagemUrl);
+    console.log('🔍 [URL-ANALYSIS] Comprimento da URL:', imagemUrl.length);
+    console.log('🔍 [URL-ANALYSIS] Protocolo HTTPS?', imagemUrl.startsWith('https://'));
+    console.log('🔍 [URL-ANALYSIS] É URL do Cloudinary?', imagemUrl.includes('res.cloudinary.com'));
+    console.log('🔍 [URL-ANALYSIS] Tem parâmetros de upload?', imagemUrl.includes('/upload/'));
+    console.log('🔍 [URL-ANALYSIS] Formato da imagem:', imagemUrl.split('.').pop());
+    console.log('🔍 [URL-ANALYSIS] É URL pública?', !imagemUrl.includes('private') && !imagemUrl.includes('authenticated'));
+    
+    // Teste de acessibilidade com HEAD request
+    console.log('🔍 [HEAD-REQUEST] ===== TESTANDO ACESSIBILIDADE COM HEAD =====');
+    try {
+      const headStartTime = Date.now();
+      const headResponse = await fetch(imagemUrl, { 
+        method: 'HEAD',
+        timeout: 10000 // 10 segundos timeout
+      });
+      const headEndTime = Date.now();
+      const headDuration = headEndTime - headStartTime;
+      
+      console.log('🔍 [HEAD-REQUEST] Status da requisição:', headResponse.status);
+      console.log('🔍 [HEAD-REQUEST] Status OK?', headResponse.ok);
+      console.log('🔍 [HEAD-REQUEST] Tempo de resposta:', headDuration + 'ms');
+      console.log('🔍 [HEAD-REQUEST] Content-Type:', headResponse.headers.get('content-type'));
+      console.log('🔍 [HEAD-REQUEST] Content-Length:', headResponse.headers.get('content-length'));
+      console.log('🔍 [HEAD-REQUEST] Cache-Control:', headResponse.headers.get('cache-control'));
+      console.log('🔍 [HEAD-REQUEST] ETag:', headResponse.headers.get('etag'));
+      console.log('🔍 [HEAD-REQUEST] Last-Modified:', headResponse.headers.get('last-modified'));
+      
+      // Verificar se é uma imagem válida
+      const contentType = headResponse.headers.get('content-type');
+      const isValidImage = contentType && contentType.startsWith('image/');
+      console.log('🔍 [HEAD-REQUEST] É imagem válida?', isValidImage);
+      console.log('🔍 [HEAD-REQUEST] Tipo de imagem:', contentType);
+      
+      if (!headResponse.ok) {
+        console.log('❌ [HEAD-REQUEST] ERRO: Imagem não acessível - Status:', headResponse.status);
+        console.log('❌ [HEAD-REQUEST] Status Text:', headResponse.statusText);
+      }
+      
+      if (!isValidImage) {
+        console.log('❌ [HEAD-REQUEST] ERRO: Content-Type não é de imagem:', contentType);
+      }
+      
+    } catch (headError) {
+      console.log('❌ [HEAD-REQUEST] ERRO na requisição HEAD:', headError.message);
+      console.log('❌ [HEAD-REQUEST] Tipo do erro:', headError.name);
+      console.log('❌ [HEAD-REQUEST] Stack do erro:', headError.stack);
+    }
+    
+    // Teste de download parcial
+    console.log('🔍 [DOWNLOAD-TEST] ===== TESTANDO DOWNLOAD PARCIAL =====');
+    try {
+      const downloadStartTime = Date.now();
+      const downloadResponse = await fetch(imagemUrl, { 
+        method: 'GET',
+        headers: { 
+          'Range': 'bytes=0-1023' // Baixar apenas 1KB para teste
+        },
+        timeout: 15000 // 15 segundos timeout
+      });
+      const downloadEndTime = Date.now();
+      const downloadDuration = downloadEndTime - downloadStartTime;
+      
+      console.log('🔍 [DOWNLOAD-TEST] Status do download:', downloadResponse.status);
+      console.log('🔍 [DOWNLOAD-TEST] Status OK?', downloadResponse.ok);
+      console.log('🔍 [DOWNLOAD-TEST] Tempo de download:', downloadDuration + 'ms');
+      console.log('🔍 [DOWNLOAD-TEST] Accept-Ranges:', downloadResponse.headers.get('accept-ranges'));
+      console.log('🔍 [DOWNLOAD-TEST] Content-Range:', downloadResponse.headers.get('content-range'));
+      console.log('🔍 [DOWNLOAD-TEST] Content-Length:', downloadResponse.headers.get('content-length'));
+      
+      if (downloadResponse.ok) {
+        const buffer = await downloadResponse.arrayBuffer();
+        console.log('🔍 [DOWNLOAD-TEST] Bytes baixados:', buffer.byteLength);
+        console.log('🔍 [DOWNLOAD-TEST] Download bem-sucedido!');
+        
+        // Verificar assinatura de arquivo de imagem
+        const uint8Array = new Uint8Array(buffer);
+        const firstBytes = Array.from(uint8Array.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+        console.log('🔍 [DOWNLOAD-TEST] Primeiros bytes (hex):', firstBytes);
+        
+        // Detectar tipo de arquivo pelos magic numbers
+        if (uint8Array[0] === 0xFF && uint8Array[1] === 0xD8) {
+          console.log('🔍 [DOWNLOAD-TEST] Formato detectado: JPEG');
+        } else if (uint8Array[0] === 0x89 && uint8Array[1] === 0x50 && uint8Array[2] === 0x4E && uint8Array[3] === 0x47) {
+          console.log('🔍 [DOWNLOAD-TEST] Formato detectado: PNG');
+        } else if (uint8Array[0] === 0x47 && uint8Array[1] === 0x49 && uint8Array[2] === 0x46) {
+          console.log('🔍 [DOWNLOAD-TEST] Formato detectado: GIF');
+        } else if (uint8Array[0] === 0x52 && uint8Array[1] === 0x49 && uint8Array[2] === 0x46 && uint8Array[3] === 0x46) {
+          console.log('🔍 [DOWNLOAD-TEST] Formato detectado: WEBP');
+        } else {
+          console.log('🔍 [DOWNLOAD-TEST] Formato não reconhecido ou corrompido');
+        }
+        
+      } else {
+        console.log('❌ [DOWNLOAD-TEST] ERRO no download - Status:', downloadResponse.status);
+        console.log('❌ [DOWNLOAD-TEST] Status Text:', downloadResponse.statusText);
+      }
+      
+    } catch (downloadError) {
+      console.log('❌ [DOWNLOAD-TEST] ERRO no download:', downloadError.message);
+      console.log('❌ [DOWNLOAD-TEST] Tipo do erro:', downloadError.name);
+      console.log('❌ [DOWNLOAD-TEST] Stack do erro:', downloadError.stack);
+    }
+    
+    // Verificação de CORS e acesso externo
+    console.log('🔍 [CORS-CHECK] ===== VERIFICANDO ACESSO EXTERNO =====');
+    console.log('🔍 [CORS-CHECK] Domínio da URL:', new URL(imagemUrl).hostname);
+    console.log('🔍 [CORS-CHECK] Protocolo:', new URL(imagemUrl).protocol);
+    console.log('🔍 [CORS-CHECK] Porta:', new URL(imagemUrl).port || 'padrão');
+    console.log('🔍 [CORS-CHECK] Path:', new URL(imagemUrl).pathname);
+    console.log('🔍 [CORS-CHECK] Query params:', new URL(imagemUrl).search);
+    
+    // Teste de acessibilidade externa (simulando acesso do Replicate)
+    console.log('🔍 [EXTERNAL-ACCESS] ===== SIMULANDO ACESSO EXTERNO =====');
+    try {
+      const externalStartTime = Date.now();
+      const externalResponse = await fetch(imagemUrl, { 
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Replicate-Image-Processor/1.0',
+          'Accept': 'image/*',
+          'Accept-Encoding': 'gzip, deflate, br'
+        },
+        timeout: 20000 // 20 segundos timeout
+      });
+      const externalEndTime = Date.now();
+      const externalDuration = externalEndTime - externalStartTime;
+      
+      console.log('🔍 [EXTERNAL-ACCESS] Status:', externalResponse.status);
+      console.log('🔍 [EXTERNAL-ACCESS] Status OK?', externalResponse.ok);
+      console.log('🔍 [EXTERNAL-ACCESS] Tempo total:', externalDuration + 'ms');
+      console.log('🔍 [EXTERNAL-ACCESS] Content-Length:', externalResponse.headers.get('content-length'));
+      console.log('🔍 [EXTERNAL-ACCESS] Acessível externamente?', externalResponse.ok);
+      
+      if (externalResponse.ok) {
+        console.log('✅ [EXTERNAL-ACCESS] Imagem ACESSÍVEL para serviços externos como Replicate');
+      } else {
+        console.log('❌ [EXTERNAL-ACCESS] Imagem NÃO ACESSÍVEL para serviços externos');
+        console.log('❌ [EXTERNAL-ACCESS] Isso pode explicar por que o Flux não usa a imagem original!');
+      }
+      
+    } catch (externalError) {
+      console.log('❌ [EXTERNAL-ACCESS] ERRO no acesso externo:', externalError.message);
+      console.log('❌ [EXTERNAL-ACCESS] Isso indica que o Replicate provavelmente não consegue acessar a imagem!');
+      console.log('❌ [EXTERNAL-ACCESS] Tipo do erro:', externalError.name);
+    }
+    
+    console.log('🔍 [IMAGE-VALIDATION] ===== FIM DA VALIDAÇÃO =====');
+
     // Integração real com Replicate usando Flux 1.1 Pro para edição
     const Replicate = require('replicate');
     const replicate = new Replicate({
