@@ -780,52 +780,36 @@ router.post('/galeria/editar', async (req, res) => {
       });
     }
 
-    // 🚀 CORREÇÃO SIMPLIFICADA: Prompt direto e eficaz para preservação
-    console.log('🎨 [PROMPT-BUILD] ===== INICIANDO CONSTRUÇÃO DO PROMPT =====');
+    // 🚀 CORREÇÃO CRÍTICA: Preservar prompt inteligente do frontend
+    console.log('🎨 [PROMPT-BUILD] ===== PRESERVANDO PROMPT INTELIGENTE DO FRONTEND =====');
     let promptEdicao = '';
 
-    // 🎯 PROMPT SIMPLES E DIRETO
-    console.log('🎨 [PROMPT-BUILD] Verificando instruções...');
+    // 🎯 USAR PROMPT COMPLETO DO FRONTEND SEM MODIFICAÇÕES
+    console.log('🎨 [PROMPT-BUILD] Verificando instruções do frontend...');
     console.log('🎨 [PROMPT-BUILD] instrucoes existe?', !!instrucoes);
     console.log('🎨 [PROMPT-BUILD] instrucoes.trim() !== ""?', instrucoes && instrucoes.trim() !== '');
     
     if (instrucoes && instrucoes.trim() !== '') {
-      console.log('🎨 [PROMPT-BUILD] Usando instruções do usuário como base');
-      // Usar apenas as instruções do usuário, de forma simples e direta
+      console.log('🎨 [PROMPT-BUILD] ✅ USANDO PROMPT INTELIGENTE COMPLETO DO FRONTEND');
+      // 🔥 CORREÇÃO: Usar o prompt EXATAMENTE como veio do frontend
       promptEdicao = instrucoes.trim();
-      console.log('🎨 [PROMPT-BUILD] Prompt inicial:', `"${promptEdicao}"`);
+      console.log('🎨 [PROMPT-BUILD] Prompt inteligente preservado:', `"${promptEdicao}"`);
+      console.log('🎨 [PROMPT-BUILD] Comprimento do prompt:', promptEdicao.length);
       
-      // Verificar se já tem palavras de preservação
-      const temKeep = promptEdicao.toLowerCase().includes('keep');
-      const temMaintain = promptEdicao.toLowerCase().includes('maintain');
-      const temPreserve = promptEdicao.toLowerCase().includes('preserve');
-      const temSame = promptEdicao.toLowerCase().includes('same');
-      
-      console.log('🎨 [PROMPT-BUILD] Verificação de palavras de preservação:');
-      console.log('🎨 [PROMPT-BUILD] - tem "keep"?', temKeep);
-      console.log('🎨 [PROMPT-BUILD] - tem "maintain"?', temMaintain);
-      console.log('🎨 [PROMPT-BUILD] - tem "preserve"?', temPreserve);
-      console.log('🎨 [PROMPT-BUILD] - tem "same"?', temSame);
-      
-      // Adicionar contexto mínimo para preservação apenas se necessário
-      if (!temKeep && !temMaintain && !temPreserve && !temSame) {
-        console.log('🎨 [PROMPT-BUILD] Adicionando contexto de preservação');
-        promptEdicao += '. Keep the same shape, design and composition';
-        console.log('🎨 [PROMPT-BUILD] Prompt após preservação:', `"${promptEdicao}"`);
-      } else {
-        console.log('🎨 [PROMPT-BUILD] Preservação já presente, não adicionando');
-      }
+      // ❌ REMOVIDO: Lógica que truncava o prompt
+      // Não vamos mais verificar palavras de preservação nem modificar o prompt
+      console.log('🎨 [PROMPT-BUILD] ✅ Prompt mantido INTEGRALMENTE sem modificações');
     }
 
-    // 🏷️ CATEGORIAS COMO CONTEXTO ADICIONAL (apenas se não há instruções)
-    console.log('🎨 [PROMPT-BUILD] Verificando categorias...');
+    // 🏷️ CATEGORIAS COMO FALLBACK (apenas se não há instruções)
+    console.log('🎨 [PROMPT-BUILD] Verificando categorias como fallback...');
     const semInstrucoes = !instrucoes || instrucoes.trim() === '';
     const temCategorias = categorias && categorias.length > 0;
     console.log('🎨 [PROMPT-BUILD] Sem instruções?', semInstrucoes);
     console.log('🎨 [PROMPT-BUILD] Tem categorias?', temCategorias);
     
     if (semInstrucoes && temCategorias) {
-      console.log('🎨 [PROMPT-BUILD] Usando categorias como base');
+      console.log('🎨 [PROMPT-BUILD] Usando categorias como fallback');
       let modificacoes = [];
       categorias.forEach((categoria, index) => {
         console.log(`🎨 [PROMPT-BUILD] Categoria ${index}:`, categoria);
@@ -839,8 +823,8 @@ router.post('/galeria/editar', async (req, res) => {
       console.log('🎨 [PROMPT-BUILD] Prompt de categorias:', `"${promptEdicao}"`);
     }
 
-    // Fallback se não há instruções nem categorias
-    console.log('🎨 [PROMPT-BUILD] Verificando fallback...');
+    // Fallback final se não há instruções nem categorias
+    console.log('🎨 [PROMPT-BUILD] Verificando fallback final...');
     const promptVazio = !promptEdicao || promptEdicao.trim() === '';
     console.log('🎨 [PROMPT-BUILD] Prompt está vazio?', promptVazio);
     
@@ -850,10 +834,11 @@ router.post('/galeria/editar', async (req, res) => {
       console.log('🎨 [PROMPT-BUILD] Prompt fallback:', `"${promptEdicao}"`);
     }
 
-    console.log('🎨 [PROMPT-BUILD] ===== PROMPT FINAL CONSTRUÍDO =====');
+    console.log('🎨 [PROMPT-BUILD] ===== PROMPT FINAL PRESERVADO =====');
     console.log('🎨 [PROMPT-BUILD] Prompt final:', `"${promptEdicao}"`);
     console.log('🎨 [PROMPT-BUILD] Comprimento:', promptEdicao.length);
-    console.log('🎨 [PROMPT-BUILD] ===== FIM CONSTRUÇÃO PROMPT =====');
+    console.log('🎨 [PROMPT-BUILD] ✅ PROMPT INTELIGENTE PRESERVADO INTEGRALMENTE');
+    console.log('🎨 [PROMPT-BUILD] ===== FIM PRESERVAÇÃO PROMPT =====');
 
     // 🔍 CHECKPOINT ANTES DA VALIDAÇÃO
     console.log('🔍 [CHECKPOINT-1] ===== ANTES DA VALIDAÇÃO DE ACESSIBILIDADE =====');
