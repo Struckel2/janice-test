@@ -6102,8 +6102,45 @@ ${currentActionPlanData.conteudo}`;
       });
     }
     
-    // Configurar botão de modificação de cores
+    // Configurar evento do textarea de instruções de cores
+    const customInstructions = document.getElementById('custom-edit-instructions');
+    if (customInstructions) {
+      customInstructions.addEventListener('input', () => {
+        // Atualizar preview das instruções
+        updateColorEditPreview();
+      });
+    }
+    
+    // ===== CONFIGURAR EVENT LISTENERS PARA SEÇÕES DE EDIÇÃO =====
+    
+    // Configurar cliques nas seções de edição
+    const colorSectionHeader = document.getElementById('color-section-header');
+    const artisticSectionHeader = document.getElementById('artistic-section-header');
+    
+    if (colorSectionHeader) {
+      colorSectionHeader.addEventListener('click', () => {
+        console.log('🎨 [DEBUG] Clique na seção de modificação de cores');
+        toggleEditSection('color-section');
+      });
+    }
+    
+    if (artisticSectionHeader) {
+      artisticSectionHeader.addEventListener('click', () => {
+        console.log('🎨 [DEBUG] Clique na seção de estilo artístico');
+        toggleEditSection('artistic-section');
+      });
+    }
+    
+    // Configurar clique no botão de edição de cores
     const colorEditButton = document.getElementById('color-edit-button');
+    if (colorEditButton) {
+      colorEditButton.addEventListener('click', () => {
+        console.log('🎨 [DEBUG] Clique no botão de edição de cores');
+        toggleColorInstructions();
+      });
+    }
+    
+    // Configurar botão de modificação de cores (container de instruções)
     const colorInstructionsContainer = document.getElementById('color-instructions-container');
     
     if (colorEditButton && colorInstructionsContainer) {
@@ -6113,11 +6150,13 @@ ${currentActionPlanData.conteudo}`;
         if (isVisible) {
           // Esconder container
           colorInstructionsContainer.style.display = 'none';
-          colorEditButton.querySelector('.color-edit-arrow i').className = 'fas fa-chevron-down';
+          const arrow = colorEditButton.querySelector('.color-edit-arrow i');
+          if (arrow) arrow.className = 'fas fa-chevron-down';
         } else {
           // Mostrar container
           colorInstructionsContainer.style.display = 'block';
-          colorEditButton.querySelector('.color-edit-arrow i').className = 'fas fa-chevron-up';
+          const arrow = colorEditButton.querySelector('.color-edit-arrow i');
+          if (arrow) arrow.className = 'fas fa-chevron-up';
           
           // Focar no textarea
           const textarea = document.getElementById('custom-edit-instructions');
@@ -6125,15 +6164,6 @@ ${currentActionPlanData.conteudo}`;
             setTimeout(() => textarea.focus(), 100);
           }
         }
-      });
-    }
-    
-    // Configurar evento do textarea de instruções de cores
-    const customInstructions = document.getElementById('custom-edit-instructions');
-    if (customInstructions) {
-      customInstructions.addEventListener('input', () => {
-        // Atualizar preview das instruções
-        updateColorEditPreview();
       });
     }
   }
