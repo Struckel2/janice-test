@@ -4140,95 +4140,56 @@ ${currentActionPlanData.conteudo}`;
     
     console.log('🔄 [IMAGE-EDITOR] Iniciando processamento da edição...');
     
-    // Coletar categorias selecionadas
-    const selectedCategories = [];
+    // Obter instruções do usuário
+    const userInstructions = document.getElementById('custom-edit-instructions')?.value?.trim();
     
-    // Textos
-    const textEdits = Array.from(document.querySelectorAll('input[name="edit-text"]:checked'))
-      .map(input => input.value);
-    if (textEdits.length > 0) {
-      selectedCategories.push({
-        categoria: 'textos',
-        modificacoes: textEdits
-      });
-    }
-    
-    // Cores
-    const colorEdits = Array.from(document.querySelectorAll('input[name="edit-colors"]:checked'))
-      .map(input => input.value);
-    if (colorEdits.length > 0) {
-      selectedCategories.push({
-        categoria: 'cores',
-        modificacoes: colorEdits
-      });
-    }
-    
-    // Layout
-    const layoutEdits = Array.from(document.querySelectorAll('input[name="edit-layout"]:checked'))
-      .map(input => input.value);
-    if (layoutEdits.length > 0) {
-      selectedCategories.push({
-        categoria: 'layout',
-        modificacoes: layoutEdits
-      });
-    }
-    
-    // Elementos
-    const elementEdits = Array.from(document.querySelectorAll('input[name="edit-elements"]:checked'))
-      .map(input => input.value);
-    if (elementEdits.length > 0) {
-      selectedCategories.push({
-        categoria: 'elementos',
-        modificacoes: elementEdits
-      });
-    }
-    
-    // Imagens
-    const imageEdits = Array.from(document.querySelectorAll('input[name="edit-images"]:checked'))
-      .map(input => input.value);
-    if (imageEdits.length > 0) {
-      selectedCategories.push({
-        categoria: 'imagens',
-        modificacoes: imageEdits
-      });
-    }
-    
-    // Estilo
-    const styleEdits = Array.from(document.querySelectorAll('input[name="edit-style"]:checked'))
-      .map(input => input.value);
-    if (styleEdits.length > 0) {
-      selectedCategories.push({
-        categoria: 'estilo',
-        modificacoes: styleEdits
-      });
-    }
-    
-    // Instruções personalizadas
-    const customInstructions = document.getElementById('custom-edit-instructions')?.value?.trim();
-    
-    // Validar se há pelo menos uma modificação
-    if (selectedCategories.length === 0 && !customInstructions) {
-      alert('Por favor, selecione pelo menos uma categoria de edição ou forneça instruções personalizadas.');
+    // Validar se há instruções
+    if (!userInstructions) {
+      alert('Por favor, descreva o que você quer editar na imagem.');
       return;
     }
     
-    console.log('🎨 [IMAGE-EDITOR] Categorias selecionadas:', selectedCategories);
-    console.log('🎨 [IMAGE-EDITOR] Instruções personalizadas:', customInstructions);
+    console.log('🎨 [IMAGE-EDITOR] Instruções do usuário:', userInstructions);
+    
+    // Analisar se as instruções são destrutivas
+    const analysisResult = analyzeEditInstructions(userInstructions);
+    
+    if (analysisResult.isDestructive) {
+      // Mostrar aviso sobre edição destrutiva
+      const shouldContinue = confirm(
+        `⚠️ AVISO: Suas instruções parecem ser muito amplas e podem alterar significativamente a imagem.\n\n` +
+        `Instruções: "${userInstructions}"\n\n` +
+        `Para melhores resultados, recomendamos:\n` +
+        `• Gerar uma nova imagem usando os Mockups\n` +
+        `• Ou ser mais específico sobre o que manter\n\n` +
+        `Deseja continuar mesmo assim?`
+      );
+      
+      if (!shouldContinue) {
+        return;
+      }
+    }
     
     try {
       // Mostrar modal de loading
       showEditLoadingModal();
       
+      // Converter instruções para prompt otimizado
+      const optimizedPrompt = convertToPreservationPrompt(userInstructions, analysisResult);
+      
+      console.log('🎨 [IMAGE-EDITOR] Prompt otimizado:', optimizedPrompt);
+      
       // Preparar dados para envio
       const editData = {
         imagemId: window.currentEditingImage.id,
         imagemUrl: window.currentEditingImage.url,
-        categorias: selectedCategories,
-        instrucoes: customInstructions || '',
+        instrucoes: userInstructions,
+        promptOtimizado: optimizedPrompt,
         metadados: {
           tituloOriginal: window.currentEditingImage.titulo,
           tipoOriginal: window.currentEditingImage.tipo,
-          promptOriginal: window.currentEditingImage.prompt
+          promptOriginal: window.currentEditingImage.prompt,
+          analiseInstrucoes: analysisResult
         }
       };
       
@@ -6222,6 +6183,62 @@ ${currentActionPlanData.conteudo}`;
         }
       }
     }
+  }
+
+  // ===== FUNÇÕES DE ANÁLISE INTELIGENTE PARA EDIÇÃO DE IMAGENS =====
+  
+  // Analisar se as instruções são destrutivas
+  function analyzeEditInstructions(instructions) {
+    const instructionsLower = instructions.toLowerCase();
+    
+    // Termos que indicam preservação
+    const preservationTerms = [
+      'manter', 'preservar', 'conservar', 'exatamente', 'mesmo', 'mesma', 
+      'igual', 'idêntico', 'sem alterar', 'não mudar', 'manter o', 'keep'
+    ];
+    
+    // Termos destrutivos (mudanças amplas)
+    const destructiveTerms = [
+      'completamente diferente', 'totalmente novo', 'redesenhar', 'refazer',
+      'mudar tudo', 'alterar tudo', 'novo design', 'design diferente'
+    ];
+    
+    // Verificar se há contexto de preservação
+    const hasPreservation = preservationTerms.some(term => instructionsLower.includes(term));
+    
+    // Verificar se há termos destrutivos
+    const hasDestructive = destructiveTerms.some(term => instructionsLower.includes(term));
+    
+    // Verificar se as instruções são muito vagas
+    const isVague = instructions.length < 15 || 
+                   instructionsLower === 'mudar' || 
+                   instructionsLower === 'alterar' ||
+                   instructionsLower === 'modificar';
+    
+    return {
+      isDestructive: hasDestructive || (isVague && !hasPreservation),
+      hasPreservation: hasPreservation,
+      isVague: isVague,
+      confidence: hasPreservation ? 'high' : (hasDestructive ? 'low' : 'medium')
+    };
+  }
+  
+  // Converter instruções para prompt de preservação
+  function convertToPreservationPrompt(userInstructions, analysisResult) {
+    let optimizedPrompt = '';
+    
+    // Se já tem contexto de preservação, usar as instruções como estão
+    if (analysisResult.hasPreservation) {
+      optimizedPrompt = userInstructions;
+    } else {
+      // Adicionar contexto de preservação
+      optimizedPrompt = `Editar a imagem mantendo EXATAMENTE a mesma composição, layout e elementos principais. ${userInstructions}. Preservar todos os elementos que não foram especificamente mencionados para alteração.`;
+    }
+    
+    // Adicionar instruções técnicas para melhor resultado
+    optimizedPrompt += ' Manter a qualidade e resolução original da imagem.';
+    
+    return optimizedPrompt;
   }
 
   // Carregar clientes ao iniciar e mostrar tela de boas-vindas
