@@ -849,14 +849,16 @@ router.post('/galeria/editar', async (req, res) => {
     console.log('🔍 [DEBUG-REPLICATE] ===== PRÉ-CHAMADA REPLICATE =====');
     console.log('🔍 [DEBUG-REPLICATE] Modelo exato:', "black-forest-labs/flux-kontext-pro");
     
-    // 🔧 CORREÇÃO CRÍTICA: Reduzir prompt_strength para preservar melhor a forma original
+    // 🔧 CORREÇÃO CRÍTICA: Aumentar prompt_strength para seguir rigorosamente a instrução
     const inputObject = {
       prompt: promptEdicao,
       image: imagemUrl,
-      prompt_strength: 0.3, // 🔧 REDUZIDO: De 0.5 para 0.3 - Menos agressivo
+      prompt_strength: 0.8, // 🔧 AUMENTADO: De 0.3 para 0.8 - Seguir instrução rigorosamente
+      guidance_scale: 7.5, // 🔧 NOVO: Controle adicional sobre aderência ao prompt
+      num_inference_steps: 30, // 🔧 NOVO: Mais steps para melhor qualidade na preservação
       output_format: "png",
-      output_quality: 90,
-      safety_tolerance: 2
+      output_quality: 95, // 🔧 AUMENTADO: Melhor qualidade
+      safety_tolerance: 5 // 🔧 AUMENTADO: Permitir modificações de cor sem restrições
     };
     
     console.log('🔧 [REPLICATE-INPUT] ===== INPUT PARA REPLICATE =====');
