@@ -6336,40 +6336,52 @@ ${currentActionPlanData.conteudo}`;
     let basePrompt = userInstructions;
     let preservationContext = '';
     let technicalInstructions = '';
+    let specificInstructions = '';
     
-    // 🎯 CONTEXTO ESPECÍFICO BASEADO NO TIPO DE IMAGEM
+    // 🎯 CONTEXTO ULTRA-ESPECÍFICO BASEADO NO TIPO DE IMAGEM
     if (imageContext.isGeometricLogo) {
-      preservationContext = 'Preserve EXACTLY the same geometric shapes, proportions, angles, and overall design structure. Maintain the same visual hierarchy and composition. ';
-      technicalInstructions = 'Keep all geometric elements identical in shape and positioning. Ensure crisp, clean edges and maintain vector-like quality.';
+      preservationContext = 'CRITICAL: Preserve EXACTLY the same geometric diamond/arrow shapes, identical angles (maintain all 60°, 120°, and sharp points), same proportions, same line thickness, same overall composition and positioning. Keep the exact same visual hierarchy and symmetry. ';
+      technicalInstructions = 'Maintain all geometric elements identical in shape, size, and positioning. Ensure crisp, clean vector-style edges. Preserve the exact same design structure and geometric precision. ';
+      specificInstructions = 'This is a geometric logo with precise angular shapes - preserve ALL shapes, lines, angles, and proportions EXACTLY as they are. Do not modify the geometric structure, only apply the color changes as specified.';
     } else if (imageContext.isPhoto) {
-      preservationContext = 'Preserve the same subject, pose, composition, and lighting. Maintain the same background and overall scene. ';
-      technicalInstructions = 'Keep photorealistic quality and natural appearance.';
+      preservationContext = 'CRITICAL: Preserve the exact same subject, pose, facial expression, body positioning, composition, lighting direction and intensity. Maintain the same background elements and overall scene setup. ';
+      technicalInstructions = 'Keep photorealistic quality, natural skin tones, and authentic lighting. Preserve depth of field and camera perspective. ';
+      specificInstructions = 'This is a photograph - maintain all photographic elements, lighting, and composition exactly as they are.';
     } else if (imageContext.isGraphicDesign) {
-      preservationContext = 'Preserve the same layout, text positioning, and design elements arrangement. Maintain the same visual balance and composition. ';
-      technicalInstructions = 'Keep the same design structure and element hierarchy.';
+      preservationContext = 'CRITICAL: Preserve the exact same layout, text positioning, font sizes, design elements arrangement, spacing, and visual balance. Maintain the same composition and element hierarchy. ';
+      technicalInstructions = 'Keep the same design structure, typography, and element positioning. Preserve visual balance and design flow. ';
+      specificInstructions = 'This is a graphic design - maintain all layout elements, text positioning, and design structure exactly as they are.';
     } else {
-      preservationContext = 'Preserve the same overall composition, layout, and main visual elements. ';
-      technicalInstructions = 'Maintain the same visual structure and quality.';
+      preservationContext = 'CRITICAL: Preserve the exact same overall composition, layout, main visual elements, and structural arrangement. ';
+      technicalInstructions = 'Maintain the same visual structure, proportions, and quality. ';
+      specificInstructions = 'Preserve all structural elements exactly as they are.';
     }
     
-    // 🚀 CONSTRUIR PROMPT OTIMIZADO
+    // 🚀 CONSTRUIR PROMPT ULTRA-OTIMIZADO COM PRIORIDADES CLARAS
     let optimizedPrompt = '';
     
-    // Se já tem contexto de preservação forte, usar instruções mais diretas
-    if (analysisResult.hasPreservation && analysisResult.confidence === 'high') {
-      optimizedPrompt = `${basePrompt}. ${preservationContext}${technicalInstructions}`;
+    // Sempre começar com preservação crítica para logos geométricos
+    if (imageContext.isGeometricLogo) {
+      optimizedPrompt = `${preservationContext}INSTRUCTION: ${basePrompt}. CONSTRAINT: Only change colors as specified, do not modify any shapes, angles, or geometric elements. ${technicalInstructions}${specificInstructions}`;
+    } else if (analysisResult.hasPreservation && analysisResult.confidence === 'high') {
+      // Usuário já especificou preservação
+      optimizedPrompt = `${preservationContext}${basePrompt}. ${technicalInstructions}${specificInstructions}`;
     } else {
       // Adicionar contexto de preservação mais forte
-      optimizedPrompt = `${preservationContext}${basePrompt}. Only change what is specifically mentioned. ${technicalInstructions}`;
+      optimizedPrompt = `${preservationContext}INSTRUCTION: ${basePrompt}. CONSTRAINT: Only change what is specifically mentioned, preserve everything else exactly. ${technicalInstructions}${specificInstructions}`;
     }
     
-    // 🎨 INSTRUÇÕES ESPECÍFICAS PARA LOGOS GEOMÉTRICOS
+    // 🎨 INSTRUÇÕES FINAIS ESPECÍFICAS POR TIPO
     if (imageContext.isGeometricLogo) {
-      optimizedPrompt += ' This is a geometric logo - preserve all shapes, lines, angles, and proportions exactly as they are.';
+      optimizedPrompt += ' FINAL CONSTRAINT: This is a geometric logo with precise angular diamond/arrow shapes - preserve ALL geometric elements (shapes, lines, angles, proportions) exactly as they are. Only apply color changes.';
+    } else if (imageContext.isPhoto) {
+      optimizedPrompt += ' FINAL CONSTRAINT: This is a photograph - preserve all photographic elements, lighting, and subject positioning exactly as they are.';
+    } else if (imageContext.isGraphicDesign) {
+      optimizedPrompt += ' FINAL CONSTRAINT: This is a graphic design - preserve all layout, typography, and design elements exactly as they are.';
     }
     
-    // 📐 INSTRUÇÕES TÉCNICAS FINAIS
-    optimizedPrompt += ' Maintain original image quality and resolution.';
+    // 📐 INSTRUÇÕES TÉCNICAS FINAIS UNIVERSAIS
+    optimizedPrompt += ' Maintain original image quality, resolution, and aspect ratio.';
     
     console.log('✅ [INTELLIGENT-PROMPT] Prompt final gerado:', optimizedPrompt);
     
