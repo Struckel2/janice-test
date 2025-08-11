@@ -929,49 +929,177 @@ a<!DOCTYPE html>
                                 </div>
                             </div>
                             
-                            <div class="edit-section-content" id="artistic-section-content" style="display: none;">
+                            <div class="edit-section-content" id="artistic-section-content">
                                 <div class="style-selector">
-                                    <h5>🎨 Escolha o Estilo</h5>
-                                    <div class="style-grid">
-                                        <div class="style-option" data-style="aquarela">
-                                            <div class="style-icon">🎨</div>
-                                            <div class="style-name">Aquarela</div>
-                                            <div class="style-description">Efeito de tinta aquarela</div>
+                                    <h5>🎨 Escolha o Estilo Artístico</h5>
+                                    <div class="style-categories">
+                                        <div class="category-tabs">
+                                            <button class="category-tab active" data-category="classicos">🎨 Clássicos</button>
+                                            <button class="category-tab" data-category="modernos">🚀 Modernos</button>
+                                            <button class="category-tab" data-category="digitais">💻 Digitais</button>
+                                            <button class="category-tab" data-category="especiais">✨ Especiais</button>
                                         </div>
-                                        <div class="style-option" data-style="oleo">
-                                            <div class="style-icon">🖌️</div>
-                                            <div class="style-name">Óleo</div>
-                                            <div class="style-description">Pintura a óleo clássica</div>
-                                        </div>
-                                        <div class="style-option" data-style="sketch">
-                                            <div class="style-icon">✏️</div>
-                                            <div class="style-name">Sketch</div>
-                                            <div class="style-description">Desenho a lápis</div>
-                                        </div>
-                                        <div class="style-option" data-style="cartoon">
-                                            <div class="style-icon">🎭</div>
-                                            <div class="style-name">Cartoon</div>
-                                            <div class="style-description">Estilo cartoon/animação</div>
-                                        </div>
-                                        <div class="style-option" data-style="anime">
-                                            <div class="style-icon">🌸</div>
-                                            <div class="style-name">Anime</div>
-                                            <div class="style-description">Estilo anime/manga</div>
-                                        </div>
-                                        <div class="style-option" data-style="vintage">
-                                            <div class="style-icon">📸</div>
-                                            <div class="style-name">Vintage</div>
-                                            <div class="style-description">Efeito fotográfico retrô</div>
-                                        </div>
-                                        <div class="style-option" data-style="vetorial">
-                                            <div class="style-icon">🎯</div>
-                                            <div class="style-name">Vetorial</div>
-                                            <div class="style-description">Estilo vetorial limpo</div>
-                                        </div>
-                                        <div class="style-option" data-style="pop-art">
-                                            <div class="style-icon">🌈</div>
-                                            <div class="style-name">Pop Art</div>
-                                            <div class="style-description">Estilo pop art vibrante</div>
+                                        
+                                        <div class="style-grid-container">
+                                            <!-- Estilos Clássicos -->
+                                            <div class="style-grid active" data-category="classicos">
+                                                <div class="style-option" data-style="aquarela" data-prompt="watercolor painting style">
+                                                    <div class="style-icon">🎨</div>
+                                                    <div class="style-name">Aquarela</div>
+                                                    <div class="style-description">Efeito de tinta aquarela fluida</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="oleo" data-prompt="oil painting style">
+                                                    <div class="style-icon">🖌️</div>
+                                                    <div class="style-name">Óleo</div>
+                                                    <div class="style-description">Pintura a óleo clássica</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="impressionista" data-prompt="impressionist painting style">
+                                                    <div class="style-icon">🌅</div>
+                                                    <div class="style-name">Impressionista</div>
+                                                    <div class="style-description">Estilo impressionista francês</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="sketch" data-prompt="pencil sketch drawing style">
+                                                    <div class="style-icon">✏️</div>
+                                                    <div class="style-name">Sketch</div>
+                                                    <div class="style-description">Desenho a lápis artístico</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="cubista" data-prompt="cubist art style">
+                                                    <div class="style-icon">🔷</div>
+                                                    <div class="style-name">Cubista</div>
+                                                    <div class="style-description">Arte cubista geométrica</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="surrealista" data-prompt="surrealist art style">
+                                                    <div class="style-icon">🌀</div>
+                                                    <div class="style-name">Surrealista</div>
+                                                    <div class="style-description">Arte surrealista onírica</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Estilos Modernos -->
+                                            <div class="style-grid" data-category="modernos">
+                                                <div class="style-option" data-style="pop-art" data-prompt="pop art style">
+                                                    <div class="style-icon">🌈</div>
+                                                    <div class="style-name">Pop Art</div>
+                                                    <div class="style-description">Estilo pop art vibrante</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="street-art" data-prompt="street art graffiti style">
+                                                    <div class="style-icon">🎯</div>
+                                                    <div class="style-name">Street Art</div>
+                                                    <div class="style-description">Arte urbana e graffiti</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="minimalista" data-prompt="minimalist art style">
+                                                    <div class="style-icon">⚪</div>
+                                                    <div class="style-name">Minimalista</div>
+                                                    <div class="style-description">Arte minimalista limpa</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="abstrato" data-prompt="abstract art style">
+                                                    <div class="style-icon">🎪</div>
+                                                    <div class="style-name">Abstrato</div>
+                                                    <div class="style-description">Arte abstrata expressiva</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="vintage" data-prompt="vintage retro style">
+                                                    <div class="style-icon">📸</div>
+                                                    <div class="style-name">Vintage</div>
+                                                    <div class="style-description">Efeito fotográfico retrô</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="art-deco" data-prompt="art deco style">
+                                                    <div class="style-icon">💎</div>
+                                                    <div class="style-name">Art Deco</div>
+                                                    <div class="style-description">Estilo art déco elegante</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Estilos Digitais -->
+                                            <div class="style-grid" data-category="digitais">
+                                                <div class="style-option" data-style="vetorial" data-prompt="vector art style">
+                                                    <div class="style-icon">🎯</div>
+                                                    <div class="style-name">Vetorial</div>
+                                                    <div class="style-description">Arte vetorial limpa</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="pixel-art" data-prompt="pixel art style">
+                                                    <div class="style-icon">🕹️</div>
+                                                    <div class="style-name">Pixel Art</div>
+                                                    <div class="style-description">Arte pixelizada retrô</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="low-poly" data-prompt="low poly 3D style">
+                                                    <div class="style-icon">🔺</div>
+                                                    <div class="style-name">Low Poly</div>
+                                                    <div class="style-description">3D poligonal simplificado</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="neon" data-prompt="neon cyberpunk style">
+                                                    <div class="style-icon">💫</div>
+                                                    <div class="style-name">Neon</div>
+                                                    <div class="style-description">Estilo cyberpunk neon</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="glitch" data-prompt="glitch art digital style">
+                                                    <div class="style-icon">📺</div>
+                                                    <div class="style-name">Glitch</div>
+                                                    <div class="style-description">Arte digital com glitch</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="holografico" data-prompt="holographic iridescent style">
+                                                    <div class="style-icon">🌈</div>
+                                                    <div class="style-name">Holográfico</div>
+                                                    <div class="style-description">Efeito holográfico iridescente</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Estilos Especiais -->
+                                            <div class="style-grid" data-category="especiais">
+                                                <div class="style-option" data-style="cartoon" data-prompt="cartoon animation style">
+                                                    <div class="style-icon">🎭</div>
+                                                    <div class="style-name">Cartoon</div>
+                                                    <div class="style-description">Estilo cartoon animado</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="anime" data-prompt="anime manga style">
+                                                    <div class="style-icon">🌸</div>
+                                                    <div class="style-name">Anime</div>
+                                                    <div class="style-description">Estilo anime/manga japonês</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="steampunk" data-prompt="steampunk victorian style">
+                                                    <div class="style-icon">⚙️</div>
+                                                    <div class="style-name">Steampunk</div>
+                                                    <div class="style-description">Estilo steampunk vitoriano</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="gothic" data-prompt="gothic dark art style">
+                                                    <div class="style-icon">🦇</div>
+                                                    <div class="style-name">Gótico</div>
+                                                    <div class="style-description">Arte gótica sombria</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="fantasia" data-prompt="fantasy magical art style">
+                                                    <div class="style-icon">🧙</div>
+                                                    <div class="style-name">Fantasia</div>
+                                                    <div class="style-description">Arte fantástica mágica</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                                <div class="style-option" data-style="sci-fi" data-prompt="sci-fi futuristic style">
+                                                    <div class="style-icon">🚀</div>
+                                                    <div class="style-name">Sci-Fi</div>
+                                                    <div class="style-description">Ficção científica futurista</div>
+                                                    <div class="style-preview"></div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

@@ -6944,8 +6944,39 @@ ${currentActionPlanData.conteudo}`;
     showNoImageSelected();
   }
   
+  // Configurar navegação entre categorias de estilos
+  function setupStyleCategoryNavigation() {
+    const categoryTabs = document.querySelectorAll('.category-tab');
+    const styleGrids = document.querySelectorAll('.style-grid');
+    
+    categoryTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Remover classe active de todas as abas
+        categoryTabs.forEach(t => t.classList.remove('active'));
+        
+        // Adicionar classe active à aba clicada
+        tab.classList.add('active');
+        
+        // Esconder todos os grids
+        styleGrids.forEach(grid => grid.classList.remove('active'));
+        
+        // Mostrar grid correspondente
+        const category = tab.dataset.category;
+        const targetGrid = document.querySelector(`[data-category="${category}"]`);
+        if (targetGrid) {
+          targetGrid.classList.add('active');
+        }
+        
+        console.log('🎨 [STYLE-CATEGORY] Categoria alterada para:', category);
+      });
+    });
+  }
+
   // Configurar eventos do estilo artístico
   function setupArtisticStyleEvents() {
+    // Configurar navegação entre categorias de estilos
+    setupStyleCategoryNavigation();
+    
     // Configurar seleção de estilos
     document.querySelectorAll('.style-option').forEach(option => {
       option.addEventListener('click', () => selectArtisticStyle(option));
