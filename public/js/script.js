@@ -4151,17 +4151,22 @@ ${currentActionPlanData.conteudo}`;
     
     console.log('🎨 [IMAGE-EDITOR] Instruções do usuário:', userInstructions);
     
-    // Analisar se as instruções são destrutivas
+    // 🚀 CORREÇÃO CRÍTICA: Aplicar análise inteligente completa
     const analysisResult = analyzeEditInstructions(userInstructions);
+    console.log('🧠 [IMAGE-EDITOR] Análise inteligente:', analysisResult);
     
-    if (analysisResult.isDestructive) {
+    // Detectar tipo de imagem para contexto específico
+    const imageContext = detectImageContext(window.currentEditingImage);
+    console.log('🖼️ [IMAGE-EDITOR] Contexto da imagem:', imageContext);
+    
+    if (analysisResult.isDestructive && !analysisResult.hasPreservation) {
       // Mostrar aviso sobre edição destrutiva
       const shouldContinue = confirm(
         `⚠️ AVISO: Suas instruções parecem ser muito amplas e podem alterar significativamente a imagem.\n\n` +
         `Instruções: "${userInstructions}"\n\n` +
         `Para melhores resultados, recomendamos:\n` +
-        `• Gerar uma nova imagem usando os Mockups\n` +
-        `• Ou ser mais específico sobre o que manter\n\n` +
+        `• Ser mais específico: "Mudar apenas a cor para azul, mantendo exatamente a mesma forma"\n` +
+        `• Ou gerar uma nova imagem usando os Mockups\n\n` +
         `Deseja continuar mesmo assim?`
       );
       
@@ -4174,10 +4179,10 @@ ${currentActionPlanData.conteudo}`;
       // Mostrar modal de loading
       showEditLoadingModal();
       
-      // Converter instruções para prompt otimizado
-      const optimizedPrompt = convertToPreservationPrompt(userInstructions, analysisResult);
+      // 🚀 CORREÇÃO: Aplicar otimização inteligente completa
+      const optimizedPrompt = generateIntelligentPrompt(userInstructions, analysisResult, imageContext);
       
-      console.log('🎨 [IMAGE-EDITOR] Prompt otimizado:', optimizedPrompt);
+      console.log('🎨 [IMAGE-EDITOR] Prompt inteligente gerado:', optimizedPrompt);
       
       // Preparar dados para envio
       const editData = {
@@ -4189,7 +4194,8 @@ ${currentActionPlanData.conteudo}`;
           tituloOriginal: window.currentEditingImage.titulo,
           tipoOriginal: window.currentEditingImage.tipo,
           promptOriginal: window.currentEditingImage.prompt,
-          analiseInstrucoes: analysisResult
+          analiseInstrucoes: analysisResult,
+          contextoImagem: imageContext
         }
       };
       
@@ -6223,7 +6229,98 @@ ${currentActionPlanData.conteudo}`;
     };
   }
   
-  // Converter instruções para prompt de preservação
+  // Detectar contexto da imagem para otimização específica
+  function detectImageContext(image) {
+    const titulo = image.titulo?.toLowerCase() || '';
+    const tipo = image.tipo?.toLowerCase() || '';
+    const prompt = image.prompt?.toLowerCase() || '';
+    
+    // Detectar se é um logo geométrico
+    const isGeometricLogo = (
+      tipo.includes('logo') || 
+      titulo.includes('logo') ||
+      prompt.includes('geometric') ||
+      prompt.includes('geométrico') ||
+      prompt.includes('abstract') ||
+      prompt.includes('symbol')
+    );
+    
+    // Detectar se é uma foto/imagem realista
+    const isPhoto = (
+      prompt.includes('photo') ||
+      prompt.includes('realistic') ||
+      prompt.includes('portrait') ||
+      tipo.includes('foto')
+    );
+    
+    // Detectar se é um design gráfico
+    const isGraphicDesign = (
+      tipo.includes('banner') ||
+      tipo.includes('post') ||
+      tipo.includes('flyer') ||
+      prompt.includes('design')
+    );
+    
+    return {
+      isGeometricLogo,
+      isPhoto,
+      isGraphicDesign,
+      primaryType: isGeometricLogo ? 'geometric-logo' : 
+                   isPhoto ? 'photo' : 
+                   isGraphicDesign ? 'graphic-design' : 'general'
+    };
+  }
+  
+  // Gerar prompt inteligente baseado na análise
+  function generateIntelligentPrompt(userInstructions, analysisResult, imageContext) {
+    console.log('🧠 [INTELLIGENT-PROMPT] Gerando prompt inteligente...');
+    console.log('🧠 [INTELLIGENT-PROMPT] Análise:', analysisResult);
+    console.log('🧠 [INTELLIGENT-PROMPT] Contexto:', imageContext);
+    
+    let basePrompt = userInstructions;
+    let preservationContext = '';
+    let technicalInstructions = '';
+    
+    // 🎯 CONTEXTO ESPECÍFICO BASEADO NO TIPO DE IMAGEM
+    if (imageContext.isGeometricLogo) {
+      preservationContext = 'Preserve EXACTLY the same geometric shapes, proportions, angles, and overall design structure. Maintain the same visual hierarchy and composition. ';
+      technicalInstructions = 'Keep all geometric elements identical in shape and positioning. Ensure crisp, clean edges and maintain vector-like quality.';
+    } else if (imageContext.isPhoto) {
+      preservationContext = 'Preserve the same subject, pose, composition, and lighting. Maintain the same background and overall scene. ';
+      technicalInstructions = 'Keep photorealistic quality and natural appearance.';
+    } else if (imageContext.isGraphicDesign) {
+      preservationContext = 'Preserve the same layout, text positioning, and design elements arrangement. Maintain the same visual balance and composition. ';
+      technicalInstructions = 'Keep the same design structure and element hierarchy.';
+    } else {
+      preservationContext = 'Preserve the same overall composition, layout, and main visual elements. ';
+      technicalInstructions = 'Maintain the same visual structure and quality.';
+    }
+    
+    // 🚀 CONSTRUIR PROMPT OTIMIZADO
+    let optimizedPrompt = '';
+    
+    // Se já tem contexto de preservação forte, usar instruções mais diretas
+    if (analysisResult.hasPreservation && analysisResult.confidence === 'high') {
+      optimizedPrompt = `${basePrompt}. ${preservationContext}${technicalInstructions}`;
+    } else {
+      // Adicionar contexto de preservação mais forte
+      optimizedPrompt = `${preservationContext}${basePrompt}. Only change what is specifically mentioned. ${technicalInstructions}`;
+    }
+    
+    // 🎨 INSTRUÇÕES ESPECÍFICAS PARA LOGOS GEOMÉTRICOS
+    if (imageContext.isGeometricLogo) {
+      optimizedPrompt += ' This is a geometric logo - preserve all shapes, lines, angles, and proportions exactly as they are.';
+    }
+    
+    // 📐 INSTRUÇÕES TÉCNICAS FINAIS
+    optimizedPrompt += ' Maintain original image quality and resolution.';
+    
+    console.log('✅ [INTELLIGENT-PROMPT] Prompt final gerado:', optimizedPrompt);
+    
+    return optimizedPrompt;
+  }
+  
+  // Converter instruções para prompt de preservação (função legada - mantida para compatibilidade)
   function convertToPreservationPrompt(userInstructions, analysisResult) {
     let optimizedPrompt = '';
     
