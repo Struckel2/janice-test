@@ -6501,6 +6501,84 @@ ${currentActionPlanData.conteudo}`;
     }
   }
 
+  // 🚀 CORREÇÃO: Função para validar botão de processar edição (unificada)
+  function updateProcessButtonValidation() {
+    console.log('🎨 [PROCESS-VALIDATION] ===== VALIDANDO BOTÃO DE PROCESSAR EDIÇÃO =====');
+    
+    const processBtn = document.getElementById('process-edit-btn');
+    if (!processBtn) {
+      console.log('⚠️ [PROCESS-VALIDATION] Botão de processar edição não encontrado');
+      return;
+    }
+    
+    // Verificar se há estilo artístico selecionado
+    const hasArtisticStyle = currentSelectedStyle !== null;
+    console.log('🎨 [PROCESS-VALIDATION] Estilo artístico selecionado:', hasArtisticStyle, currentSelectedStyle);
+    
+    // Verificar se há instruções de texto
+    const customInstructions = document.getElementById('custom-edit-instructions')?.value?.trim();
+    const hasInstructions = customInstructions && customInstructions.length >= 10;
+    console.log('🎨 [PROCESS-VALIDATION] Instruções de texto:', hasInstructions, customInstructions?.substring(0, 50));
+    
+    // Verificar se há checkboxes de preservação marcados
+    const preservationCheckboxes = document.querySelectorAll('.preservation-options input[type="checkbox"]:checked');
+    const hasPreservationOptions = preservationCheckboxes.length > 0;
+    console.log('🎨 [PROCESS-VALIDATION] Opções de preservação:', hasPreservationOptions, preservationCheckboxes.length);
+    
+    let isValid = false;
+    let buttonText = '';
+    let buttonClass = '';
+    let buttonTitle = '';
+    
+    // 🎯 LÓGICA DE VALIDAÇÃO UNIFICADA
+    if (hasArtisticStyle && hasPreservationOptions) {
+      // Estilo artístico + opções de preservação = válido
+      isValid = true;
+      buttonText = '<i class="fas fa-magic"></i> ✅ Aplicar Estilo Artístico';
+      buttonClass = '';
+      buttonTitle = `Aplicar estilo ${currentSelectedStyle.label} com preservação selecionada`;
+      console.log('✅ [PROCESS-VALIDATION] Válido: Estilo artístico + preservação');
+      
+    } else if (hasArtisticStyle && !hasPreservationOptions) {
+      // Estilo artístico sem preservação = válido (mas com aviso)
+      isValid = true;
+      buttonText = '<i class="fas fa-magic"></i> ⚠️ Aplicar Estilo (sem preservação)';
+      buttonClass = 'warning';
+      buttonTitle = `Aplicar estilo ${currentSelectedStyle.label} - Recomendamos marcar opções de preservação`;
+      console.log('⚠️ [PROCESS-VALIDATION] Válido com aviso: Estilo artístico sem preservação');
+      
+    } else if (hasInstructions) {
+      // Instruções de texto = usar validação de cores
+      console.log('🎨 [PROCESS-VALIDATION] Usando validação de instruções de texto');
+      updateColorEditPreview();
+      return; // A função updateColorEditPreview já cuida da validação
+      
+    } else {
+      // Nada selecionado = inválido
+      isValid = false;
+      buttonText = '<i class="fas fa-exclamation-triangle"></i> ⚠️ Selecione um estilo ou descreva a edição';
+      buttonClass = 'warning';
+      buttonTitle = 'Selecione um estilo artístico ou descreva o que você quer editar na imagem';
+      console.log('❌ [PROCESS-VALIDATION] Inválido: Nada selecionado');
+    }
+    
+    // Aplicar estado do botão
+    processBtn.disabled = !isValid;
+    processBtn.innerHTML = buttonText;
+    processBtn.className = processBtn.className.replace(/\bwarning\b/g, '');
+    if (buttonClass) {
+      processBtn.classList.add(buttonClass);
+    }
+    processBtn.title = buttonTitle;
+    
+    console.log('✅ [PROCESS-VALIDATION] Estado final do botão:', {
+      disabled: processBtn.disabled,
+      text: buttonText,
+      class: buttonClass,
+      title: buttonTitle
+    });
+  }
+
   // ===== FUNÇÕES DE ANÁLISE INTELIGENTE PARA EDIÇÃO DE IMAGENS =====
   
   // Analisar se as instruções são destrutivas
@@ -6862,6 +6940,9 @@ ${currentActionPlanData.conteudo}`;
     
     // Habilitar botão de aplicar
     updateApplyButtonState();
+    
+    // 🚀 CORREÇÃO: Atualizar validação do botão de processar edição
+    updateProcessButtonValidation();
     
     console.log('🎨 [ARTISTIC-STYLE] Estilo selecionado:', currentSelectedStyle);
   }
@@ -7308,12 +7389,22 @@ ${currentActionPlanData.conteudo}`;
     const customInstructions = document.getElementById('custom-edit-instructions');
     if (customInstructions) {
       customInstructions.addEventListener('input', () => {
-        updateColorEditPreview();
+        updateProcessButtonValidation();
       });
       console.log('✅ [SETUP-EVENTS] Event listener para textarea configurado');
     } else {
       console.log('⚠️ [SETUP-EVENTS] Textarea de instruções não encontrado');
     }
+    
+    // Event listeners para checkboxes de preservação
+    const preservationCheckboxes = document.querySelectorAll('.preservation-options input[type="checkbox"]');
+    preservationCheckboxes.forEach(checkbox => {
+      checkbox.addEventListener('change', () => {
+        console.log('🎨 [DEBUG] Checkbox de preservação alterado:', checkbox.value, checkbox.checked);
+        updateProcessButtonValidation();
+      });
+    });
+    console.log(`✅ [SETUP-EVENTS] ${preservationCheckboxes.length} checkboxes de preservação configurados`);
     
     console.log('✅ [SETUP-EVENTS] Todos os event listeners configurados');
   }
