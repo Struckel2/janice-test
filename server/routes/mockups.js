@@ -774,54 +774,38 @@ router.post('/galeria/editar', async (req, res) => {
       });
     }
 
-    // 🚀 CORREÇÃO AVANÇADA: Construir prompt de edição contextual e específico
+    // 🚀 CORREÇÃO SIMPLIFICADA: Prompt direto e eficaz para preservação
     let promptEdicao = '';
 
-    // 🎯 CONTEXTO DETALHADO DA IMAGEM ORIGINAL
-    if (metadados?.promptOriginal) {
-      promptEdicao += `ORIGINAL IMAGE CONTEXT: "${metadados.promptOriginal}"\n\n`;
-      promptEdicao += `You are editing an existing image that was created with the above description. `;
-    } else {
-      promptEdicao += `You are editing an existing image. `;
-    }
-
-    promptEdicao += `Your task is to make ONLY the specific changes requested below while preserving ALL other visual elements, layout, composition, and style exactly as they are.\n\n`;
-
-    // 🔧 INSTRUÇÕES ESPECÍFICAS PRIMEIRO (mais importantes)
+    // 🎯 PROMPT SIMPLES E DIRETO
     if (instrucoes && instrucoes.trim() !== '') {
-      promptEdicao += `PRIMARY EDITING INSTRUCTIONS:\n`;
-      promptEdicao += `${instrucoes.trim()}\n\n`;
+      // Usar apenas as instruções do usuário, de forma simples e direta
+      promptEdicao = instrucoes.trim();
       
-      // Adicionar diretrizes de preservação específicas
-      promptEdicao += `PRESERVATION GUIDELINES:\n`;
-      promptEdicao += `- Keep the exact same layout and composition\n`;
-      promptEdicao += `- Maintain all existing visual elements not mentioned in the instructions\n`;
-      promptEdicao += `- Preserve the original style, colors, and atmosphere unless specifically requested to change\n`;
-      promptEdicao += `- Only modify what is explicitly described in the instructions above\n\n`;
+      // Adicionar contexto mínimo para preservação apenas se necessário
+      if (!promptEdicao.toLowerCase().includes('keep') && 
+          !promptEdicao.toLowerCase().includes('maintain') && 
+          !promptEdicao.toLowerCase().includes('preserve') &&
+          !promptEdicao.toLowerCase().includes('same')) {
+        promptEdicao += '. Keep the same shape, design and composition';
+      }
     }
 
-    // 🏷️ CATEGORIAS SELECIONADAS (como contexto adicional)
-    if (categorias && categorias.length > 0) {
-      promptEdicao += `ADDITIONAL CONTEXT - Categories selected for editing:\n`;
+    // 🏷️ CATEGORIAS COMO CONTEXTO ADICIONAL (apenas se não há instruções)
+    if ((!instrucoes || instrucoes.trim() === '') && categorias && categorias.length > 0) {
+      let modificacoes = [];
       categorias.forEach(categoria => {
-        promptEdicao += `${categoria.categoria.toUpperCase()} modifications:\n`;
         categoria.modificacoes.forEach(mod => {
-          promptEdicao += `- ${mod} (preserve existing positioning and style)\n`;
+          modificacoes.push(mod);
         });
-        promptEdicao += '\n';
       });
+      promptEdicao = modificacoes.join(', ') + '. Keep the same shape, design and composition';
     }
 
-    // 🎯 DIRETRIZES FINAIS RIGOROSAS
-    promptEdicao += `CRITICAL REQUIREMENTS:\n`;
-    promptEdicao += `- This is an EDIT, not a new creation\n`;
-    promptEdicao += `- Preserve the original image's core identity and visual structure\n`;
-    promptEdicao += `- Make changes seamlessly integrated with the existing design\n`;
-    promptEdicao += `- Maintain professional quality and visual coherence\n`;
-    promptEdicao += `- Only alter elements specifically mentioned in the instructions`;
-
-    // Garantir que o prompt seja bem formatado
-    promptEdicao = promptEdicao.replace(/\n\n\n+/g, '\n\n').trim();
+    // Fallback se não há instruções nem categorias
+    if (!promptEdicao || promptEdicao.trim() === '') {
+      promptEdicao = 'Make subtle improvements while keeping the same shape, design and composition';
+    }
 
     console.log('🎨 [IMAGE-EDITOR] Prompt de edição otimizado:', promptEdicao);
 
@@ -862,7 +846,7 @@ router.post('/galeria/editar', async (req, res) => {
         input: {
           prompt: promptEdicao,
           image: imagemUrl,
-          prompt_strength: 0.8, // Força do prompt (0.1-1.0)
+          prompt_strength: 0.5, // 🔧 REDUZIDO: Menos agressivo para preservar forma original
           output_format: "png",
           output_quality: 90,
           safety_tolerance: 2
