@@ -740,6 +740,7 @@ router.post('/galeria/editar', async (req, res) => {
       imagemUrl,
       categorias,
       instrucoes,
+      promptOtimizado,
       metadados
     } = req.body;
 
@@ -755,6 +756,8 @@ router.post('/galeria/editar', async (req, res) => {
     console.log('🎨 [IMAGE-EDITOR] instrucoes RAW:', `"${instrucoes}"`);
     console.log('🎨 [IMAGE-EDITOR] instrucoes length:', instrucoes?.length || 0);
     console.log('🎨 [IMAGE-EDITOR] instrucoes trimmed:', `"${instrucoes?.trim()}"`);
+    console.log('🎨 [IMAGE-EDITOR] promptOtimizado RAW:', `"${promptOtimizado}"`);
+    console.log('🎨 [IMAGE-EDITOR] promptOtimizado length:', promptOtimizado?.length || 0);
     console.log('🎨 [IMAGE-EDITOR] metadados:', JSON.stringify(metadados, null, 2));
     console.log('🎨 [IMAGE-EDITOR] ===== FIM DADOS RECEBIDOS =====');
 
@@ -773,37 +776,48 @@ router.post('/galeria/editar', async (req, res) => {
       });
     }
 
-    if ((!categorias || categorias.length === 0) && (!instrucoes || instrucoes.trim() === '')) {
+    if ((!categorias || categorias.length === 0) && (!instrucoes || instrucoes.trim() === '') && (!promptOtimizado || promptOtimizado.trim() === '')) {
       return res.status(400).json({
         success: false,
-        message: 'Pelo menos uma categoria de edição ou instruções personalizadas devem ser fornecidas'
+        message: 'Pelo menos uma categoria de edição, instruções personalizadas ou prompt otimizado devem ser fornecidos'
       });
     }
 
-    // 🚀 CORREÇÃO CRÍTICA: Usar prompt inteligente completo do frontend
+    // 🚀 CORREÇÃO CRÍTICA: Usar prompt otimizado do frontend em PRIORIDADE
     console.log('🎨 [PROMPT-CRITICAL] ===== CORREÇÃO CRÍTICA DO PROMPT =====');
     
     let promptEdicao = '';
     
-    // ✅ USAR PROMPT INTELIGENTE COMPLETO DO FRONTEND (sem reprocessamento)
-    if (instrucoes && instrucoes.trim() !== '') {
-      promptEdicao = instrucoes.trim();
-      console.log('✅ [PROMPT-CRITICAL] Usando prompt inteligente completo do frontend');
+    // ✅ PRIORIDADE 1: USAR PROMPT OTIMIZADO COMPLETO DO FRONTEND
+    if (promptOtimizado && promptOtimizado.trim() !== '') {
+      promptEdicao = promptOtimizado.trim();
+      console.log('✅ [PROMPT-CRITICAL] Usando prompt otimizado do frontend');
       console.log('✅ [PROMPT-CRITICAL] Comprimento:', promptEdicao.length);
-    } else if (categorias && categorias.length > 0) {
-      // Fallback para categorias apenas se não há instruções
+      console.log('✅ [PROMPT-CRITICAL] Preview:', promptEdicao.substring(0, 100) + '...');
+    } 
+    // ✅ PRIORIDADE 2: Fallback para instruções simples
+    else if (instrucoes && instrucoes.trim() !== '') {
+      promptEdicao = instrucoes.trim();
+      console.log('⚠️ [PROMPT-CRITICAL] Fallback para instruções simples');
+      console.log('⚠️ [PROMPT-CRITICAL] Comprimento:', promptEdicao.length);
+    } 
+    // ✅ PRIORIDADE 3: Fallback para categorias
+    else if (categorias && categorias.length > 0) {
       let modificacoes = [];
       categorias.forEach(categoria => {
         categoria.modificacoes.forEach(mod => modificacoes.push(mod));
       });
       promptEdicao = modificacoes.join(', ') + '. Keep the same shape, design and composition';
-      console.log('✅ [PROMPT-CRITICAL] Usando categorias como fallback');
-    } else {
+      console.log('⚠️ [PROMPT-CRITICAL] Fallback para categorias');
+    } 
+    // ✅ PRIORIDADE 4: Fallback padrão
+    else {
       promptEdicao = 'Make subtle improvements while keeping the same shape, design and composition';
-      console.log('✅ [PROMPT-CRITICAL] Usando fallback padrão');
+      console.log('⚠️ [PROMPT-CRITICAL] Usando fallback padrão');
     }
 
     console.log('✅ [PROMPT-CRITICAL] Prompt final:', promptEdicao);
+    console.log('✅ [PROMPT-CRITICAL] Comprimento final:', promptEdicao.length);
     console.log('🎨 [PROMPT-CRITICAL] ===== FIM CORREÇÃO CRÍTICA =====');
 
     // ✅ VALIDAÇÃO SIMPLIFICADA DA IMAGEM
