@@ -6512,7 +6512,7 @@ ${currentActionPlanData.conteudo}`;
     }
     
     // Verificar se há estilo artístico selecionado
-    const hasArtisticStyle = currentSelectedStyle !== null;
+    const hasArtisticStyle = typeof currentSelectedStyle !== 'undefined' && currentSelectedStyle !== null;
     console.log('🎨 [PROCESS-VALIDATION] Estilo artístico selecionado:', hasArtisticStyle, currentSelectedStyle);
     
     // Verificar se há instruções de texto
@@ -6530,22 +6530,14 @@ ${currentActionPlanData.conteudo}`;
     let buttonClass = '';
     let buttonTitle = '';
     
-    // 🎯 LÓGICA DE VALIDAÇÃO UNIFICADA
-    if (hasArtisticStyle && hasPreservationOptions) {
-      // Estilo artístico + opções de preservação = válido
+    // 🎯 LÓGICA DE VALIDAÇÃO CORRIGIDA - ESTILO ARTÍSTICO SEMPRE VÁLIDO
+    if (hasArtisticStyle) {
+      // 🚀 CORREÇÃO: Estilo artístico é SEMPRE válido, independente de qualquer outra condição
       isValid = true;
       buttonText = '<i class="fas fa-magic"></i> ✅ Aplicar Estilo Artístico';
       buttonClass = '';
-      buttonTitle = `Aplicar estilo ${currentSelectedStyle.label} com preservação selecionada`;
-      console.log('✅ [PROCESS-VALIDATION] Válido: Estilo artístico + preservação');
-      
-    } else if (hasArtisticStyle && !hasPreservationOptions) {
-      // Estilo artístico sem preservação = válido (mas com aviso)
-      isValid = true;
-      buttonText = '<i class="fas fa-magic"></i> ⚠️ Aplicar Estilo (sem preservação)';
-      buttonClass = 'warning';
-      buttonTitle = `Aplicar estilo ${currentSelectedStyle.label} - Recomendamos marcar opções de preservação`;
-      console.log('⚠️ [PROCESS-VALIDATION] Válido com aviso: Estilo artístico sem preservação');
+      buttonTitle = `Aplicar estilo ${currentSelectedStyle.label || 'selecionado'}`;
+      console.log('✅ [PROCESS-VALIDATION] Válido: Estilo artístico selecionado');
       
     } else if (hasInstructions) {
       // Instruções de texto = usar validação de cores
@@ -6556,7 +6548,7 @@ ${currentActionPlanData.conteudo}`;
     } else {
       // Nada selecionado = inválido
       isValid = false;
-      buttonText = '<i class="fas fa-exclamation-triangle"></i> ⚠️ Selecione um estilo ou descreva a edição';
+      buttonText = '<i class="fas fa-exclamation-triangle"></i> Selecione um estilo artístico ou descreva o que editar';
       buttonClass = 'warning';
       buttonTitle = 'Selecione um estilo artístico ou descreva o que você quer editar na imagem';
       console.log('❌ [PROCESS-VALIDATION] Inválido: Nada selecionado');
@@ -7309,39 +7301,43 @@ ${currentActionPlanData.conteudo}`;
 
   // Configurar eventos do estilo artístico
   function setupArtisticStyleEvents() {
-    // Configurar navegação entre categorias de estilos
-    setupStyleCategoryNavigation();
-    
-    // Configurar seleção de estilos
-    document.querySelectorAll('.style-option').forEach(option => {
-      option.addEventListener('click', () => selectArtisticStyle(option));
-    });
-    
-    // Configurar slider de intensidade
-    if (styleIntensityRange && styleIntensityValue) {
-      styleIntensityRange.addEventListener('input', (e) => {
-        styleIntensityValue.textContent = `${e.target.value}%`;
+    try {
+      // Configurar navegação entre categorias de estilos
+      setupStyleCategoryNavigation();
+      
+      // Configurar seleção de estilos
+      document.querySelectorAll('.style-option').forEach(option => {
+        option.addEventListener('click', () => selectArtisticStyle(option));
       });
-    }
-    
-    // Configurar botões
-    if (applyStyleBtn) {
-      applyStyleBtn.addEventListener('click', applyArtisticStyle);
-    }
-    
-    if (saveStyledImageBtn) {
-      saveStyledImageBtn.addEventListener('click', saveStyledImage);
-    }
-    
-    if (resetStyleBtn) {
-      resetStyleBtn.addEventListener('click', resetArtisticStyleState);
-    }
-    
-    // Fechar modal de loading ao clicar fora (não permitir)
-    if (artisticStyleLoadingModal) {
-      artisticStyleLoadingModal.addEventListener('click', (e) => {
-        e.stopPropagation(); // Não permitir fechar clicando fora
-      });
+      
+      // Configurar slider de intensidade
+      if (styleIntensityRange && styleIntensityValue) {
+        styleIntensityRange.addEventListener('input', (e) => {
+          styleIntensityValue.textContent = `${e.target.value}%`;
+        });
+      }
+      
+      // Configurar botões
+      if (applyStyleBtn) {
+        applyStyleBtn.addEventListener('click', applyArtisticStyle);
+      }
+      
+      if (saveStyledImageBtn) {
+        saveStyledImageBtn.addEventListener('click', saveStyledImage);
+      }
+      
+      if (resetStyleBtn) {
+        resetStyleBtn.addEventListener('click', resetArtisticStyleState);
+      }
+      
+      // Fechar modal de loading ao clicar fora (não permitir)
+      if (artisticStyleLoadingModal) {
+        artisticStyleLoadingModal.addEventListener('click', (e) => {
+          e.stopPropagation(); // Não permitir fechar clicando fora
+        });
+      }
+    } catch (error) {
+      console.error('❌ [SETUP-ARTISTIC-STYLE] Erro ao configurar eventos de estilo artístico:', error);
     }
   }
   
