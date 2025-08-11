@@ -3817,14 +3817,24 @@ footer {
 
 /* Textarea específico para edição de imagens - responsivo */
 #custom-edit-instructions {
+  width: 100%;
+  max-width: 100%;
+  min-width: 200px;
   min-height: 20vh;
   max-height: 35vh;
   height: auto;
-  resize: vertical;
+  resize: both;
   transition: var(--transition);
+  box-sizing: border-box;
 }
 
 /* Adaptação para diferentes tamanhos de tela */
+@media (min-width: 1200px) {
+  #custom-edit-instructions {
+    max-width: 600px;
+  }
+}
+
 @media (min-height: 800px) {
   #custom-edit-instructions {
     min-height: 180px;
@@ -3841,8 +3851,19 @@ footer {
 
 @media (max-width: 768px) {
   #custom-edit-instructions {
+    width: 100%;
+    min-width: 100%;
     min-height: 150px;
     max-height: 250px;
+    resize: vertical;
+  }
+}
+
+@media (max-width: 480px) {
+  #custom-edit-instructions {
+    min-height: 120px;
+    max-height: 200px;
+    resize: none;
   }
 }
 
