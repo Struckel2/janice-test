@@ -6114,39 +6114,42 @@ ${currentActionPlanData.conteudo}`;
   // ===== FUNÇÃO PARA ALTERNAR SEÇÕES DE EDIÇÃO =====
   
   // Função para alternar visibilidade das seções de edição
-  function toggleEditSection(sectionId) {
-    console.log('🎨 [TOGGLE-SECTION] Alternando seção:', sectionId);
+  function toggleEditSection(headerSectionId) {
+    console.log('🎨 [TOGGLE-SECTION] Alternando seção:', headerSectionId);
     
-    const section = document.getElementById(sectionId);
-    if (!section) {
-      console.error('🎨 [TOGGLE-SECTION] Seção não encontrada:', sectionId);
+    // Derivar o ID do content a partir do header
+    const contentSectionId = headerSectionId.replace('-header', '-content');
+    
+    const headerSection = document.getElementById(headerSectionId);
+    const contentSection = document.getElementById(contentSectionId);
+    
+    if (!headerSection || !contentSection) {
+      console.error('🎨 [TOGGLE-SECTION] Seções não encontradas:', {
+        header: headerSectionId,
+        content: contentSectionId,
+        headerFound: !!headerSection,
+        contentFound: !!contentSection
+      });
       return;
     }
     
-    const content = section.querySelector('.edit-section-content');
-    const header = section.querySelector('.edit-section-header');
-    const arrow = header ? header.querySelector('.section-arrow i') : null;
+    const arrow = headerSection.querySelector('.section-arrow i');
     
-    if (!content) {
-      console.error('🎨 [TOGGLE-SECTION] Conteúdo da seção não encontrado:', sectionId);
-      return;
-    }
-    
-    // Verificar estado atual
-    const isExpanded = section.classList.contains('expanded');
+    // Verificar estado atual baseado no header
+    const isExpanded = headerSection.classList.contains('expanded');
     
     if (isExpanded) {
       // Contrair seção
-      section.classList.remove('expanded');
-      content.style.display = 'none';
+      headerSection.classList.remove('expanded');
+      contentSection.style.display = 'none';
       if (arrow) arrow.className = 'fas fa-chevron-down';
-      console.log('🎨 [TOGGLE-SECTION] Seção contraída:', sectionId);
+      console.log('🎨 [TOGGLE-SECTION] Seção contraída:', headerSectionId);
     } else {
       // Expandir seção
-      section.classList.add('expanded');
-      content.style.display = 'block';
+      headerSection.classList.add('expanded');
+      contentSection.style.display = 'block';
       if (arrow) arrow.className = 'fas fa-chevron-up';
-      console.log('🎨 [TOGGLE-SECTION] Seção expandida:', sectionId);
+      console.log('🎨 [TOGGLE-SECTION] Seção expandida:', headerSectionId);
     }
   }
   
@@ -6159,14 +6162,14 @@ ${currentActionPlanData.conteudo}`;
   if (colorSectionHeader) {
     colorSectionHeader.addEventListener('click', () => {
       console.log('🎨 [DEBUG] Clique na seção de modificação de cores');
-      toggleEditSection('color-section-content');
+      toggleEditSection('color-section-header');
     });
   }
   
   if (artisticSectionHeader) {
     artisticSectionHeader.addEventListener('click', () => {
       console.log('🎨 [DEBUG] Clique na seção de estilo artístico');
-      toggleEditSection('artistic-section-content');
+      toggleEditSection('artistic-section-header');
     });
   }
     
