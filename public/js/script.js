@@ -4333,9 +4333,10 @@ ${currentActionPlanData.conteudo}`;
       console.log('🎨 [IMAGE-EDITOR] Prompt inteligente gerado:', optimizedPrompt);
       
       // Preparar dados para envio
+      // 🚀 CORREÇÃO: Usar URL cacheada do Cloudinary se disponível
       const editData = {
         imagemId: window.currentEditingImage.id,
-        imagemUrl: window.currentEditingImage.url,
+        imagemUrl: window.currentEditingImage.cachedUrl || window.currentEditingImage.url,
         instrucoes: userInstructions,
         promptOtimizado: optimizedPrompt,
         metadados: {
