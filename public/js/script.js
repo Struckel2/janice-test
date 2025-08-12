@@ -6627,14 +6627,14 @@ ${currentActionPlanData.conteudo}`;
     let buttonClass = '';
     let buttonTitle = '';
     
-    // 🎯 PRIORIDADE 1: ESTILO ARTÍSTICO = APENAS SELEÇÃO DE MENU (SEM PROMPT ADICIONAL)
+    // 🎯 PRIORIDADE 1: ESTILO ARTÍSTICO = SEMPRE VÁLIDO (SEM PROMPT ADICIONAL NECESSÁRIO)
     if (hasArtisticStyle) {
       // ✅ ESTILO ARTÍSTICO SELECIONADO = SEMPRE VÁLIDO E PRONTO
       isValid = true;
-      buttonText = `<i class="fas fa-palette"></i> ✅ Aplicar ${window.currentSelectedStyle.label}`;
+      buttonText = `<i class="fas fa-palette"></i> ✨ Aplicar ${window.currentSelectedStyle.label}`;
       buttonClass = 'artistic-style-ready';
-      buttonTitle = `Aplicar estilo ${window.currentSelectedStyle.label} na imagem. Não precisa escrever nada - apenas clique para aplicar!`;
-      console.log('✅ [PROCESS-VALIDATION] ESTILO ARTÍSTICO VÁLIDO - sem necessidade de prompt adicional');
+      buttonTitle = `✨ ${window.currentSelectedStyle.label} selecionado! Clique para aplicar este estilo automaticamente. Não precisa escrever nada adicional.`;
+      console.log('✅ [PROCESS-VALIDATION] ESTILO ARTÍSTICO VÁLIDO - pronto para aplicar automaticamente');
       
     } else if (hasInstructions) {
       // PRIORIDADE 2: INSTRUÇÕES MANUAIS = validar se são específicas o suficiente
@@ -6643,11 +6643,11 @@ ${currentActionPlanData.conteudo}`;
       return; // A função updateColorEditPreview já cuida da validação
       
     } else {
-      // NENHUMA SELEÇÃO = mostrar opções disponíveis
+      // NENHUMA SELEÇÃO = mostrar opções disponíveis com clareza
       isValid = false;
-      buttonText = '<i class="fas fa-hand-pointer"></i> Escolha uma opção acima';
+      buttonText = '<i class="fas fa-hand-pointer"></i> 👆 Escolha uma das opções acima';
       buttonClass = 'warning';
-      buttonTitle = 'OPÇÃO 1: Selecione um estilo artístico no menu (clique em uma das opções de estilo) OU OPÇÃO 2: Descreva uma modificação específica no campo de texto abaixo';
+      buttonTitle = '👆 OPÇÃO 1: Clique em um dos estilos artísticos acima (automático, não precisa escrever nada)\n\n✏️ OPÇÃO 2: OU escreva instruções específicas no campo de texto abaixo\n\nEscolha uma das duas opções para continuar.';
       console.log('❌ [PROCESS-VALIDATION] Nenhuma opção selecionada');
     }
     
@@ -7394,6 +7394,48 @@ ${currentActionPlanData.conteudo}`;
         console.log('🎨 [STYLE-CATEGORY] Categoria alterada para:', category);
       });
     });
+  }
+
+  // ===== FUNÇÃO PARA ALTERNAR SEÇÕES DE EDIÇÃO (CORRIGIDA) =====
+  
+  // Função para alternar visibilidade das seções de edição
+  function toggleEditSection(headerSectionId) {
+    console.log('🎨 [TOGGLE-SECTION] Alternando seção:', headerSectionId);
+    
+    // Derivar o ID do content a partir do header
+    const contentSectionId = headerSectionId.replace('-header', '-content');
+    
+    const headerSection = document.getElementById(headerSectionId);
+    const contentSection = document.getElementById(contentSectionId);
+    
+    if (!headerSection || !contentSection) {
+      console.error('🎨 [TOGGLE-SECTION] Seções não encontradas:', {
+        header: headerSectionId,
+        content: contentSectionId,
+        headerFound: !!headerSection,
+        contentFound: !!contentSection
+      });
+      return;
+    }
+    
+    const arrow = headerSection.querySelector('.section-toggle i');
+    
+    // Verificar estado atual baseado no header
+    const isExpanded = headerSection.classList.contains('expanded');
+    
+    if (isExpanded) {
+      // Contrair seção
+      headerSection.classList.remove('expanded');
+      contentSection.style.display = 'none';
+      if (arrow) arrow.className = 'fas fa-chevron-down';
+      console.log('🎨 [TOGGLE-SECTION] Seção contraída:', headerSectionId);
+    } else {
+      // Expandir seção
+      headerSection.classList.add('expanded');
+      contentSection.style.display = 'block';
+      if (arrow) arrow.className = 'fas fa-chevron-up';
+      console.log('🎨 [TOGGLE-SECTION] Seção expandida:', headerSectionId);
+    }
   }
 
   // Configurar eventos do estilo artístico

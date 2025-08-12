@@ -905,44 +905,95 @@ router.post('/galeria/editar', async (req, res) => {
       });
     }
 
-    if ((!categorias || categorias.length === 0) && (!instrucoes || instrucoes.trim() === '') && (!promptOtimizado || promptOtimizado.trim() === '')) {
-      return res.status(400).json({
-        success: false,
-        message: 'Pelo menos uma categoria de edição, instruções personalizadas ou prompt otimizado devem ser fornecidos'
-      });
-    }
-
-    // 🚀 CORREÇÃO CRÍTICA: Usar prompt otimizado do frontend em PRIORIDADE
-    console.log('🎨 [PROMPT-CRITICAL] ===== CORREÇÃO CRÍTICA DO PROMPT =====');
+    // 🚀 CORREÇÃO CRÍTICA: Suporte para estilo artístico automático
+    console.log('🎨 [STYLE-CHECK] ===== VERIFICANDO TIPO DE EDIÇÃO =====');
+    console.log('🎨 [STYLE-CHECK] Tipo:', req.body.tipo);
+    console.log('🎨 [STYLE-CHECK] Estilo artístico:', req.body.estiloArtistico);
     
     let promptEdicao = '';
     
-    // ✅ PRIORIDADE 1: USAR PROMPT OTIMIZADO COMPLETO DO FRONTEND
-    if (promptOtimizado && promptOtimizado.trim() !== '') {
-      promptEdicao = promptOtimizado.trim();
-      console.log('✅ [PROMPT-CRITICAL] Usando prompt otimizado do frontend');
-      console.log('✅ [PROMPT-CRITICAL] Comprimento:', promptEdicao.length);
-      console.log('✅ [PROMPT-CRITICAL] Preview:', promptEdicao.substring(0, 100) + '...');
+    // ✅ PRIORIDADE 1: ESTILO ARTÍSTICO AUTOMÁTICO
+    if (req.body.tipo === 'estilo-artistico' && req.body.estiloArtistico) {
+      console.log('🎨 [ARTISTIC-STYLE] Modo estilo artístico detectado');
+      
+      // Mapeamento de estilos para prompts técnicos otimizados
+      const stylePrompts = {
+        'oil-painting': 'oil painting style, rich textures, classical art technique, painterly brushstrokes',
+        'watercolor': 'watercolor painting style, soft flowing colors, artistic brush strokes, translucent effects',
+        'sketch': 'pencil sketch style, hand-drawn lines, artistic shading, graphite texture',
+        'cartoon': 'cartoon illustration style, vibrant colors, simplified forms, clean vector lines',
+        'anime': 'anime art style, clean lines, cel-shaded colors, manga aesthetic',
+        'vintage': 'vintage photography style, retro colors, aged effect, nostalgic atmosphere',
+        'pop-art': 'pop art style, bold colors, high contrast, graphic design, Andy Warhol inspired',
+        'abstract': 'abstract art style, artistic interpretation, creative transformation',
+        'minimalist': 'minimalist design style, clean lines, simple forms, reduced color palette'
+      };
+      
+      const estilo = req.body.estiloArtistico.nome;
+      const intensidade = req.body.estiloArtistico.intensidade || 50;
+      
+      console.log('🎨 [ARTISTIC-STYLE] Estilo:', estilo);
+      console.log('🎨 [ARTISTIC-STYLE] Intensidade:', intensidade);
+      
+      // Construir prompt base
+      promptEdicao = stylePrompts[estilo] || 'artistic style transformation';
+      
+      // Aplicar intensidade
+      if (intensidade > 80) {
+        promptEdicao += ', strong artistic effect, dramatic transformation';
+      } else if (intensidade > 60) {
+        promptEdicao += ', moderate artistic effect, balanced transformation';
+      } else if (intensidade > 40) {
+        promptEdicao += ', subtle artistic effect, gentle transformation';
+      } else {
+        promptEdicao += ', very subtle artistic effect, light transformation';
+      }
+      
+      // Preservação estrutural crítica
+      promptEdicao += ', CRITICAL: maintain exactly the same composition, layout, and overall structure. Keep all elements in the same positions. Preserve the original design integrity while applying artistic style.';
+      
+      console.log('✅ [ARTISTIC-STYLE] Prompt gerado automaticamente:', promptEdicao);
+      
     } 
-    // ✅ PRIORIDADE 2: Fallback para instruções simples
-    else if (instrucoes && instrucoes.trim() !== '') {
-      promptEdicao = instrucoes.trim();
-      console.log('⚠️ [PROMPT-CRITICAL] Fallback para instruções simples');
-      console.log('⚠️ [PROMPT-CRITICAL] Comprimento:', promptEdicao.length);
-    } 
-    // ✅ PRIORIDADE 3: Fallback para categorias
-    else if (categorias && categorias.length > 0) {
-      let modificacoes = [];
-      categorias.forEach(categoria => {
-        categoria.modificacoes.forEach(mod => modificacoes.push(mod));
-      });
-      promptEdicao = modificacoes.join(', ') + '. Keep the same shape, design and composition';
-      console.log('⚠️ [PROMPT-CRITICAL] Fallback para categorias');
-    } 
-    // ✅ PRIORIDADE 4: Fallback padrão
+    // ✅ PRIORIDADE 2: EDIÇÃO MANUAL COM VALIDAÇÃO
     else {
-      promptEdicao = 'Make subtle improvements while keeping the same shape, design and composition';
-      console.log('⚠️ [PROMPT-CRITICAL] Usando fallback padrão');
+      console.log('🎨 [MANUAL-EDIT] Modo edição manual detectado');
+      
+      // Validação para edição manual
+      if ((!categorias || categorias.length === 0) && (!instrucoes || instrucoes.trim() === '') && (!promptOtimizado || promptOtimizado.trim() === '')) {
+        return res.status(400).json({
+          success: false,
+          message: 'Para edição manual: forneça instruções específicas, selecione categorias ou um prompt otimizado'
+        });
+      }
+
+      // ✅ PRIORIDADE 2A: USAR PROMPT OTIMIZADO COMPLETO DO FRONTEND
+      if (promptOtimizado && promptOtimizado.trim() !== '') {
+        promptEdicao = promptOtimizado.trim();
+        console.log('✅ [MANUAL-EDIT] Usando prompt otimizado do frontend');
+        console.log('✅ [MANUAL-EDIT] Comprimento:', promptEdicao.length);
+        console.log('✅ [MANUAL-EDIT] Preview:', promptEdicao.substring(0, 100) + '...');
+      } 
+      // ✅ PRIORIDADE 2B: Fallback para instruções simples
+      else if (instrucoes && instrucoes.trim() !== '') {
+        promptEdicao = instrucoes.trim();
+        console.log('⚠️ [MANUAL-EDIT] Fallback para instruções simples');
+        console.log('⚠️ [MANUAL-EDIT] Comprimento:', promptEdicao.length);
+      } 
+      // ✅ PRIORIDADE 2C: Fallback para categorias
+      else if (categorias && categorias.length > 0) {
+        let modificacoes = [];
+        categorias.forEach(categoria => {
+          categoria.modificacoes.forEach(mod => modificacoes.push(mod));
+        });
+        promptEdicao = modificacoes.join(', ') + '. Keep the same shape, design and composition';
+        console.log('⚠️ [MANUAL-EDIT] Fallback para categorias');
+      } 
+      // ✅ PRIORIDADE 2D: Fallback padrão
+      else {
+        promptEdicao = 'Make subtle improvements while keeping the same shape, design and composition';
+        console.log('⚠️ [MANUAL-EDIT] Usando fallback padrão');
+      }
     }
 
     console.log('✅ [PROMPT-CRITICAL] Prompt final:', promptEdicao);
