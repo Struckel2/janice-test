@@ -4129,40 +4129,47 @@ ${currentActionPlanData.conteudo}`;
       console.log('✅ [RESET-SECTIONS] Container de instruções de cores resetado');
     }
     
-    // 🚀 CORREÇÃO: Reset completo de todos os controles e seleções
+    // 🚀 CORREÇÃO: Reset seletivo de controles - NÃO resetar estilo artístico se já estiver selecionado
     
-    // Limpar seleções de estilo artístico
-    document.querySelectorAll('.style-option').forEach(option => {
-      option.classList.remove('selected');
-    });
-    console.log('✅ [RESET-SECTIONS] Seleções de estilo artístico removidas');
+    // 🎯 PRESERVAR seleção de estilo artístico se já existir
+    const preserveArtisticStyle = typeof currentSelectedStyle !== 'undefined' && currentSelectedStyle !== null;
     
-    // Resetar slider de intensidade de estilo
-    const styleIntensityRange = document.getElementById('style-intensity');
-    const styleIntensityValue = document.getElementById('style-intensity-value');
-    if (styleIntensityRange && styleIntensityValue) {
-      styleIntensityRange.value = 50;
-      styleIntensityValue.textContent = '50%';
-      console.log('✅ [RESET-SECTIONS] Slider de intensidade resetado para 50%');
+    if (!preserveArtisticStyle) {
+      // Limpar seleções de estilo artístico apenas se não houver seleção válida
+      document.querySelectorAll('.style-option').forEach(option => {
+        option.classList.remove('selected');
+      });
+      console.log('✅ [RESET-SECTIONS] Seleções de estilo artístico removidas (não havia seleção prévia)');
+      
+      // Resetar slider de intensidade de estilo apenas se não houver estilo selecionado
+      const styleIntensityRange = document.getElementById('style-intensity');
+      const styleIntensityValue = document.getElementById('style-intensity-value');
+      if (styleIntensityRange && styleIntensityValue) {
+        styleIntensityRange.value = 50;
+        styleIntensityValue.textContent = '50%';
+        console.log('✅ [RESET-SECTIONS] Slider de intensidade resetado para 50%');
+      }
+    } else {
+      console.log('🎨 [RESET-SECTIONS] PRESERVANDO estilo artístico selecionado:', currentSelectedStyle.label);
     }
     
-    // Limpar checkboxes de preservação
+    // Sempre limpar checkboxes de preservação (independente do estilo artístico)
     document.querySelectorAll('.preservation-options input[type="checkbox"]').forEach(checkbox => {
       checkbox.checked = false;
     });
     console.log('✅ [RESET-SECTIONS] Checkboxes de preservação desmarcados');
     
-    // Limpar textarea de instruções personalizadas
+    // Sempre limpar textarea de instruções personalizadas
     const customInstructions = document.getElementById('custom-edit-instructions');
     if (customInstructions) {
       customInstructions.value = '';
       console.log('✅ [RESET-SECTIONS] Textarea de instruções limpo');
     }
     
-    // Resetar estado das variáveis globais de estilo artístico
-    if (typeof currentSelectedStyle !== 'undefined') {
+    // 🎯 NÃO resetar currentSelectedStyle se já estiver selecionado
+    if (!preserveArtisticStyle && typeof currentSelectedStyle !== 'undefined') {
       currentSelectedStyle = null;
-      console.log('✅ [RESET-SECTIONS] Estado do estilo artístico resetado');
+      console.log('✅ [RESET-SECTIONS] Estado do estilo artístico resetado (não havia seleção válida)');
     }
     
     // Resetar botão de processar edição
@@ -4385,46 +4392,9 @@ ${currentActionPlanData.conteudo}`;
     console.log('📤 [IMAGE-EDITOR] Dados preparados para envio:', editData);
     console.log('🔧 [IMAGE-EDITOR] Tipo de operação:', operationType);
     
-    if (analysisResult.isDestructive && !analysisResult.hasPreservation) {
-      // Mostrar aviso sobre edição destrutiva
-      const shouldContinue = confirm(
-        `⚠️ AVISO: Suas instruções parecem ser muito amplas e podem alterar significativamente a imagem.\n\n` +
-        `Instruções: "${userInstructions}"\n\n` +
-        `Para melhores resultados, recomendamos:\n` +
-        `• Ser mais específico: "Mudar apenas a cor para azul, mantendo exatamente a mesma forma"\n` +
-        `• Ou gerar uma nova imagem usando os Mockups\n\n` +
-        `Deseja continuar mesmo assim?`
-      );
-      
-      if (!shouldContinue) {
-        return;
-      }
-    }
-    
     try {
       // Mostrar modal de loading
       showEditLoadingModal();
-      
-      // 🚀 CORREÇÃO: Aplicar otimização inteligente completa
-      const optimizedPrompt = generateIntelligentPrompt(userInstructions, analysisResult, imageContext);
-      
-      console.log('🎨 [IMAGE-EDITOR] Prompt inteligente gerado:', optimizedPrompt);
-      
-      // Preparar dados para envio
-      // 🚀 CORREÇÃO: Usar URL cacheada do Cloudinary se disponível
-      const editData = {
-        imagemId: window.currentEditingImage.id,
-        imagemUrl: window.currentEditingImage.cachedUrl || window.currentEditingImage.url,
-        instrucoes: userInstructions,
-        promptOtimizado: optimizedPrompt,
-        metadados: {
-          tituloOriginal: window.currentEditingImage.titulo,
-          tipoOriginal: window.currentEditingImage.tipo,
-          promptOriginal: window.currentEditingImage.prompt,
-          analiseInstrucoes: analysisResult,
-          contextoImagem: imageContext
-        }
-      };
       
       console.log('📤 [IMAGE-EDITOR] Enviando dados para edição:', editData);
       
@@ -6633,7 +6603,7 @@ ${currentActionPlanData.conteudo}`;
     }
   }
 
-  // 🚀 CORREÇÃO: Função para validar botão de processar edição (unificada)
+  // 🚀 CORREÇÃO DEFINITIVA: Função para validar botão de processar edição (estilo artístico = apenas seleção de menu)
   function updateProcessButtonValidation() {
     console.log('🎨 [PROCESS-VALIDATION] ===== VALIDANDO BOTÃO DE PROCESSAR EDIÇÃO =====');
     
@@ -6643,9 +6613,9 @@ ${currentActionPlanData.conteudo}`;
       return;
     }
     
-    // Verificar se há estilo artístico selecionado
-    const hasArtisticStyle = typeof currentSelectedStyle !== 'undefined' && currentSelectedStyle !== null;
-    console.log('🎨 [PROCESS-VALIDATION] Estilo artístico selecionado:', hasArtisticStyle, currentSelectedStyle);
+    // Verificar se há estilo artístico selecionado (apenas verificar se currentSelectedStyle existe)
+    const hasArtisticStyle = window.currentSelectedStyle && window.currentSelectedStyle !== null;
+    console.log('🎨 [PROCESS-VALIDATION] Estilo artístico selecionado:', hasArtisticStyle, window.currentSelectedStyle);
     
     // Verificar se há instruções de texto
     const customInstructions = document.getElementById('custom-edit-instructions')?.value?.trim();
@@ -6657,28 +6627,28 @@ ${currentActionPlanData.conteudo}`;
     let buttonClass = '';
     let buttonTitle = '';
     
-    // 🎯 LÓGICA DE VALIDAÇÃO CORRIGIDA - ESTILO ARTÍSTICO É SEMPRE VÁLIDO E PRIORITÁRIO
+    // 🎯 PRIORIDADE 1: ESTILO ARTÍSTICO = APENAS SELEÇÃO DE MENU (SEM PROMPT ADICIONAL)
     if (hasArtisticStyle) {
-      // 🚀 CORREÇÃO DEFINITIVA: Estilo artístico SEMPRE válido - apenas seleção de menu, SEM prompt adicional
+      // ✅ ESTILO ARTÍSTICO SELECIONADO = SEMPRE VÁLIDO E PRONTO
       isValid = true;
-      buttonText = '<i class="fas fa-palette"></i> ✅ Aplicar Estilo Artístico';
+      buttonText = `<i class="fas fa-palette"></i> ✅ Aplicar ${window.currentSelectedStyle.label}`;
       buttonClass = 'artistic-style-ready';
-      buttonTitle = `Aplicar estilo ${currentSelectedStyle.label || 'selecionado'} na imagem (100% automático - sem precisar escrever nada)`;
-      console.log('✅ [PROCESS-VALIDATION] VÁLIDO: Estilo artístico selecionado - modo menu puro (sem prompt)');
+      buttonTitle = `Aplicar estilo ${window.currentSelectedStyle.label} na imagem. Não precisa escrever nada - apenas clique para aplicar!`;
+      console.log('✅ [PROCESS-VALIDATION] ESTILO ARTÍSTICO VÁLIDO - sem necessidade de prompt adicional');
       
     } else if (hasInstructions) {
-      // Instruções de texto = usar validação específica para modificação de cores/texto
+      // PRIORIDADE 2: INSTRUÇÕES MANUAIS = validar se são específicas o suficiente
       console.log('🎨 [PROCESS-VALIDATION] Usando validação de instruções de texto');
       updateColorEditPreview();
       return; // A função updateColorEditPreview já cuida da validação
       
     } else {
-      // Nada selecionado = inválido
+      // NENHUMA SELEÇÃO = mostrar opções disponíveis
       isValid = false;
-      buttonText = '<i class="fas fa-hand-pointer"></i> Selecione um estilo artístico ou descreva uma modificação';
+      buttonText = '<i class="fas fa-hand-pointer"></i> Escolha uma opção acima';
       buttonClass = 'warning';
-      buttonTitle = 'DUAS OPÇÕES: 1) Selecione um estilo artístico no menu acima (automático, sem escrever nada) OU 2) Descreva uma modificação específica no campo de texto';
-      console.log('❌ [PROCESS-VALIDATION] Inválido: Nada selecionado');
+      buttonTitle = 'OPÇÃO 1: Selecione um estilo artístico no menu (clique em uma das opções de estilo) OU OPÇÃO 2: Descreva uma modificação específica no campo de texto abaixo';
+      console.log('❌ [PROCESS-VALIDATION] Nenhuma opção selecionada');
     }
     
     // Aplicar estado do botão
@@ -7047,8 +7017,8 @@ ${currentActionPlanData.conteudo}`;
     // Adicionar seleção atual
     styleElement.classList.add('selected');
     
-    // Armazenar estilo selecionado
-    currentSelectedStyle = {
+    // 🚀 CORREÇÃO: Armazenar estilo selecionado na variável global
+    window.currentSelectedStyle = {
       name: styleElement.dataset.style,
       label: styleElement.querySelector('.style-name').textContent,
       description: styleElement.querySelector('.style-description').textContent
@@ -7063,7 +7033,7 @@ ${currentActionPlanData.conteudo}`;
     // 🚀 CORREÇÃO: Atualizar validação do botão de processar edição
     updateProcessButtonValidation();
     
-    console.log('🎨 [ARTISTIC-STYLE] Estilo selecionado:', currentSelectedStyle);
+    console.log('🎨 [ARTISTIC-STYLE] Estilo selecionado:', window.currentSelectedStyle);
   }
   
   // Atualizar recomendações de estilo
