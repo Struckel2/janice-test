@@ -4132,7 +4132,7 @@ ${currentActionPlanData.conteudo}`;
     // 🚀 CORREÇÃO: Reset seletivo de controles - NÃO resetar estilo artístico se já estiver selecionado
     
     // 🎯 PRESERVAR seleção de estilo artístico se já existir
-    const preserveArtisticStyle = typeof currentSelectedStyle !== 'undefined' && currentSelectedStyle !== null;
+    const preserveArtisticStyle = typeof window.currentSelectedStyle !== 'undefined' && window.currentSelectedStyle !== null;
     
     if (!preserveArtisticStyle) {
       // Limpar seleções de estilo artístico apenas se não houver seleção válida
@@ -4310,7 +4310,7 @@ ${currentActionPlanData.conteudo}`;
     
     // 🚀 CORREÇÃO: Validação inteligente - estilo artístico OU instruções manuais
     if (!hasArtisticStyle && !userInstructions) {
-      alert('Por favor, selecione um estilo artístico no menu acima OU descreva o que você quer editar na imagem.');
+      alert('OPÇÃO 1: Selecione um estilo artístico no menu (automático, não precisa escrever nada)\n\nOPÇÃO 2: OU escreva instruções específicas no campo de texto abaixo\n\nEscolha uma das duas opções para continuar.');
       return;
     }
     
@@ -4328,15 +4328,15 @@ ${currentActionPlanData.conteudo}`;
         imagemUrl: window.currentEditingImage.cachedUrl || window.currentEditingImage.url,
         tipo: 'estilo-artistico',
         estiloArtistico: {
-          nome: currentSelectedStyle.name,
-          label: currentSelectedStyle.label,
+          nome: window.currentSelectedStyle.name,
+          label: window.currentSelectedStyle.label,
           intensidade: document.getElementById('style-intensity')?.value || 50
         },
         metadados: {
           tituloOriginal: window.currentEditingImage.titulo,
           tipoOriginal: window.currentEditingImage.tipo,
           promptOriginal: window.currentEditingImage.prompt,
-          estiloAplicado: currentSelectedStyle.label
+          estiloAplicado: window.currentSelectedStyle.label
         }
       };
       
@@ -7508,6 +7508,99 @@ ${currentActionPlanData.conteudo}`;
       });
       console.log(`✅ [SETUP-EVENTS] ${preservationCheckboxes.length} checkboxes de preservação configurados`);
     }, 1000);
+    
+  // 🚀 CORREÇÃO CRÍTICA: Configurar seleção de estilos artísticos com delay E observador DOM
+    function setupStyleOptionsEventListeners() {
+      const styleOptions = document.querySelectorAll('.style-option');
+      console.log('🎨 [SETUP-EVENTS] Configurando seleção de estilos artísticos...');
+      console.log('🎨 [SETUP-EVENTS] Opções de estilo encontradas:', styleOptions.length);
+      
+      if (styleOptions.length === 0) {
+        console.log('⚠️ [SETUP-EVENTS] Nenhuma opção de estilo encontrada, tentando novamente...');
+        return false;
+      }
+      
+      styleOptions.forEach((option, index) => {
+        // Remover event listeners existentes para evitar duplicação
+        const newOption = option.cloneNode(true);
+        option.parentNode.replaceChild(newOption, option);
+        
+        console.log(`🎨 [SETUP-EVENTS] Configurando estilo ${index + 1}:`, newOption.dataset.style);
+        
+        newOption.addEventListener('click', () => {
+          console.log('🎨 [STYLE-SELECTION] ===== ESTILO SELECIONADO =====');
+          console.log('🎨 [STYLE-SELECTION] Elemento clicado:', newOption);
+          console.log('🎨 [STYLE-SELECTION] Dataset style:', newOption.dataset.style);
+          
+          // Remover seleção anterior
+          document.querySelectorAll('.style-option').forEach(opt => {
+            opt.classList.remove('selected');
+          });
+          
+          // Adicionar seleção atual
+          newOption.classList.add('selected');
+          
+          // Obter dados do estilo
+          const styleName = newOption.dataset.style;
+          const styleLabel = newOption.querySelector('.style-name')?.textContent || styleName;
+          const styleDescription = newOption.querySelector('.style-description')?.textContent || '';
+          
+          console.log('🎨 [STYLE-SELECTION] Dados extraídos:', {
+            name: styleName,
+            label: styleLabel,
+            description: styleDescription
+          });
+          
+          // 🚀 ARMAZENAR ESTILO SELECIONADO GLOBALMENTE
+          window.currentSelectedStyle = {
+            name: styleName,
+            label: styleLabel,
+            description: styleDescription
+          };
+          
+          console.log('🎨 [STYLE-SELECTION] Estilo armazenado globalmente:', window.currentSelectedStyle);
+          
+          // 🚀 ATUALIZAR VALIDAÇÃO DO BOTÃO IMEDIATAMENTE
+          updateProcessButtonValidation();
+          
+          console.log('✅ [STYLE-SELECTION] ===== SELEÇÃO CONCLUÍDA =====');
+        });
+      });
+      
+      console.log(`✅ [SETUP-EVENTS] ${styleOptions.length} opções de estilo artístico configuradas`);
+      return true;
+    }
+    
+    // Tentar configurar imediatamente
+    if (!setupStyleOptionsEventListeners()) {
+      // Se não funcionou, tentar com delay
+      setTimeout(() => {
+        if (!setupStyleOptionsEventListeners()) {
+          // Se ainda não funcionou, criar um observador DOM
+          const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+              if (mutation.type === 'childList') {
+                const styleOptions = document.querySelectorAll('.style-option');
+                if (styleOptions.length > 0) {
+                  console.log('🎨 [DOM-OBSERVER] Estilos detectados via observador DOM');
+                  if (setupStyleOptionsEventListeners()) {
+                    observer.disconnect();
+                  }
+                }
+              }
+            });
+          });
+          
+          // Observar mudanças no documento
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true
+          });
+          
+          console.log('🎨 [SETUP-EVENTS] Observador DOM ativado para detectar estilos artísticos');
+        }
+      }, 1500);
+    }
     
     console.log('✅ [SETUP-EVENTS] Configuração de event listeners iniciada');
   }
