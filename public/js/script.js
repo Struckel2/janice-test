@@ -4301,18 +4301,23 @@ ${currentActionPlanData.conteudo}`;
     console.log('🔍 [DEBUG-EDIT] ID da imagem:', window.currentEditingImage.id);
     console.log('🔍 [DEBUG-EDIT] ===================================');
     
-    // 🚀 CORREÇÃO: Verificar se há estilo artístico selecionado OU instruções manuais
-    const userInstructions = document.getElementById('custom-edit-instructions')?.value?.trim();
-    const hasArtisticStyle = window.currentSelectedStyle && window.currentSelectedStyle !== null;
-    
-    console.log('🎨 [DEBUG-EDIT] Estilo artístico selecionado:', hasArtisticStyle, window.currentSelectedStyle);
-    console.log('🎨 [DEBUG-EDIT] Instruções manuais:', !!userInstructions, userInstructions?.substring(0, 50));
-    
-    // 🚀 CORREÇÃO: Validação inteligente - estilo artístico OU instruções manuais
-    if (!hasArtisticStyle && !userInstructions) {
-      alert('OPÇÃO 1: Selecione um estilo artístico no menu (automático, não precisa escrever nada)\n\nOPÇÃO 2: OU escreva instruções específicas no campo de texto abaixo\n\nEscolha uma das duas opções para continuar.');
-      return;
-    }
+  // 🚀 CORREÇÃO: Verificar se há estilo artístico selecionado OU instruções manuais
+  const userInstructions = document.getElementById('custom-edit-instructions')?.value?.trim();
+  const hasArtisticStyle = window.currentSelectedStyle && window.currentSelectedStyle !== null;
+  
+  console.log('🎨 [DEBUG-EDIT] Estilo artístico selecionado:', hasArtisticStyle, window.currentSelectedStyle);
+  console.log('🎨 [DEBUG-EDIT] Instruções manuais:', !!userInstructions, userInstructions?.substring(0, 50));
+  
+  // 🚀 CORREÇÃO: Validação inteligente - estilo artístico OU instruções manuais
+  if (!hasArtisticStyle && !userInstructions) {
+    alert('OPÇÃO 1: Selecione um estilo artístico no menu (automático, não precisa escrever nada)\n\nOPÇÃO 2: OU escreva instruções específicas no campo de texto abaixo\n\nEscolha uma das duas opções para continuar.');
+    return;
+  }
+  
+  // 🎯 PRIORIDADE: Se tem estilo artístico, usar APENAS o estilo (ignorar instruções de texto)
+  if (hasArtisticStyle) {
+    console.log('✅ [DEBUG-EDIT] USANDO MODO ESTILO ARTÍSTICO - ignorando qualquer texto digitado');
+  }
     
     // 🚀 CORREÇÃO: Decidir entre estilo artístico automático ou edição manual
     let editData = {};
@@ -6308,7 +6313,7 @@ ${currentActionPlanData.conteudo}`;
       });
     }
     
-  // ===== FUNÇÃO PARA ALTERNAR SEÇÕES DE EDIÇÃO =====
+  // ===== FUNÇÃO PARA ALTERNAR SEÇÕES DE EDIÇÃO (CORRIGIDA) =====
   
   // Função para alternar visibilidade das seções de edição
   function toggleEditSection(headerSectionId) {
@@ -6320,61 +6325,84 @@ ${currentActionPlanData.conteudo}`;
     const headerSection = document.getElementById(headerSectionId);
     const contentSection = document.getElementById(contentSectionId);
     
+    console.log('🎨 [TOGGLE-SECTION] Elementos encontrados:', {
+      header: !!headerSection,
+      content: !!contentSection,
+      contentSectionId: contentSectionId
+    });
+    
     if (!headerSection || !contentSection) {
-      console.error('🎨 [TOGGLE-SECTION] Seções não encontradas:', {
-        header: headerSectionId,
-        content: contentSectionId,
+      console.error('🎨 [TOGGLE-SECTION] Elementos não encontrados:', {
         headerFound: !!headerSection,
-        contentFound: !!contentSection
+        contentFound: !!contentSection,
+        headerSectionId: headerSectionId,
+        contentSectionId: contentSectionId
       });
       return;
     }
     
     const arrow = headerSection.querySelector('.section-toggle i');
     
-    // Verificar estado atual baseado no header
-    const isExpanded = headerSection.classList.contains('expanded');
+    // Verificar estado atual usando o display CSS
+    const isCurrentlyVisible = contentSection.style.display === 'block';
     
-    if (isExpanded) {
+    console.log('🎨 [TOGGLE-SECTION] Estado atual:', {
+      isCurrentlyVisible: isCurrentlyVisible,
+      currentDisplay: contentSection.style.display,
+      hasExpandedClass: headerSection.classList.contains('expanded')
+    });
+    
+    if (isCurrentlyVisible) {
       // Contrair seção
       headerSection.classList.remove('expanded');
       contentSection.style.display = 'none';
+      contentSection.style.opacity = '0';
       if (arrow) arrow.className = 'fas fa-chevron-down';
-      console.log('🎨 [TOGGLE-SECTION] Seção contraída:', headerSectionId);
+      console.log('🎨 [TOGGLE-SECTION] ❌ Seção contraída:', headerSectionId);
     } else {
       // Expandir seção
       headerSection.classList.add('expanded');
       contentSection.style.display = 'block';
+      contentSection.style.opacity = '1';
+      contentSection.style.visibility = 'visible';
       if (arrow) arrow.className = 'fas fa-chevron-up';
-      console.log('🎨 [TOGGLE-SECTION] Seção expandida:', headerSectionId);
+      console.log('🎨 [TOGGLE-SECTION] ✅ Seção expandida:', headerSectionId);
       
-      // 🚀 CORREÇÃO: Fluxo direto para modificação de cores
+      // 🚀 CORREÇÃO: Fluxo específico para cada seção
       if (headerSectionId === 'color-section-header') {
+        console.log('🎨 [TOGGLE-SECTION] Configurando seção de cores...');
+        
         // Automaticamente mostrar o campo de instruções de cores
         const colorInstructionsContainer = document.getElementById('color-instructions-container');
-        const colorEditButton = document.getElementById('color-edit-button');
         
-        if (colorInstructionsContainer && colorEditButton) {
-          // Mostrar container de instruções
-          colorInstructionsContainer.style.display = 'block';
-          
-          // Atualizar seta do botão
-          const arrow = colorEditButton.querySelector('.color-edit-arrow i');
-          if (arrow) arrow.className = 'fas fa-chevron-up';
-          
-          // Focar no textarea após um pequeno delay
+        if (colorInstructionsContainer) {
+          // Aguardar um momento para o DOM se estabilizar
           setTimeout(() => {
+            colorInstructionsContainer.style.display = 'block';
+            colorInstructionsContainer.style.opacity = '1';
+            
+            // Focar no textarea
             const textarea = document.getElementById('custom-edit-instructions');
             if (textarea) {
               textarea.focus();
               console.log('✅ [TOGGLE-SECTION] Foco aplicado no textarea de cores');
             }
-          }, 100);
-          
-          console.log('✅ [TOGGLE-SECTION] Fluxo direto para cores ativado');
+            
+            console.log('✅ [TOGGLE-SECTION] Seção de cores totalmente configurada');
+          }, 150);
         }
+      } else if (headerSectionId === 'artistic-section-header') {
+        console.log('🎨 [TOGGLE-SECTION] Seção de estilo artístico expandida');
+        
+        // Atualizar validação do botão após expansão
+        setTimeout(() => {
+          updateProcessButtonValidation();
+        }, 100);
       }
     }
+    
+    // Forçar repaint do DOM
+    contentSection.offsetHeight;
   }
   
   // ===== CONFIGURAR EVENT LISTENERS PARA SEÇÕES DE EDIÇÃO =====
@@ -6637,10 +6665,36 @@ ${currentActionPlanData.conteudo}`;
       console.log('✅ [PROCESS-VALIDATION] ESTILO ARTÍSTICO VÁLIDO - pronto para aplicar automaticamente');
       
     } else if (hasInstructions) {
-      // PRIORIDADE 2: INSTRUÇÕES MANUAIS = validar se são específicas o suficiente
+      // PRIORIDADE 2: INSTRUÇÕES MANUAIS = validar se são específicas o suficiente (SEM CONFLITO COM ESTILO ARTÍSTICO)
       console.log('🎨 [PROCESS-VALIDATION] Usando validação de instruções de texto');
-      updateColorEditPreview();
-      return; // A função updateColorEditPreview já cuida da validação
+      
+      // Validação específica para instruções manuais
+      const instructionsLower = customInstructions.toLowerCase();
+      
+      // Termos relacionados a cores
+      const hasColorTerms = /(?:cor|cores|azul|verde|vermelho|amarelo|preto|branco|cinza|rosa|roxo|laranja|#[0-9a-f]{3,6}|mudar.*para|alterar.*para)/i.test(customInstructions);
+      
+      // Termos de preservação
+      const hasPreservationTerms = /(?:manter|preservar|exatamente|mesmo|mesma|igual|idêntico|figura|forma|estrutura)/i.test(customInstructions);
+      
+      if (hasColorTerms && hasPreservationTerms) {
+        isValid = true;
+        buttonText = '<i class="fas fa-magic"></i> 🔄 Processar Edição';
+        buttonTitle = 'Instruções adequadas para modificação de cores';
+      } else if (hasColorTerms) {
+        isValid = true;
+        buttonText = '<i class="fas fa-magic"></i> 🔄 Processar Edição';
+        buttonTitle = 'Processará a modificação de cores';
+      } else if (customInstructions.length >= 20) {
+        isValid = true;
+        buttonText = '<i class="fas fa-magic"></i> 🔄 Processar Edição';
+        buttonTitle = 'Instruções aceitas - pronto para processar';
+      } else {
+        isValid = false;
+        buttonText = '<i class="fas fa-exclamation-triangle"></i> Especifique as cores';
+        buttonClass = 'warning';
+        buttonTitle = 'Mencione quais cores alterar. Ex: "Mudar roxo para azul"';
+      }
       
     } else {
       // NENHUMA SELEÇÃO = mostrar opções disponíveis com clareza
