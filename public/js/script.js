@@ -4179,11 +4179,64 @@ ${currentActionPlanData.conteudo}`;
   }
   
   // Configurar modal de edição de imagem
-  function setupImageEditor(image) {
+  async function setupImageEditor(image) {
     console.log('🎨 [IMAGE-EDITOR] Configurando editor para:', image.titulo);
     
     // 🚀 CORREÇÃO: Reset completo das seções de edição
     resetEditSections();
+    
+    // 🚀 CACHE PREVENTIVO: Cachear imagem imediatamente ao abrir o modal
+    console.log('🔄 [CACHE-PREVENTIVO] Iniciando cache preventivo da imagem...');
+    try {
+      const cacheResponse = await fetch('/api/mockups/galeria/cachear-preventivo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          imagemUrl: image.url,
+          imagemId: image.id
+        })
+      });
+      
+      if (cacheResponse.ok) {
+        const cacheResult = await cacheResponse.json();
+        // Armazenar URL cacheada na imagem
+        image.cachedUrl = cacheResult.urlCacheada;
+        console.log('✅ [CACHE-PREVENTIVO] Imagem cacheada com sucesso:', cacheResult.urlCacheada);
+        
+        // Mostrar indicador visual de cache bem-sucedido
+        const cacheIndicator = document.createElement('div');
+        cacheIndicator.className = 'cache-success-indicator';
+        cacheIndicator.innerHTML = '<i class="fas fa-check-circle"></i> Imagem preparada para edição';
+        cacheIndicator.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #4CAF50;
+          color: white;
+          padding: 10px 15px;
+          border-radius: 6px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+          z-index: 10001;
+          font-size: 14px;
+          animation: slideIn 0.3s ease;
+        `;
+        document.body.appendChild(cacheIndicator);
+        
+        // Remover indicador após 3 segundos
+        setTimeout(() => {
+          if (cacheIndicator.parentNode) {
+            cacheIndicator.remove();
+          }
+        }, 3000);
+      } else {
+        console.log('⚠️ [CACHE-PREVENTIVO] Resposta não OK, usando URL original');
+      }
+    } catch (error) {
+      console.log('⚠️ [CACHE-PREVENTIVO] Erro no cache preventivo:', error);
+      console.log('⚠️ [CACHE-PREVENTIVO] Continuando com URL original');
+    }
     
     // Preencher imagem original
     const originalPreview = document.getElementById('original-preview');

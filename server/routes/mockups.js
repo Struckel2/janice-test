@@ -733,6 +733,134 @@ router.get('/galeria/:clienteId', async (req, res) => {
     }
 });
 
+// Rota para cachear preventivamente uma imagem no Cloudinary
+router.post('/galeria/cachear-preventivo', async (req, res) => {
+  try {
+    const { imagemUrl, imagemId } = req.body;
+    
+    console.log('🔄 [CACHE-PREVENTIVO] ===== INICIANDO CACHE PREVENTIVO =====');
+    console.log('🔄 [CACHE-PREVENTIVO] URL original:', imagemUrl?.substring(0, 100) + '...');
+    console.log('🔄 [CACHE-PREVENTIVO] ID da imagem:', imagemId);
+    
+    // Validações básicas
+    if (!imagemUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'URL da imagem é obrigatória'
+      });
+    }
+    
+    // Verificar se é uma URL do Replicate
+    const isReplicateUrl = imagemUrl.includes('replicate.delivery') || 
+                          imagemUrl.includes('replicate.com');
+    
+    if (!isReplicateUrl) {
+      console.log('✅ [CACHE-PREVENTIVO] URL não é do Replicate, não precisa de cache');
+      return res.json({
+        success: true,
+        message: 'URL não requer cache',
+        urlCacheada: imagemUrl,
+        cacheado: false
+      });
+    }
+    
+    console.log('🔄 [CACHE-PREVENTIVO] URL do Replicate detectada, iniciando cache...');
+    
+    try {
+      // Baixar imagem do Replicate
+      const axios = require('axios');
+      const response = await axios.get(imagemUrl, {
+        responseType: 'arraybuffer',
+        timeout: 30000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      
+      console.log('✅ [CACHE-PREVENTIVO] Imagem baixada com sucesso');
+      console.log('📊 [CACHE-PREVENTIVO] Tamanho:', response.data.length, 'bytes');
+      
+      // Converter para base64
+      const base64Image = Buffer.from(response.data).toString('base64');
+      const dataUri = `data:${response.headers['content-type'] || 'image/png'};base64,${base64Image}`;
+      
+      // Upload para Cloudinary
+      const { cloudinary } = require('../config/cloudinary');
+      
+      console.log('☁️ [CACHE-PREVENTIVO] Fazendo upload para Cloudinary...');
+      
+      const uploadResult = await cloudinary.uploader.upload(dataUri, {
+        folder: 'janice/cache',
+        public_id: `cached_${imagemId}_${Date.now()}`,
+        resource_type: 'image',
+        format: 'png',
+        transformation: [
+          { quality: 'auto:best' },
+          { fetch_format: 'auto' }
+        ]
+      });
+      
+      console.log('✅ [CACHE-PREVENTIVO] Upload para Cloudinary concluído');
+      console.log('☁️ [CACHE-PREVENTIVO] URL Cloudinary:', uploadResult.secure_url);
+      console.log('☁️ [CACHE-PREVENTIVO] Public ID:', uploadResult.public_id);
+      
+      // Salvar referência no banco se necessário
+      if (imagemId) {
+        const [mockupId, seed] = imagemId.split('_');
+        if (mockupId) {
+          const Mockup = require('../models/Mockup');
+          const mockup = await Mockup.findById(mockupId);
+          
+          if (mockup && mockup.metadados) {
+            if (!mockup.metadados.urlsCache) {
+              mockup.metadados.urlsCache = {};
+            }
+            
+            // Salvar URL cacheada
+            mockup.metadados.urlsCache[imagemId] = {
+              urlOriginal: imagemUrl,
+              urlCloudinary: uploadResult.secure_url,
+              publicId: uploadResult.public_id,
+              dataCriacao: new Date()
+            };
+            
+            await mockup.save();
+            console.log('💾 [CACHE-PREVENTIVO] Referência salva no banco de dados');
+          }
+        }
+      }
+      
+      res.json({
+        success: true,
+        message: 'Imagem cacheada com sucesso no Cloudinary',
+        urlCacheada: uploadResult.secure_url,
+        publicId: uploadResult.public_id,
+        cacheado: true
+      });
+      
+    } catch (downloadError) {
+      console.error('❌ [CACHE-PREVENTIVO] Erro ao baixar/cachear imagem:', downloadError.message);
+      
+      // Se falhar, retornar URL original
+      res.json({
+        success: false,
+        message: 'Não foi possível cachear, usando URL original',
+        urlCacheada: imagemUrl,
+        cacheado: false,
+        erro: downloadError.message
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ [CACHE-PREVENTIVO] Erro geral:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao processar cache preventivo',
+      error: error.message
+    });
+  }
+});
+
 // Rota para editar imagem da galeria
 router.post('/galeria/editar', async (req, res) => {
   try {
@@ -821,109 +949,162 @@ router.post('/galeria/editar', async (req, res) => {
     console.log('✅ [PROMPT-CRITICAL] Comprimento final:', promptEdicao.length);
     console.log('🎨 [PROMPT-CRITICAL] ===== FIM CORREÇÃO CRÍTICA =====');
 
-    // ✅ VALIDAÇÃO ROBUSTA DA IMAGEM COM CACHE JUST-IN-TIME
+    // ✅ VALIDAÇÃO ROBUSTA DA IMAGEM COM CLOUDINARY
     console.log('✅ [IMAGE-CHECK] Validando URL da imagem:', imagemUrl.substring(0, 50) + '...');
     
-    const imageCache = getImageCacheService();
     let imagemUrlFinal = imagemUrl;
     
-    try {
-      // Primeiro, tentar validar a URL original
-      const response = await fetch(imagemUrl, { method: 'HEAD', timeout: 10000 });
+    // Verificar se é URL do Replicate que precisa de cache
+    const isReplicateUrl = imagemUrl.includes('replicate.delivery') || 
+                          imagemUrl.includes('replicate.com');
+    
+    if (isReplicateUrl) {
+      console.log('🔄 [IMAGE-CHECK] URL do Replicate detectada, verificando cache...');
       
-      if (!response.ok) {
-        console.error('❌ [IMAGE-CHECK] Imagem não acessível - Status:', response.status);
-        
-        // Se a URL expirou (404), tentar usar cache
-        if (response.status === 404) {
-          console.log('🔄 [IMAGE-CACHE] URL expirada, tentando cache...');
+      // Verificar se já temos URL cacheada no banco
+      if (imagemId) {
+        const [mockupId] = imagemId.split('_');
+        if (mockupId) {
+          const Mockup = require('../models/Mockup');
+          const mockup = await Mockup.findById(mockupId);
           
-          try {
-            // Verificar se está em cache
-            if (await imageCache.isInCache(imagemUrl)) {
-              const cachedPath = imageCache.getCachedFilePath(imagemUrl);
-              console.log('✅ [IMAGE-CACHE] Imagem encontrada no cache:', cachedPath);
-              
-              // Converter caminho local para URL acessível
-              const fs = require('fs');
-              const path = require('path');
-              
-              // Verificar se o arquivo existe
-              if (fs.existsSync(cachedPath)) {
-                // Para desenvolvimento local, usar file:// URL
-                imagemUrlFinal = `file://${path.resolve(cachedPath)}`;
-                console.log('✅ [IMAGE-CACHE] Usando imagem do cache:', imagemUrlFinal);
-              } else {
-                throw new Error('Arquivo de cache não encontrado');
-              }
-            } else {
-              // Tentar fazer cache da imagem
-              console.log('📥 [IMAGE-CACHE] Tentando cachear imagem...');
-              const cachedPath = await imageCache.cacheImage(imagemUrl);
-              imagemUrlFinal = `file://${path.resolve(cachedPath)}`;
-              console.log('✅ [IMAGE-CACHE] Imagem cacheada e pronta para uso:', imagemUrlFinal);
-            }
-          } catch (cacheError) {
-            console.error('❌ [IMAGE-CACHE] Erro no cache:', cacheError.message);
-            
-            // Se o cache falhar, retornar erro original
+          if (mockup?.metadados?.urlsCache?.[imagemId]) {
+            const cacheInfo = mockup.metadados.urlsCache[imagemId];
+            console.log('✅ [IMAGE-CHECK] URL cacheada encontrada no banco:', cacheInfo.urlCloudinary);
+            imagemUrlFinal = cacheInfo.urlCloudinary;
+          }
+        }
+      }
+      
+      // Se ainda é URL do Replicate, verificar se está acessível
+      if (imagemUrlFinal.includes('replicate')) {
+        try {
+          const response = await fetch(imagemUrlFinal, { method: 'HEAD', timeout: 5000 });
+          
+          if (!response.ok) {
+            console.error('❌ [IMAGE-CHECK] URL do Replicate expirada:', response.status);
             return res.status(400).json({
               success: false,
               message: 'A imagem selecionada não está mais disponível (URL expirada)',
               error: 'IMAGE_URL_EXPIRED',
-              suggestion: 'Por favor, regenere o mockup ou selecione uma imagem mais recente da galeria.',
-              cacheError: cacheError.message
+              suggestion: 'Por favor, atualize a página e tente novamente. O sistema tentará cachear a imagem automaticamente.'
+            });
+          }
+        } catch (error) {
+          console.error('❌ [IMAGE-CHECK] Erro ao verificar URL do Replicate:', error.message);
+          return res.status(400).json({
+            success: false,
+            message: 'Não foi possível verificar a imagem',
+            error: 'IMAGE_URL_CHECK_FAILED',
+            suggestion: 'A imagem pode ter expirado. Tente selecionar outra imagem.'
+          });
+        }
+      }
+    } else {
+      // Para URLs não-Replicate, fazer verificação básica
+      try {
+        const response = await fetch(imagemUrlFinal, { method: 'HEAD', timeout: 10000 });
+        
+        if (!response.ok) {
+          console.error('❌ [IMAGE-CHECK] Imagem não acessível - Status:', response.status);
+          
+          // Se a URL expirou (404), tentar usar cache
+          if (response.status === 404) {
+            console.log('🔄 [IMAGE-CACHE] URL expirada, tentando cache...');
+            
+            const imageCache = getImageCacheService();
+            
+            try {
+              // Verificar se está em cache
+              if (await imageCache.isInCache(imagemUrl)) {
+                const cachedPath = imageCache.getCachedFilePath(imagemUrl);
+                console.log('✅ [IMAGE-CACHE] Imagem encontrada no cache:', cachedPath);
+                
+                // Converter caminho local para URL acessível
+                const fs = require('fs');
+                const path = require('path');
+                
+                // Verificar se o arquivo existe
+                if (fs.existsSync(cachedPath)) {
+                  // Para desenvolvimento local, usar file:// URL
+                  imagemUrlFinal = `file://${path.resolve(cachedPath)}`;
+                  console.log('✅ [IMAGE-CACHE] Usando imagem do cache:', imagemUrlFinal);
+                } else {
+                  throw new Error('Arquivo de cache não encontrado');
+                }
+              } else {
+                // Tentar fazer cache da imagem
+                console.log('📥 [IMAGE-CACHE] Tentando cachear imagem...');
+                const cachedPath = await imageCache.cacheImage(imagemUrl);
+                imagemUrlFinal = `file://${path.resolve(cachedPath)}`;
+                console.log('✅ [IMAGE-CACHE] Imagem cacheada e pronta para uso:', imagemUrlFinal);
+              }
+            } catch (cacheError) {
+              console.error('❌ [IMAGE-CACHE] Erro no cache:', cacheError.message);
+              
+              // Se o cache falhar, retornar erro original
+              return res.status(400).json({
+                success: false,
+                message: 'A imagem selecionada não está mais disponível (URL expirada)',
+                error: 'IMAGE_URL_EXPIRED',
+                suggestion: 'Por favor, regenere o mockup ou selecione uma imagem mais recente da galeria.',
+                cacheError: cacheError.message
+              });
+            }
+          } else {
+            return res.status(400).json({
+              success: false,
+              message: 'A imagem selecionada não está acessível',
+              error: 'IMAGE_URL_INACCESSIBLE',
+              suggestion: 'Verifique se a imagem ainda existe ou tente novamente.'
             });
           }
         } else {
-          return res.status(400).json({
-            success: false,
-            message: 'A imagem selecionada não está acessível',
-            error: 'IMAGE_URL_INACCESSIBLE',
-            suggestion: 'Verifique se a imagem ainda existe ou tente novamente.'
+          console.log('✅ [IMAGE-CHECK] Imagem acessível e válida');
+          
+          const imageCache = getImageCacheService();
+          
+          // Imagem acessível, fazer cache preventivo em background
+          imageCache.cacheImage(imagemUrl).catch(error => {
+            console.log('⚠️ [IMAGE-CACHE] Cache preventivo falhou:', error.message);
           });
         }
-      } else {
-        console.log('✅ [IMAGE-CHECK] Imagem acessível e válida');
+      } catch (error) {
+        console.error('❌ [IMAGE-CHECK] Erro ao validar imagem:', error.message);
         
-        // Imagem acessível, fazer cache preventivo em background
-        imageCache.cacheImage(imagemUrl).catch(error => {
-          console.log('⚠️ [IMAGE-CACHE] Cache preventivo falhou:', error.message);
-        });
-      }
-    } catch (error) {
-      console.error('❌ [IMAGE-CHECK] Erro ao validar imagem:', error.message);
-      
-      // Tentar usar cache como fallback
-      try {
-        console.log('🔄 [IMAGE-CACHE] Erro de conectividade, tentando cache...');
+        const imageCache = getImageCacheService();
         
-        if (await imageCache.isInCache(imagemUrl)) {
-          const cachedPath = imageCache.getCachedFilePath(imagemUrl);
-          const fs = require('fs');
-          const path = require('path');
+        // Tentar usar cache como fallback
+        try {
+          console.log('🔄 [IMAGE-CACHE] Erro de conectividade, tentando cache...');
           
-          if (fs.existsSync(cachedPath)) {
-            imagemUrlFinal = `file://${path.resolve(cachedPath)}`;
-            console.log('✅ [IMAGE-CACHE] Usando cache devido a erro de conectividade:', imagemUrlFinal);
+          if (await imageCache.isInCache(imagemUrl)) {
+            const cachedPath = imageCache.getCachedFilePath(imagemUrl);
+            const fs = require('fs');
+            const path = require('path');
+            
+            if (fs.existsSync(cachedPath)) {
+              imagemUrlFinal = `file://${path.resolve(cachedPath)}`;
+              console.log('✅ [IMAGE-CACHE] Usando cache devido a erro de conectividade:', imagemUrlFinal);
+            } else {
+              throw new Error('Cache não disponível');
+            }
           } else {
-            throw new Error('Cache não disponível');
+            throw new Error('Imagem não está em cache');
           }
-        } else {
-          throw new Error('Imagem não está em cache');
+        } catch (cacheError) {
+          console.error('❌ [IMAGE-CACHE] Cache também falhou:', cacheError.message);
+          
+          // Retornar erro específico para problemas de conectividade
+          return res.status(400).json({
+            success: false,
+            message: 'Não foi possível acessar a imagem selecionada',
+            error: 'IMAGE_URL_CONNECTION_ERROR',
+            suggestion: 'Verifique sua conexão ou tente selecionar outra imagem.',
+            details: error.message,
+            cacheError: cacheError.message
+          });
         }
-      } catch (cacheError) {
-        console.error('❌ [IMAGE-CACHE] Cache também falhou:', cacheError.message);
-        
-        // Retornar erro específico para problemas de conectividade
-        return res.status(400).json({
-          success: false,
-          message: 'Não foi possível acessar a imagem selecionada',
-          error: 'IMAGE_URL_CONNECTION_ERROR',
-          suggestion: 'Verifique sua conexão ou tente selecionar outra imagem.',
-          details: error.message,
-          cacheError: cacheError.message
-        });
       }
     }
 
