@@ -6585,14 +6585,14 @@ ${currentActionPlanData.conteudo}`;
     let buttonClass = '';
     let buttonTitle = '';
     
-    // 🎯 LÓGICA DE VALIDAÇÃO CORRIGIDA - ESTILO ARTÍSTICO É SEMPRE VÁLIDO POR SI SÓ
+    // 🎯 LÓGICA DE VALIDAÇÃO CORRIGIDA - ESTILO ARTÍSTICO É SEMPRE VÁLIDO E PRIORITÁRIO
     if (hasArtisticStyle) {
-      // 🚀 CORREÇÃO: Estilo artístico é SEMPRE válido - apenas seleção de menu, sem prompt adicional
+      // 🚀 CORREÇÃO DEFINITIVA: Estilo artístico SEMPRE válido - apenas seleção de menu, SEM prompt adicional
       isValid = true;
       buttonText = '<i class="fas fa-palette"></i> ✅ Aplicar Estilo Artístico';
-      buttonClass = '';
-      buttonTitle = `Aplicar estilo ${currentSelectedStyle.label || 'selecionado'} - apenas seleção de menu, sem prompt adicional`;
-      console.log('✅ [PROCESS-VALIDATION] Válido: Estilo artístico selecionado (modo menu)');
+      buttonClass = 'artistic-style-ready';
+      buttonTitle = `Aplicar estilo ${currentSelectedStyle.label || 'selecionado'} na imagem (100% automático - sem precisar escrever nada)`;
+      console.log('✅ [PROCESS-VALIDATION] VÁLIDO: Estilo artístico selecionado - modo menu puro (sem prompt)');
       
     } else if (hasInstructions) {
       // Instruções de texto = usar validação específica para modificação de cores/texto
@@ -6603,16 +6603,16 @@ ${currentActionPlanData.conteudo}`;
     } else {
       // Nada selecionado = inválido
       isValid = false;
-      buttonText = '<i class="fas fa-exclamation-triangle"></i> Selecione um estilo artístico ou descreva o que editar';
+      buttonText = '<i class="fas fa-hand-pointer"></i> Selecione um estilo artístico ou descreva uma modificação';
       buttonClass = 'warning';
-      buttonTitle = 'ESTILO ARTÍSTICO: Selecione um estilo no menu acima (sem precisar escrever nada) OU MODIFICAÇÃO: Descreva o que você quer editar na imagem';
+      buttonTitle = 'DUAS OPÇÕES: 1) Selecione um estilo artístico no menu acima (automático, sem escrever nada) OU 2) Descreva uma modificação específica no campo de texto';
       console.log('❌ [PROCESS-VALIDATION] Inválido: Nada selecionado');
     }
     
     // Aplicar estado do botão
     processBtn.disabled = !isValid;
     processBtn.innerHTML = buttonText;
-    processBtn.className = processBtn.className.replace(/\bwarning\b/g, '');
+    processBtn.className = processBtn.className.replace(/\bwarning\b/g, '').replace(/\bartistic-style-ready\b/g, '');
     if (buttonClass) {
       processBtn.classList.add(buttonClass);
     }
