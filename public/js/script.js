@@ -4294,24 +4294,96 @@ ${currentActionPlanData.conteudo}`;
     console.log('🔍 [DEBUG-EDIT] ID da imagem:', window.currentEditingImage.id);
     console.log('🔍 [DEBUG-EDIT] ===================================');
     
-    // Obter instruções do usuário
+    // 🚀 CORREÇÃO: Verificar se há estilo artístico selecionado OU instruções manuais
     const userInstructions = document.getElementById('custom-edit-instructions')?.value?.trim();
+    const hasArtisticStyle = typeof currentSelectedStyle !== 'undefined' && currentSelectedStyle !== null;
     
-    // Validar se há instruções
-    if (!userInstructions) {
-      alert('Por favor, descreva o que você quer editar na imagem.');
+    console.log('🎨 [DEBUG-EDIT] Estilo artístico selecionado:', hasArtisticStyle, currentSelectedStyle);
+    console.log('🎨 [DEBUG-EDIT] Instruções manuais:', !!userInstructions, userInstructions?.substring(0, 50));
+    
+    // 🚀 CORREÇÃO: Validação inteligente - estilo artístico OU instruções manuais
+    if (!hasArtisticStyle && !userInstructions) {
+      alert('Por favor, selecione um estilo artístico no menu acima OU descreva o que você quer editar na imagem.');
       return;
     }
     
-    console.log('🎨 [IMAGE-EDITOR] Instruções do usuário:', userInstructions);
+    // 🚀 CORREÇÃO: Decidir entre estilo artístico automático ou edição manual
+    let editData = {};
+    let operationType = '';
     
-    // 🚀 CORREÇÃO CRÍTICA: Aplicar análise inteligente completa
-    const analysisResult = analyzeEditInstructions(userInstructions);
-    console.log('🧠 [IMAGE-EDITOR] Análise inteligente:', analysisResult);
+    if (hasArtisticStyle) {
+      // 🎨 MODO ESTILO ARTÍSTICO: Automático, sem prompt do usuário
+      console.log('🎨 [IMAGE-EDITOR] Usando modo estilo artístico automático');
+      operationType = 'artistic-style';
+      
+      editData = {
+        imagemId: window.currentEditingImage.id,
+        imagemUrl: window.currentEditingImage.cachedUrl || window.currentEditingImage.url,
+        tipo: 'estilo-artistico',
+        estiloArtistico: {
+          nome: currentSelectedStyle.name,
+          label: currentSelectedStyle.label,
+          intensidade: document.getElementById('style-intensity')?.value || 50
+        },
+        metadados: {
+          tituloOriginal: window.currentEditingImage.titulo,
+          tipoOriginal: window.currentEditingImage.tipo,
+          promptOriginal: window.currentEditingImage.prompt,
+          estiloAplicado: currentSelectedStyle.label
+        }
+      };
+      
+    } else {
+      // 📝 MODO EDIÇÃO MANUAL: Com instruções do usuário
+      console.log('🎨 [IMAGE-EDITOR] Usando modo edição manual com instruções');
+      operationType = 'manual-edit';
+      
+      // Aplicar análise inteligente para instruções manuais
+      const analysisResult = analyzeEditInstructions(userInstructions);
+      console.log('🧠 [IMAGE-EDITOR] Análise inteligente:', analysisResult);
+      
+      // Detectar tipo de imagem para contexto específico
+      const imageContext = detectImageContext(window.currentEditingImage);
+      console.log('🖼️ [IMAGE-EDITOR] Contexto da imagem:', imageContext);
+      
+      // Mostrar aviso para edições destrutivas apenas no modo manual
+      if (analysisResult.isDestructive && !analysisResult.hasPreservation) {
+        const shouldContinue = confirm(
+          `⚠️ AVISO: Suas instruções parecem ser muito amplas e podem alterar significativamente a imagem.\n\n` +
+          `Instruções: "${userInstructions}"\n\n` +
+          `Para melhores resultados, recomendamos:\n` +
+          `• Ser mais específico: "Mudar apenas a cor para azul, mantendo exatamente a mesma forma"\n` +
+          `• Ou gerar uma nova imagem usando os Mockups\n\n` +
+          `Deseja continuar mesmo assim?`
+        );
+        
+        if (!shouldContinue) {
+          return;
+        }
+      }
+      
+      // Aplicar otimização inteligente para instruções manuais
+      const optimizedPrompt = generateIntelligentPrompt(userInstructions, analysisResult, imageContext);
+      console.log('🎨 [IMAGE-EDITOR] Prompt inteligente gerado:', optimizedPrompt);
+      
+      editData = {
+        imagemId: window.currentEditingImage.id,
+        imagemUrl: window.currentEditingImage.cachedUrl || window.currentEditingImage.url,
+        tipo: 'edicao-manual',
+        instrucoes: userInstructions,
+        promptOtimizado: optimizedPrompt,
+        metadados: {
+          tituloOriginal: window.currentEditingImage.titulo,
+          tipoOriginal: window.currentEditingImage.tipo,
+          promptOriginal: window.currentEditingImage.prompt,
+          analiseInstrucoes: analysisResult,
+          contextoImagem: imageContext
+        }
+      };
+    }
     
-    // Detectar tipo de imagem para contexto específico
-    const imageContext = detectImageContext(window.currentEditingImage);
-    console.log('🖼️ [IMAGE-EDITOR] Contexto da imagem:', imageContext);
+    console.log('📤 [IMAGE-EDITOR] Dados preparados para envio:', editData);
+    console.log('🔧 [IMAGE-EDITOR] Tipo de operação:', operationType);
     
     if (analysisResult.isDestructive && !analysisResult.hasPreservation) {
       // Mostrar aviso sobre edição destrutiva
