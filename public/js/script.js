@@ -6580,27 +6580,22 @@ ${currentActionPlanData.conteudo}`;
     const hasInstructions = customInstructions && customInstructions.length >= 10;
     console.log('🎨 [PROCESS-VALIDATION] Instruções de texto:', hasInstructions, customInstructions?.substring(0, 50));
     
-    // Verificar se há checkboxes de preservação marcados
-    const preservationCheckboxes = document.querySelectorAll('.preservation-options input[type="checkbox"]:checked');
-    const hasPreservationOptions = preservationCheckboxes.length > 0;
-    console.log('🎨 [PROCESS-VALIDATION] Opções de preservação:', hasPreservationOptions, preservationCheckboxes.length);
-    
     let isValid = false;
     let buttonText = '';
     let buttonClass = '';
     let buttonTitle = '';
     
-    // 🎯 LÓGICA DE VALIDAÇÃO CORRIGIDA - ESTILO ARTÍSTICO SEMPRE VÁLIDO
+    // 🎯 LÓGICA DE VALIDAÇÃO CORRIGIDA - ESTILO ARTÍSTICO É SEMPRE VÁLIDO POR SI SÓ
     if (hasArtisticStyle) {
-      // 🚀 CORREÇÃO: Estilo artístico é SEMPRE válido, independente de qualquer outra condição
+      // 🚀 CORREÇÃO: Estilo artístico é SEMPRE válido - apenas seleção de menu, sem prompt adicional
       isValid = true;
-      buttonText = '<i class="fas fa-magic"></i> ✅ Aplicar Estilo Artístico';
+      buttonText = '<i class="fas fa-palette"></i> ✅ Aplicar Estilo Artístico';
       buttonClass = '';
-      buttonTitle = `Aplicar estilo ${currentSelectedStyle.label || 'selecionado'}`;
-      console.log('✅ [PROCESS-VALIDATION] Válido: Estilo artístico selecionado');
+      buttonTitle = `Aplicar estilo ${currentSelectedStyle.label || 'selecionado'} - apenas seleção de menu, sem prompt adicional`;
+      console.log('✅ [PROCESS-VALIDATION] Válido: Estilo artístico selecionado (modo menu)');
       
     } else if (hasInstructions) {
-      // Instruções de texto = usar validação de cores
+      // Instruções de texto = usar validação específica para modificação de cores/texto
       console.log('🎨 [PROCESS-VALIDATION] Usando validação de instruções de texto');
       updateColorEditPreview();
       return; // A função updateColorEditPreview já cuida da validação
@@ -6610,7 +6605,7 @@ ${currentActionPlanData.conteudo}`;
       isValid = false;
       buttonText = '<i class="fas fa-exclamation-triangle"></i> Selecione um estilo artístico ou descreva o que editar';
       buttonClass = 'warning';
-      buttonTitle = 'Selecione um estilo artístico ou descreva o que você quer editar na imagem';
+      buttonTitle = 'ESTILO ARTÍSTICO: Selecione um estilo no menu acima (sem precisar escrever nada) OU MODIFICAÇÃO: Descreva o que você quer editar na imagem';
       console.log('❌ [PROCESS-VALIDATION] Inválido: Nada selecionado');
     }
     
