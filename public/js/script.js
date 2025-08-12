@@ -4303,9 +4303,9 @@ ${currentActionPlanData.conteudo}`;
     
     // 🚀 CORREÇÃO: Verificar se há estilo artístico selecionado OU instruções manuais
     const userInstructions = document.getElementById('custom-edit-instructions')?.value?.trim();
-    const hasArtisticStyle = typeof currentSelectedStyle !== 'undefined' && currentSelectedStyle !== null;
+    const hasArtisticStyle = window.currentSelectedStyle && window.currentSelectedStyle !== null;
     
-    console.log('🎨 [DEBUG-EDIT] Estilo artístico selecionado:', hasArtisticStyle, currentSelectedStyle);
+    console.log('🎨 [DEBUG-EDIT] Estilo artístico selecionado:', hasArtisticStyle, window.currentSelectedStyle);
     console.log('🎨 [DEBUG-EDIT] Instruções manuais:', !!userInstructions, userInstructions?.substring(0, 50));
     
     // 🚀 CORREÇÃO: Validação inteligente - estilo artístico OU instruções manuais
