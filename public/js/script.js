@@ -4287,6 +4287,12 @@ ${currentActionPlanData.conteudo}`;
     }
     
     console.log('🔄 [IMAGE-EDITOR] Iniciando processamento da edição...');
+    console.log('🔍 [DEBUG-EDIT] ===== DADOS DA IMAGEM ATUAL =====');
+    console.log('🔍 [DEBUG-EDIT] window.currentEditingImage:', window.currentEditingImage);
+    console.log('🔍 [DEBUG-EDIT] URL original:', window.currentEditingImage.url);
+    console.log('🔍 [DEBUG-EDIT] URL cacheada:', window.currentEditingImage.cachedUrl || 'NÃO DEFINIDA');
+    console.log('🔍 [DEBUG-EDIT] ID da imagem:', window.currentEditingImage.id);
+    console.log('🔍 [DEBUG-EDIT] ===================================');
     
     // Obter instruções do usuário
     const userInstructions = document.getElementById('custom-edit-instructions')?.value?.trim();
