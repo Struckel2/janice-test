@@ -7665,7 +7665,7 @@ ${currentActionPlanData.conteudo}`;
   
   // ===== FUNÇÕES DE TOGGLE ESPECÍFICAS PARA CADA SEÇÃO =====
   
-  // Toggle específico para seção de cores
+  // Toggle específico para seção de cores - CORREÇÃO: Mostrar prompt diretamente
   function toggleColorSection() {
     console.log('🎨 [TOGGLE-COLOR] ===== ALTERNANDO SEÇÃO DE CORES =====');
     
@@ -7703,38 +7703,37 @@ ${currentActionPlanData.conteudo}`;
       }
       
     } else {
-      // EXPANDIR SEÇÃO
-      console.log('🎨 [TOGGLE-COLOR] ✅ Expandindo seção de cores');
+      // EXPANDIR SEÇÃO E MOSTRAR PROMPT DIRETAMENTE
+      console.log('🎨 [TOGGLE-COLOR] ✅ Expandindo seção de cores E mostrando prompt diretamente');
       
       headerSection.classList.add('active');
       contentSection.classList.add('expanded');
       
       if (arrow) arrow.className = 'fas fa-chevron-up';
       
-      // 🚀 CORREÇÃO CRÍTICA: Mostrar container de instruções ao expandir
-      setTimeout(() => {
-        const colorContainer = document.getElementById('color-instructions-container');
-        if (colorContainer) {
-          colorContainer.classList.add('show');
-          console.log('🎨 [TOGGLE-COLOR] ✅ Container de instruções mostrado');
-          
-          // Aguardar animação do container e focar no textarea
-          setTimeout(() => {
-            const textarea = document.getElementById('custom-edit-instructions');
-            if (textarea) {
-              textarea.focus();
-              textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              console.log('✅ [TOGGLE-COLOR] Foco aplicado no textarea e scroll realizado');
-            }
-            updateProcessButtonValidation();
-          }, 200);
-        } else {
-          console.error('❌ [TOGGLE-COLOR] Container color-instructions-container não encontrado!');
-        }
-      }, 300); // Aguardar expansão da seção principal
+      // 🚀 CORREÇÃO: Mostrar container de instruções IMEDIATAMENTE (sem delay)
+      const colorContainer = document.getElementById('color-instructions-container');
+      if (colorContainer) {
+        // Mostrar container imediatamente
+        colorContainer.classList.add('show');
+        console.log('🎨 [TOGGLE-COLOR] ✅ Container de instruções mostrado IMEDIATAMENTE');
+        
+        // Focar no textarea após pequeno delay para garantir que esteja visível
+        setTimeout(() => {
+          const textarea = document.getElementById('custom-edit-instructions');
+          if (textarea) {
+            textarea.focus();
+            textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            console.log('✅ [TOGGLE-COLOR] Foco aplicado no textarea - PROMPT PRONTO PARA USO');
+          }
+          updateProcessButtonValidation();
+        }, 100); // Delay mínimo apenas para garantir renderização
+      } else {
+        console.error('❌ [TOGGLE-COLOR] Container color-instructions-container não encontrado!');
+      }
     }
     
-    console.log('✅ [TOGGLE-COLOR] Toggle de cores concluído');
+    console.log('✅ [TOGGLE-COLOR] Toggle de cores concluído - PROMPT DIRETO ATIVO');
   }
   
   // Toggle específico para seção de estilo artístico
