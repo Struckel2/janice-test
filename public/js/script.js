@@ -7695,6 +7695,13 @@ ${currentActionPlanData.conteudo}`;
       
       if (arrow) arrow.className = 'fas fa-chevron-down';
       
+      // Esconder container de instruções ao contrair
+      const colorContainer = document.getElementById('color-instructions-container');
+      if (colorContainer) {
+        colorContainer.style.display = 'none';
+        console.log('🎨 [TOGGLE-COLOR] Container de instruções escondido');
+      }
+      
     } else {
       // EXPANDIR SEÇÃO
       console.log('🎨 [TOGGLE-COLOR] ✅ Expandindo seção de cores');
@@ -7704,16 +7711,27 @@ ${currentActionPlanData.conteudo}`;
       
       if (arrow) arrow.className = 'fas fa-chevron-up';
       
-      // Focar no textarea após expansão e garantir que esteja visível
+      // 🚀 CORREÇÃO CRÍTICA: Mostrar container de instruções ao expandir
       setTimeout(() => {
-        const textarea = document.getElementById('custom-edit-instructions');
-        if (textarea) {
-          textarea.focus();
-          textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          console.log('✅ [TOGGLE-COLOR] Foco aplicado no textarea e scroll realizado');
+        const colorContainer = document.getElementById('color-instructions-container');
+        if (colorContainer) {
+          colorContainer.style.display = 'block';
+          console.log('🎨 [TOGGLE-COLOR] ✅ Container de instruções mostrado');
+          
+          // Aguardar animação do container e focar no textarea
+          setTimeout(() => {
+            const textarea = document.getElementById('custom-edit-instructions');
+            if (textarea) {
+              textarea.focus();
+              textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              console.log('✅ [TOGGLE-COLOR] Foco aplicado no textarea e scroll realizado');
+            }
+            updateProcessButtonValidation();
+          }, 200);
+        } else {
+          console.error('❌ [TOGGLE-COLOR] Container color-instructions-container não encontrado!');
         }
-        updateProcessButtonValidation();
-      }, 300);
+      }, 300); // Aguardar expansão da seção principal
     }
     
     console.log('✅ [TOGGLE-COLOR] Toggle de cores concluído');

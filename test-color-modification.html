@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Modificação de Cores</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section-header {
+            background: #6c5ce7;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .section-header:hover {
+            background: #5a4fcf;
+        }
+        .section-content {
+            display: none;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .section-content.active {
+            display: block;
+        }
+        .color-input-container {
+            margin-top: 15px;
+        }
+        .color-input-container textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        .btn {
+            background: #6c5ce7;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn:hover {
+            background: #5a4fcf;
+        }
+        .arrow {
+            transition: transform 0.3s ease;
+        }
+        .arrow.rotated {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Teste - Modificação de Cores</h1>
+        
+        <!-- Seção de Modificação de Cores -->
+        <div class="section-header" id="color-section-header">
+            <div style="display: flex; align-items: center;">
+                <span style="margin-right: 10px;">🎨</span>
+                <div>
+                    <div style="font-weight: bold;">Modificação de Cores</div>
+                    <div style="font-size: 0.9em; opacity: 0.9;">Altere as cores da imagem mantendo exatamente a mesma forma e estrutura</div>
+                </div>
+            </div>
+            <span class="arrow">▼</span>
+        </div>
+        
+        <div class="section-content" id="color-section-content">
+            <div style="color: #6c757d; margin-bottom: 15px;">
+                <span style="margin-right: 10px;">💡</span>
+                Clique para especificar as cores que deseja alterar
+            </div>
+            
+            <div class="color-input-container" id="color-input-container" style="display: none;">
+                <label for="color-instructions">Descreva as mudanças de cor que deseja fazer:</label>
+                <textarea id="color-instructions" placeholder="Ex: Mudar o fundo de azul para verde, alterar as flores de vermelho para rosa..."></textarea>
+                <button class="btn" onclick="processColorChange()">Aplicar Mudanças de Cor</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Função para toggle da seção
+        function toggleSection(headerId, contentId) {
+            const header = document.getElementById(headerId);
+            const content = document.getElementById(contentId);
+            const arrow = header.querySelector('.arrow');
+            
+            header.addEventListener('click', function() {
+                console.log('🎨 [COLOR-CLICK] Clique na seção de cores detectado');
+                
+                const isActive = content.classList.contains('active');
+                
+                if (isActive) {
+                    console.log('🎨 [COLOR-TOGGLE] Fechando seção de cores');
+                    content.classList.remove('active');
+                    arrow.classList.remove('rotated');
+                    document.getElementById('color-input-container').style.display = 'none';
+                } else {
+                    console.log('🎨 [COLOR-TOGGLE] Abrindo seção de cores');
+                    content.classList.add('active');
+                    arrow.classList.add('rotated');
+                    
+                    // Mostrar o container de input após um pequeno delay
+                    setTimeout(() => {
+                        console.log('🎨 [COLOR-INPUT] Mostrando container de input');
+                        document.getElementById('color-input-container').style.display = 'block';
+                        
+                        // Focar no textarea
+                        const textarea = document.getElementById('color-instructions');
+                        if (textarea) {
+                            textarea.focus();
+                            console.log('🎨 [COLOR-FOCUS] Foco definido no textarea');
+                        }
+                    }, 300);
+                }
+            });
+        }
+        
+        // Função para processar mudança de cor
+        function processColorChange() {
+            const instructions = document.getElementById('color-instructions').value;
+            console.log('🎨 [COLOR-PROCESS] Processando mudança de cor:', instructions);
+            
+            if (!instructions.trim()) {
+                alert('Por favor, descreva as mudanças de cor que deseja fazer.');
+                return;
+            }
+            
+            alert('Mudanças de cor processadas com sucesso!\nInstruções: ' + instructions);
+        }
+        
+        // Inicializar quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎨 [INIT] Inicializando teste de modificação de cores');
+            toggleSection('color-section-header', 'color-section-content');
+            console.log('🎨 [INIT] Event listeners configurados');
+        });
+    </script>
+</body>
+</html>
