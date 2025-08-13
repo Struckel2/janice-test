@@ -6341,64 +6341,85 @@ ${currentActionPlanData.conteudo}`;
     console.log('🎨 [TOGGLE-SECTION] ===== ALTERNANDO SEÇÃO =====');
     console.log('🎨 [TOGGLE-SECTION] Header ID:', headerSectionId);
     
-    // Derivar o ID do content
-    const contentSectionId = headerSectionId.replace('-header', '-content');
-    
-    // Buscar elementos
+    // Verificar estado atual
     const headerSection = document.getElementById(headerSectionId);
-    const contentSection = document.getElementById(contentSectionId);
+    const contentSection = document.getElementById(headerSectionId.replace('-header', '-content'));
     
     if (!headerSection || !contentSection) {
-      console.error('❌ [TOGGLE-SECTION] Elementos não encontrados!');
+      console.error('❌ [TOGGLE-SECTION] Elementos não encontrados:', {
+        headerSection: !!headerSection,
+        contentSection: !!contentSection
+      });
       return;
     }
     
-    // Obter seta
-    const arrow = headerSection.querySelector('.section-toggle i');
-    
-    // Verificar estado atual
     const isCurrentlyExpanded = contentSection.classList.contains('expanded');
     
     console.log('🎨 [TOGGLE-SECTION] Estado atual:', {
-      isExpanded: isCurrentlyExpanded,
       headerActive: headerSection.classList.contains('active'),
       contentExpanded: contentSection.classList.contains('expanded')
     });
     
     if (isCurrentlyExpanded) {
-      // CONTRAIR SEÇÃO
-      console.log('🎨 [TOGGLE-SECTION] ❌ Contraindo seção');
-      
+      // Fechar seção
+      console.log('🎨 [TOGGLE-SECTION] ❌ Fechando seção...');
       headerSection.classList.remove('active');
       contentSection.classList.remove('expanded');
       
+      // Resetar seta
+      const arrow = headerSection.querySelector('.section-toggle i');
       if (arrow) arrow.className = 'fas fa-chevron-down';
       
+      // 🚀 FECHAR CONTAINER DE CORES SE FOR SEÇÃO DE CORES
+      if (headerSectionId === 'color-section-header') {
+        const colorContainer = document.getElementById('color-instructions-container');
+        if (colorContainer) {
+          colorContainer.classList.remove('show');
+          console.log('🎨 [TOGGLE-SECTION] Container de cores fechado');
+        }
+      }
     } else {
-      // EXPANDIR SEÇÃO
-      console.log('🎨 [TOGGLE-SECTION] ✅ Expandindo seção');
-      
+      // Abrir seção
+      console.log('🎨 [TOGGLE-SECTION] ✅ Expandindo seção...');
       headerSection.classList.add('active');
       contentSection.classList.add('expanded');
       
+      // Atualizar seta
+      const arrow = headerSection.querySelector('.section-toggle i');
       if (arrow) arrow.className = 'fas fa-chevron-up';
       
-      // Ações específicas por seção após expansão
-      setTimeout(() => {
-        if (headerSectionId === 'color-section-header') {
-          const textarea = document.getElementById('custom-edit-instructions');
-          if (textarea) {
-            textarea.focus();
-            console.log('✅ [TOGGLE-SECTION] Foco aplicado no textarea');
+      // 🚀 LÓGICA ESPECÍFICA PARA SEÇÃO DE CORES
+      if (headerSectionId === 'color-section-header') {
+        // Aguardar a animação de expansão da seção
+        setTimeout(() => {
+          // Mostrar o container de instruções de cores
+          const colorContainer = document.getElementById('color-instructions-container');
+          if (colorContainer) {
+            colorContainer.classList.add('show');
+            console.log('🎨 [TOGGLE-SECTION] Container de cores mostrado');
+            
+            // Aguardar a animação do container e focar no textarea
+            setTimeout(() => {
+              const textarea = document.getElementById('custom-edit-instructions');
+              if (textarea) {
+                console.log('🎨 [TOGGLE-SECTION] 🎯 Focando textarea de cores...');
+                textarea.focus();
+                textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              } else {
+                console.error('❌ [TOGGLE-SECTION] Textarea custom-edit-instructions não encontrado');
+              }
+            }, 200); // Aguardar animação do container
+          } else {
+            console.error('❌ [TOGGLE-SECTION] Container color-instructions-container não encontrado');
           }
-        } else if (headerSectionId === 'artistic-section-header') {
-          console.log('🎨 [TOGGLE-SECTION] Configurando estilos artísticos...');
-          setupStyleOptionEventListeners();
-        }
-        
-        updateProcessButtonValidation();
-      }, 300);
+        }, 300); // Aguardar animação da seção
+      }
     }
+    
+    console.log('🎨 [TOGGLE-SECTION] Estado final:', {
+      headerActive: headerSection.classList.contains('active'),
+      contentExpanded: contentSection.classList.contains('expanded')
+    });
     
     console.log('✅ [TOGGLE-SECTION] Toggle concluído');
   }
@@ -7540,25 +7561,25 @@ ${currentActionPlanData.conteudo}`;
         header: !!headerSection,
         content: !!contentSection
       });
-      
+
       if (headerSection && contentSection) {
         // 🚀 FORÇAR ESTADO FECHADO INICIAL
         headerSection.classList.remove('active');
         contentSection.classList.remove('expanded');
-        
+
         // Resetar seta
         const arrow = headerSection.querySelector('.section-toggle i');
         if (arrow) {
           arrow.className = 'fas fa-chevron-down';
         }
-        
+
         // 🚀 CORREÇÃO CRÍTICA: REMOVER qualquer estilo inline que possa estar interferindo
         contentSection.style.maxHeight = '';
         contentSection.style.opacity = '';
         contentSection.style.visibility = '';
         contentSection.style.padding = '';
         contentSection.style.display = '';
-        
+
         console.log(`✅ [FORCE-INITIAL] Seção ${sectionHeaderId} forçada para estado fechado SEM estilos inline`);
       } else {
         console.error(`❌ [FORCE-INITIAL] Elementos não encontrados para ${sectionHeaderId}`);
@@ -7839,11 +7860,11 @@ ${currentActionPlanData.conteudo}`;
     // Configurar eventos de estilo artístico
     setupArtisticStyleEvents();
     
-  // 🚀 CORREÇÃO: Configurar event listeners para seções de edição
-  setupEditSectionEventListeners();
-  
-  // Configurar event listeners para as seções de edição de imagem
-  setupImageEditorSectionListeners();
+    // 🚀 CORREÇÃO: Configurar event listeners para seções de edição
+    setupEditSectionEventListeners();
+    
+    // Configurar event listeners para as seções de edição de imagem
+    setupImageEditorSectionListeners();
   };
 
   // ===== CONFIGURAÇÃO SIMPLIFICADA DOS EVENT LISTENERS DAS SEÇÕES DE EDIÇÃO =====
@@ -8025,7 +8046,6 @@ ${currentActionPlanData.conteudo}`;
     
     console.log('✅ [TOGGLE-SECTION] ===== TOGGLE CONCLUÍDO =====');
   }
-
 
   // Carregar clientes ao iniciar e mostrar tela de boas-vindas
   init();
