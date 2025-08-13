@@ -7698,7 +7698,7 @@ ${currentActionPlanData.conteudo}`;
       // Esconder container de instruções ao contrair
       const colorContainer = document.getElementById('color-instructions-container');
       if (colorContainer) {
-        colorContainer.style.display = 'none';
+        colorContainer.classList.remove('show');
         console.log('🎨 [TOGGLE-COLOR] Container de instruções escondido');
       }
       
@@ -7715,7 +7715,7 @@ ${currentActionPlanData.conteudo}`;
       setTimeout(() => {
         const colorContainer = document.getElementById('color-instructions-container');
         if (colorContainer) {
-          colorContainer.style.display = 'block';
+          colorContainer.classList.add('show');
           console.log('🎨 [TOGGLE-COLOR] ✅ Container de instruções mostrado');
           
           // Aguardar animação do container e focar no textarea
