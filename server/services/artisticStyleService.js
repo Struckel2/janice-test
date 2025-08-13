@@ -10,6 +10,7 @@ const replicate = new Replicate({
 class ArtisticStyleService {
     constructor() {
         this.stylePrompts = {
+            // ===== ESTILOS CLÁSSICOS =====
             aquarela: {
                 prompt: "watercolor painting style, soft flowing colors, translucent washes, artistic brush strokes, paper texture visible",
                 negativePrompt: "digital art, sharp edges, solid colors, photographic",
@@ -20,11 +21,92 @@ class ArtisticStyleService {
                 negativePrompt: "digital art, flat colors, smooth surfaces, photographic",
                 strength: 0.8
             },
+            impressionista: {
+                prompt: "impressionist painting style, loose brushwork, light and color emphasis, plein air technique, visible brushstrokes, atmospheric effects",
+                negativePrompt: "sharp details, digital art, photographic, precise lines",
+                strength: 0.75
+            },
             sketch: {
                 prompt: "pencil sketch style, hand-drawn lines, graphite shading, artistic sketching, paper texture",
                 negativePrompt: "colored, digital art, photographic, painted",
                 strength: 0.6
             },
+            cubista: {
+                prompt: "cubist art style, geometric shapes, fragmented forms, multiple perspectives, Picasso inspired, angular composition",
+                negativePrompt: "realistic, smooth curves, photographic, traditional perspective",
+                strength: 0.85
+            },
+            surrealista: {
+                prompt: "surrealist art style, dreamlike imagery, impossible combinations, Salvador Dali inspired, fantastical elements",
+                negativePrompt: "realistic, logical, conventional, photographic",
+                strength: 0.8
+            },
+
+            // ===== ESTILOS MODERNOS =====
+            'pop-art': {
+                prompt: "pop art style, bold bright colors, high contrast, comic book aesthetic, Andy Warhol inspired",
+                negativePrompt: "muted colors, realistic, classical art, subtle tones",
+                strength: 0.9
+            },
+            'street-art': {
+                prompt: "street art graffiti style, urban wall art, spray paint texture, bold colors, underground art culture",
+                negativePrompt: "clean, corporate, traditional art, photographic",
+                strength: 0.85
+            },
+            minimalista: {
+                prompt: "minimalist art style, clean simple lines, limited color palette, geometric simplicity, negative space emphasis",
+                negativePrompt: "complex details, ornate, busy composition, photographic",
+                strength: 0.7
+            },
+            abstrato: {
+                prompt: "abstract art style, non-representational forms, expressive colors, gestural brushwork, emotional expression",
+                negativePrompt: "realistic, representational, photographic, literal",
+                strength: 0.8
+            },
+            vintage: {
+                prompt: "vintage retro style, aged paper, sepia tones, old photograph aesthetic, nostalgic feel",
+                negativePrompt: "modern, bright colors, digital, contemporary",
+                strength: 0.7
+            },
+            'art-deco': {
+                prompt: "art deco style, geometric patterns, luxury aesthetics, 1920s design, elegant symmetry, metallic accents",
+                negativePrompt: "organic shapes, rustic, modern minimalism, photographic",
+                strength: 0.8
+            },
+
+            // ===== ESTILOS DIGITAIS =====
+            vetorial: {
+                prompt: "vector art style, clean geometric shapes, flat colors, minimalist design, scalable graphics",
+                negativePrompt: "textured, photographic, hand-drawn, complex details",
+                strength: 0.8
+            },
+            'pixel-art': {
+                prompt: "8-bit pixel art style, retro gaming aesthetic, blocky pixels, limited color palette, pixelated graphics, 16-bit game art",
+                negativePrompt: "smooth, anti-aliased, high resolution, photographic, vector art",
+                strength: 0.95
+            },
+            'low-poly': {
+                prompt: "low poly 3D style, geometric faceted surfaces, polygonal art, simplified 3D forms, angular shapes",
+                negativePrompt: "high poly, smooth surfaces, photographic, detailed textures",
+                strength: 0.9
+            },
+            neon: {
+                prompt: "neon cyberpunk style, glowing electric colors, dark background, futuristic lighting, synthwave aesthetic",
+                negativePrompt: "matte colors, natural lighting, traditional art, photographic",
+                strength: 0.85
+            },
+            glitch: {
+                prompt: "glitch art digital style, data corruption aesthetic, digital artifacts, RGB shift, pixelated distortion",
+                negativePrompt: "clean, perfect, traditional art, photographic",
+                strength: 0.8
+            },
+            holografico: {
+                prompt: "holographic iridescent style, rainbow reflections, metallic sheen, prismatic colors, futuristic shimmer",
+                negativePrompt: "matte, flat colors, traditional art, photographic",
+                strength: 0.8
+            },
+
+            // ===== ESTILOS ESPECIAIS =====
             cartoon: {
                 prompt: "cartoon style, animated character design, bold outlines, vibrant colors, stylized features",
                 negativePrompt: "realistic, photographic, detailed textures, complex shading",
@@ -35,20 +117,25 @@ class ArtisticStyleService {
                 negativePrompt: "realistic, western cartoon, photographic, rough sketches",
                 strength: 0.85
             },
-            vintage: {
-                prompt: "vintage retro style, aged paper, sepia tones, old photograph aesthetic, nostalgic feel",
-                negativePrompt: "modern, bright colors, digital, contemporary",
-                strength: 0.7
+            steampunk: {
+                prompt: "steampunk victorian style, brass gears, mechanical elements, industrial aesthetic, vintage machinery",
+                negativePrompt: "modern technology, clean design, minimalist, photographic",
+                strength: 0.85
             },
-            vetorial: {
-                prompt: "vector art style, clean geometric shapes, flat colors, minimalist design, scalable graphics",
-                negativePrompt: "textured, photographic, hand-drawn, complex details",
+            gothic: {
+                prompt: "gothic dark art style, dramatic shadows, ornate details, medieval architecture, mysterious atmosphere",
+                negativePrompt: "bright colors, modern, minimalist, photographic",
                 strength: 0.8
             },
-            'pop-art': {
-                prompt: "pop art style, bold bright colors, high contrast, comic book aesthetic, Andy Warhol inspired",
-                negativePrompt: "muted colors, realistic, classical art, subtle tones",
-                strength: 0.9
+            fantasia: {
+                prompt: "fantasy magical art style, mystical elements, enchanted atmosphere, mythical creatures, magical lighting",
+                negativePrompt: "realistic, modern, scientific, photographic",
+                strength: 0.85
+            },
+            'sci-fi': {
+                prompt: "sci-fi futuristic style, advanced technology, space age design, metallic surfaces, futuristic lighting",
+                negativePrompt: "vintage, traditional, organic, photographic",
+                strength: 0.85
             }
         };
     }

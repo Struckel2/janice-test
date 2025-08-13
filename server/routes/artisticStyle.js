@@ -26,13 +26,24 @@ router.post('/apply', async (req, res) => {
             });
         }
 
-        // Validar estilo
-        const validStyles = ['aquarela', 'oleo', 'sketch', 'cartoon', 'anime', 'vintage', 'vetorial', 'pop-art'];
+        // Validar estilo - Lista completa com todos os estilos disponíveis
+        const validStyles = [
+            // Estilos Clássicos
+            'aquarela', 'oleo', 'impressionista', 'sketch', 'cubista', 'surrealista',
+            // Estilos Modernos  
+            'pop-art', 'street-art', 'minimalista', 'abstrato', 'vintage', 'art-deco',
+            // Estilos Digitais
+            'vetorial', 'pixel-art', 'low-poly', 'neon', 'glitch', 'holografico',
+            // Estilos Especiais
+            'cartoon', 'anime', 'steampunk', 'gothic', 'fantasia', 'sci-fi'
+        ];
+        
         if (!validStyles.includes(style)) {
             console.log('❌ [ARTISTIC STYLE] Estilo inválido:', style);
+            console.log('❌ [ARTISTIC STYLE] Estilos válidos:', validStyles);
             return res.status(400).json({
                 success: false,
-                error: 'Estilo artístico inválido'
+                error: `Estilo artístico '${style}' inválido. Estilos disponíveis: ${validStyles.join(', ')}`
             });
         }
 

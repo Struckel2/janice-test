@@ -7187,28 +7187,24 @@ ${currentActionPlanData.conteudo}`;
       const preserveShapes = document.getElementById('preserve-shapes')?.checked || false;
       const preserveText = document.getElementById('preserve-text')?.checked || false;
       
-      // Preparar dados para envio
+      // Preparar dados para envio - estrutura corrigida para o backend
       const styleData = {
-        imagemId: currentSelectedImage.id,
-        imagemUrl: currentSelectedImage.url,
-        estilo: currentSelectedStyle.name,
-        intensidade: parseInt(intensity),
-        configuracoes: {
-          preservarCores: preserveColors,
-          preservarFormas: preserveShapes,
-          preservarTexto: preserveText
-        },
-        metadados: {
-          tituloOriginal: currentSelectedImage.titulo,
-          tipoOriginal: currentSelectedImage.tipo,
-          estiloAplicado: currentSelectedStyle.label
-        }
+        clienteId: currentClientId,
+        imageUrl: currentSelectedImage.url,
+        style: currentSelectedStyle.name,
+        intensity: parseInt(intensity),
+        preserveElements: []
       };
+      
+      // Adicionar elementos de preservação se selecionados
+      if (preserveColors) styleData.preserveElements.push('cores');
+      if (preserveShapes) styleData.preserveElements.push('formas');
+      if (preserveText) styleData.preserveElements.push('texto');
       
       console.log('📤 [ARTISTIC-STYLE] Enviando dados:', styleData);
       
       // Enviar requisição
-      const response = await fetch('/api/artistic-style/aplicar', {
+      const response = await fetch('/api/artistic-style/apply', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -7352,7 +7348,7 @@ ${currentActionPlanData.conteudo}`;
         }
       };
       
-      const response = await fetch('/api/artistic-style/salvar', {
+      const response = await fetch('/api/artistic-style/save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
