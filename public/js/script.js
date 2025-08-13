@@ -756,18 +756,18 @@ document.addEventListener('DOMContentLoaded', () => {
       'error-container'
     ];
     
-    // Esconder todas as seções
+    // Esconder todas as seções usando classes CSS
     allSections.forEach(sectionId => {
       const section = document.getElementById(sectionId);
       if (section) {
-        section.style.display = 'none';
+        section.classList.add('hidden');
       }
     });
     
-    // Mostrar apenas a seção alvo
+    // Mostrar apenas a seção alvo usando classes CSS
     const targetSection = document.getElementById(targetSectionId);
     if (targetSection) {
-      targetSection.style.display = 'block';
+      targetSection.classList.remove('hidden');
     }
   }
   
