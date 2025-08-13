@@ -7671,106 +7671,43 @@ ${currentActionPlanData.conteudo}`;
     console.log('🔍 [RAILWAY-DEBUG] Função toggleColorSection() executada');
     console.log('🔍 [RAILWAY-DEBUG] Timestamp:', new Date().toISOString());
     
-    const headerSection = document.getElementById('color-section-header');
-    const contentSection = document.getElementById('color-section-content');
+    // 🚀 CORREÇÃO CRÍTICA: Abrir prompt diretamente usando window.prompt()
+    const userInput = prompt(
+      "🎨 MODIFICAÇÃO DE CORES\n\n" +
+      "Descreva como você quer alterar as cores da imagem:\n\n" +
+      "Exemplos:\n" +
+      "• 'Mudar roxo para azul e laranja para branco'\n" +
+      "• 'Alterar todas as cores para tons de verde'\n" +
+      "• 'Trocar vermelho por dourado'\n\n" +
+      "Digite sua instrução:"
+    );
     
-    console.log('🔍 [RAILWAY-DEBUG] Elementos DOM encontrados:', {
-      headerSection: !!headerSection,
-      contentSection: !!contentSection,
-      headerSectionId: headerSection?.id || 'NÃO ENCONTRADO',
-      contentSectionId: contentSection?.id || 'NÃO ENCONTRADO'
-    });
+    console.log('🔍 [RAILWAY-DEBUG] Resposta do usuário:', userInput);
     
-    if (!headerSection || !contentSection) {
-      console.error('🔍 [RAILWAY-DEBUG] ❌ ERRO CRÍTICO: Elementos não encontrados!');
-      console.error('🔍 [RAILWAY-DEBUG] headerSection:', headerSection);
-      console.error('🔍 [RAILWAY-DEBUG] contentSection:', contentSection);
-      return;
-    }
-    
-    const arrow = headerSection.querySelector('.section-toggle i');
-    const isCurrentlyExpanded = contentSection.classList.contains('expanded');
-    
-    console.log('🔍 [RAILWAY-DEBUG] Estado atual da seção:', {
-      isExpanded: isCurrentlyExpanded,
-      headerActive: headerSection.classList.contains('active'),
-      contentExpanded: contentSection.classList.contains('expanded'),
-      arrowFound: !!arrow,
-      headerClasses: headerSection.className,
-      contentClasses: contentSection.className
-    });
-    
-    if (isCurrentlyExpanded) {
-      // CONTRAIR SEÇÃO
-      console.log('🔍 [RAILWAY-DEBUG] ❌ CONTRAINDO seção de cores');
+    if (userInput && userInput.trim()) {
+      console.log('🔍 [RAILWAY-DEBUG] ✅ Usuário forneceu instruções válidas');
       
-      headerSection.classList.remove('active');
-      contentSection.classList.remove('expanded');
-      
-      if (arrow) arrow.className = 'fas fa-chevron-down';
-      
-      // Esconder container de instruções ao contrair
-      const colorContainer = document.getElementById('color-instructions-container');
-      if (colorContainer) {
-        colorContainer.classList.remove('show');
-        console.log('🔍 [RAILWAY-DEBUG] Container de instruções escondido');
-      }
-      
-      console.log('🔍 [RAILWAY-DEBUG] ✅ Seção contraída com sucesso');
-      
-    } else {
-      // EXPANDIR SEÇÃO E MOSTRAR PROMPT DIRETAMENTE
-      console.log('🔍 [RAILWAY-DEBUG] ✅ EXPANDINDO seção de cores E mostrando prompt diretamente');
-      
-      headerSection.classList.add('active');
-      contentSection.classList.add('expanded');
-      
-      if (arrow) arrow.className = 'fas fa-chevron-up';
-      
-      console.log('🔍 [RAILWAY-DEBUG] Classes aplicadas - verificando container de instruções...');
-      
-      // 🚀 CORREÇÃO: Mostrar container de instruções IMEDIATAMENTE (sem delay)
-      const colorContainer = document.getElementById('color-instructions-container');
-      console.log('🔍 [RAILWAY-DEBUG] Container de instruções encontrado:', {
-        containerExists: !!colorContainer,
-        containerId: colorContainer?.id || 'NÃO ENCONTRADO',
-        containerClasses: colorContainer?.className || 'N/A'
-      });
-      
-      if (colorContainer) {
-        // Mostrar container imediatamente
-        colorContainer.classList.add('show');
-        console.log('🔍 [RAILWAY-DEBUG] ✅ Container de instruções mostrado IMEDIATAMENTE');
-        console.log('🔍 [RAILWAY-DEBUG] Classes do container após show:', colorContainer.className);
+      // Preencher o textarea com as instruções do usuário
+      const textarea = document.getElementById('custom-edit-instructions');
+      if (textarea) {
+        textarea.value = userInput.trim();
+        console.log('🔍 [RAILWAY-DEBUG] ✅ Textarea preenchido com:', userInput.trim());
         
-        // Focar no textarea após pequeno delay para garantir que esteja visível
-        setTimeout(() => {
-          const textarea = document.getElementById('custom-edit-instructions');
-          console.log('🔍 [RAILWAY-DEBUG] Textarea encontrado:', {
-            textareaExists: !!textarea,
-            textareaId: textarea?.id || 'NÃO ENCONTRADO'
-          });
-          
-          if (textarea) {
-            textarea.focus();
-            textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            console.log('🔍 [RAILWAY-DEBUG] ✅ Foco aplicado no textarea - PROMPT PRONTO PARA USO');
-          } else {
-            console.error('🔍 [RAILWAY-DEBUG] ❌ ERRO: Textarea custom-edit-instructions não encontrado!');
-          }
-          updateProcessButtonValidation();
-        }, 100); // Delay mínimo apenas para garantir renderização
+        // Atualizar validação do botão
+        updateProcessButtonValidation();
+        
+        // Mostrar feedback visual de que as instruções foram aceitas
+        alert("✅ Instruções de modificação de cores salvas!\n\nAgora você pode processar a edição clicando no botão 'Processar Edição'.");
+        
       } else {
-        console.error('🔍 [RAILWAY-DEBUG] ❌ ERRO CRÍTICO: Container color-instructions-container não encontrado!');
+        console.error('🔍 [RAILWAY-DEBUG] ❌ ERRO: Textarea não encontrado');
+        alert("❌ Erro interno: Campo de instruções não encontrado.");
       }
+    } else {
+      console.log('🔍 [RAILWAY-DEBUG] ❌ Usuário cancelou ou não forneceu instruções');
     }
     
     console.log('🔍 [RAILWAY-DEBUG] ===== TOGGLE DE CORES CONCLUÍDO =====');
-    console.log('🔍 [RAILWAY-DEBUG] Estado final:', {
-      headerActive: headerSection.classList.contains('active'),
-      contentExpanded: contentSection.classList.contains('expanded'),
-      arrowClass: arrow?.className || 'N/A'
-    });
   }
   
   // Toggle específico para seção de estilo artístico
