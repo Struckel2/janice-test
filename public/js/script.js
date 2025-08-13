@@ -7801,7 +7801,7 @@ ${currentActionPlanData.conteudo}`;
           console.log('🎨 [DEBUG] ===== CLIQUE NA SEÇÃO DE CORES =====');
           
           // Usar toggle simples e direto
-          toggleSectionDirect('color-section-header', 'color-section-content');
+          toggleSectionClean('color-section-header', 'color-section-content');
         });
         
         console.log('✅ [SECTION-LISTENERS] Event listener da seção de cores configurado');
@@ -7826,7 +7826,7 @@ ${currentActionPlanData.conteudo}`;
           console.log('🎨 [DEBUG] ===== CLIQUE NA SEÇÃO DE ESTILO ARTÍSTICO =====');
           
           // Usar toggle simples e direto
-          toggleSectionDirect('artistic-section-header', 'artistic-section-content');
+          toggleSectionClean('artistic-section-header', 'artistic-section-content');
         });
         
         console.log('✅ [SECTION-LISTENERS] Event listener da seção artística configurado');
@@ -7849,68 +7849,120 @@ ${currentActionPlanData.conteudo}`;
     }, 200); // Aguardar 200ms para garantir que o modal esteja pronto
   }
   
-  // ===== FUNÇÃO ÚNICA DE TOGGLE - SOLUÇÃO DEFINITIVA =====
+  // ===== FUNÇÃO DE TOGGLE ULTRA-ROBUSTA - CORREÇÃO DEFINITIVA =====
   
-  function toggleSectionDirect(headerId, contentId) {
-    console.log('🎨 [TOGGLE-DIRECT] ===== TOGGLE ÚNICO E DIRETO =====');
-    console.log('🎨 [TOGGLE-DIRECT] Header:', headerId, 'Content:', contentId);
+  function toggleSectionClean(headerId, contentId) {
+    // 🛡️ PROTEÇÃO CRÍTICA: Evitar execuções múltiplas simultâneas
+    const toggleKey = `toggle_${headerId}`;
     
-    const header = document.getElementById(headerId);
-    const content = document.getElementById(contentId);
-    
-    if (!header || !content) {
-      console.error('❌ [TOGGLE-DIRECT] Elementos não encontrados!');
+    // Se já há um toggle em progresso para esta seção, ignorar
+    if (window[toggleKey] === 'processing') {
+      console.log('🚫 [TOGGLE-SECTION] Toggle já em progresso, ignorando:', headerId);
       return;
     }
     
-    const arrow = header.querySelector('.section-toggle i');
-    const isExpanded = content.classList.contains('expanded');
+    // Marcar como processando
+    window[toggleKey] = 'processing';
     
-    console.log('🎨 [TOGGLE-DIRECT] Estado atual:', {
-      isExpanded: isExpanded,
-      headerClass: header.className,
-      contentClass: content.className
-    });
+    console.log('🎨 [TOGGLE-SECTION] ===== INICIANDO TOGGLE SEGURO =====');
+    console.log('🎨 [TOGGLE-SECTION] Header ID:', headerId);
+    console.log('🎨 [TOGGLE-SECTION] Content ID:', contentId);
     
-    if (isExpanded) {
-      // CONTRAIR
-      console.log('🎨 [TOGGLE-DIRECT] ❌ Contraindo seção');
+    try {
+      const headerSection = document.getElementById(headerId);
+      const contentSection = document.getElementById(contentId);
       
-      header.classList.remove('active');
-      content.classList.remove('expanded');
+      if (!headerSection || !contentSection) {
+        console.error('❌ [TOGGLE-SECTION] Elementos críticos não encontrados!');
+        return;
+      }
       
-      if (arrow) arrow.className = 'fas fa-chevron-down';
+      console.log('✅ [TOGGLE-SECTION] Elementos validados com sucesso');
       
-    } else {
-      // EXPANDIR
-      console.log('🎨 [TOGGLE-DIRECT] ✅ Expandindo seção');
+      const arrow = headerSection.querySelector('.section-toggle i');
+      const isCurrentlyExpanded = contentSection.classList.contains('expanded');
       
-      header.classList.add('active');
-      content.classList.add('expanded');
+      console.log('🎨 [TOGGLE-SECTION] Estado atual analisado:', {
+        isExpanded: isCurrentlyExpanded,
+        headerHasActive: headerSection.classList.contains('active'),
+        contentHasExpanded: contentSection.classList.contains('expanded'),
+        arrowFound: !!arrow
+      });
       
-      if (arrow) arrow.className = 'fas fa-chevron-up';
-      
-      // Ações específicas por seção
-      setTimeout(() => {
-        if (headerId === 'color-section-header') {
-          const textarea = document.getElementById('custom-edit-instructions');
-          if (textarea) {
-            textarea.focus();
-            console.log('✅ [TOGGLE-DIRECT] Foco aplicado no textarea');
-          }
-        } else if (headerId === 'artistic-section-header') {
-          console.log('🎨 [TOGGLE-DIRECT] Configurando estilos artísticos...');
-          setupStyleOptionEventListeners();
+      // 🎯 DECISÃO: Expandir ou contrair
+      if (isCurrentlyExpanded) {
+        // ❌ CONTRAIR SEÇÃO
+        console.log('🎨 [TOGGLE-SECTION] 📤 CONTRAINDO seção:', headerId);
+        
+        headerSection.classList.remove('active');
+        contentSection.classList.remove('expanded');
+        
+        if (arrow) {
+          arrow.className = 'fas fa-chevron-down';
         }
         
-        updateProcessButtonValidation();
-      }, 100);
+        console.log('✅ [TOGGLE-SECTION] Seção contraída com sucesso');
+        
+      } else {
+        // ✅ EXPANDIR SEÇÃO
+        console.log('🎨 [TOGGLE-SECTION] 📥 EXPANDINDO seção:', headerId);
+        
+        headerSection.classList.add('active');
+        contentSection.classList.add('expanded');
+        
+        if (arrow) {
+          arrow.className = 'fas fa-chevron-up';
+        }
+        
+        console.log('✅ [TOGGLE-SECTION] Classes aplicadas, executando ações pós-expansão...');
+        
+        // 🎯 AÇÕES ESPECÍFICAS POR SEÇÃO (com delay para garantir renderização)
+        setTimeout(() => {
+          try {
+            if (headerId === 'color-section-header') {
+              console.log('🎨 [TOGGLE-SECTION] Configurando seção de cores...');
+              const textarea = document.getElementById('custom-edit-instructions');
+              if (textarea) {
+                textarea.focus();
+                console.log('✅ [TOGGLE-SECTION] Foco aplicado no textarea');
+              }
+              updateProcessButtonValidation();
+              
+            } else if (headerId === 'artistic-section-header') {
+              console.log('🎨 [TOGGLE-SECTION] Configurando seção de estilo artístico...');
+              setupStyleOptionEventListeners();
+              updateProcessButtonValidation();
+            }
+          } catch (actionError) {
+            console.error('❌ [TOGGLE-SECTION] Erro nas ações pós-expansão:', actionError);
+          }
+        }, 150);
+        
+        console.log('✅ [TOGGLE-SECTION] Seção expandida com sucesso');
+      }
+      
+      // 📊 LOG FINAL DO ESTADO
+      setTimeout(() => {
+        console.log('📊 [TOGGLE-SECTION] Estado final verificado:', {
+          headerId: headerId,
+          headerActive: headerSection.classList.contains('active'),
+          contentExpanded: contentSection.classList.contains('expanded'),
+          arrowClass: arrow?.className || 'N/A'
+        });
+      }, 200);
+      
+    } catch (error) {
+      console.error('❌ [TOGGLE-SECTION] ERRO CRÍTICO no toggle:', error);
+      console.error('❌ [TOGGLE-SECTION] Stack trace:', error.stack);
+    } finally {
+      // 🔓 LIBERAR LOCK após um delay seguro
+      setTimeout(() => {
+        window[toggleKey] = null;
+        console.log('🔓 [TOGGLE-SECTION] Lock liberado para:', headerId);
+      }, 500);
     }
     
-    console.log('✅ [TOGGLE-DIRECT] Estado final:', {
-      headerActive: header.classList.contains('active'),
-      contentExpanded: content.classList.contains('expanded')
-    });
+    console.log('✅ [TOGGLE-SECTION] ===== TOGGLE CONCLUÍDO =====');
   }
 
 
