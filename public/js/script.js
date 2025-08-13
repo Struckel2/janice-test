@@ -6198,16 +6198,20 @@ ${currentActionPlanData.conteudo}`;
   // ===== CONFIGURAR EVENTOS DO MODAL DE EDIÇÃO DE IMAGENS =====
   
   function setupImageEditorEvents() {
+    console.log('🎨 [SETUP-EDITOR] ===== CONFIGURANDO EVENTOS DO EDITOR =====');
+    
     // Botão de processar edição
     const processEditBtn = document.getElementById('process-edit-btn');
     if (processEditBtn) {
       processEditBtn.addEventListener('click', processImageEdit);
+      console.log('✅ [SETUP-EDITOR] Botão de processar edição configurado');
     }
     
     // Botão de salvar edição
     const saveEditBtn = document.getElementById('save-edit-btn');
     if (saveEditBtn) {
       saveEditBtn.addEventListener('click', saveEditedImage);
+      console.log('✅ [SETUP-EDITOR] Botão de salvar edição configurado');
     }
     
     // Botão de fechar editor
@@ -6223,67 +6227,18 @@ ${currentActionPlanData.conteudo}`;
         window.currentEditingImage = null;
         window.currentEditedImageUrl = null;
       });
+      console.log('✅ [SETUP-EDITOR] Botão de fechar editor configurado');
     }
     
-    // ===== EVENTOS PARA ESTILO ARTÍSTICO =====
-    
-    // Botão de aplicar estilo artístico
-    const applyStyleBtn = document.getElementById('apply-style-btn');
-    if (applyStyleBtn) {
-      applyStyleBtn.addEventListener('click', applyArtisticStyle);
-    }
-    
-    // Botão de salvar imagem estilizada
-    const saveStyledImageBtn = document.getElementById('save-styled-image-btn');
-    if (saveStyledImageBtn) {
-      saveStyledImageBtn.addEventListener('click', saveStyledImage);
-    }
-    
-    // Botão de resetar estilo
-    const resetStyleBtn = document.getElementById('reset-style-btn');
-    if (resetStyleBtn) {
-      resetStyleBtn.addEventListener('click', resetArtisticStyleState);
-    }
-    
-    // Configurar seleção de estilos artísticos
-    document.querySelectorAll('.style-option').forEach(option => {
-      option.addEventListener('click', () => selectArtisticStyle(option));
-    });
-    
-    // Configurar slider de intensidade de estilo
-    const styleIntensityRange = document.getElementById('style-intensity');
-    const styleIntensityValue = document.getElementById('style-intensity-value');
-    if (styleIntensityRange && styleIntensityValue) {
-      styleIntensityRange.addEventListener('input', (e) => {
-        styleIntensityValue.textContent = `${e.target.value}%`;
+    // Configurar evento do textarea de instruções personalizadas
+    const customInstructions = document.getElementById('custom-edit-instructions');
+    if (customInstructions) {
+      customInstructions.addEventListener('input', () => {
+        console.log('🎨 [INSTRUCTIONS] Texto alterado, atualizando validação...');
+        updateProcessButtonValidation();
       });
+      console.log('✅ [SETUP-EDITOR] Textarea de instruções configurado');
     }
-    
-    // Configurar navegação entre categorias de estilos
-    const categoryTabs = document.querySelectorAll('.category-tab');
-    const styleGrids = document.querySelectorAll('.style-grid');
-    
-    categoryTabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        // Remover classe active de todas as abas
-        categoryTabs.forEach(t => t.classList.remove('active'));
-        
-        // Adicionar classe active à aba clicada
-        tab.classList.add('active');
-        
-        // Esconder todos os grids
-        styleGrids.forEach(grid => grid.classList.remove('active'));
-        
-        // Mostrar grid correspondente
-        const category = tab.dataset.category;
-        const targetGrid = document.querySelector(`[data-category="${category}"]`);
-        if (targetGrid) {
-          targetGrid.classList.add('active');
-        }
-        
-        console.log('🎨 [STYLE-CATEGORY] Categoria alterada para:', category);
-      });
-    });
     
     // Fechar modal de edição ao clicar fora
     const imageEditorModal = document.getElementById('image-editor-modal');
@@ -6297,6 +6252,7 @@ ${currentActionPlanData.conteudo}`;
           window.currentEditedImageUrl = null;
         }
       });
+      console.log('✅ [SETUP-EDITOR] Event listener de fechar modal configurado');
     }
     
     // Fechar modal de loading de edição ao clicar fora (não permitir)
@@ -6306,21 +6262,75 @@ ${currentActionPlanData.conteudo}`;
         // Não permitir fechar modal de loading clicando fora
         e.stopPropagation();
       });
+      console.log('✅ [SETUP-EDITOR] Modal de loading configurado');
     }
     
-    // Configurar evento do textarea de instruções de cores
-    const customInstructions = document.getElementById('custom-edit-instructions');
-    if (customInstructions) {
-      customInstructions.addEventListener('input', () => {
-        // Atualizar preview das instruções
-        updateColorEditPreview();
-      });
-    }
-    
-  // ===== FUNÇÃO UNIFICADA PARA ALTERNAR SEÇÕES DE EDIÇÃO =====
+    console.log('✅ [SETUP-EDITOR] ===== CONFIGURAÇÃO DE EVENTOS CONCLUÍDA =====');
+  }
   
-  function toggleEditSection(headerSectionId) {
-    console.log('🎨 [TOGGLE-SECTION] ===== INICIANDO TOGGLE =====');
+  // ===== FUNÇÃO PRINCIPAL PARA CONFIGURAR SEÇÕES DE EDIÇÃO =====
+  
+  function setupImageEditorSections() {
+    console.log('🎨 [SETUP-SECTIONS] ===== CONFIGURANDO SEÇÕES DE EDIÇÃO =====');
+    
+    // Aguardar um momento para garantir que o DOM esteja pronto
+    setTimeout(() => {
+      // 🚀 CONFIGURAR SEÇÃO DE MODIFICAÇÃO DE CORES
+      const colorSectionHeader = document.getElementById('color-section-header');
+      if (colorSectionHeader) {
+        console.log('✅ [SETUP-SECTIONS] Seção de cores encontrada');
+        
+        // Remover event listeners existentes para evitar duplicação
+        const newColorHeader = colorSectionHeader.cloneNode(true);
+        colorSectionHeader.parentNode.replaceChild(newColorHeader, colorSectionHeader);
+        
+        // Adicionar novo event listener
+        newColorHeader.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🎨 [DEBUG] Clique na seção de cores detectado');
+          toggleImageEditSection('color-section-header');
+        });
+        
+        console.log('✅ [SETUP-SECTIONS] Event listener da seção de cores configurado');
+      } else {
+        console.error('❌ [SETUP-SECTIONS] Seção de cores não encontrada');
+      }
+      
+      // 🚀 CONFIGURAR SEÇÃO DE ESTILO ARTÍSTICO
+      const artisticSectionHeader = document.getElementById('artistic-section-header');
+      if (artisticSectionHeader) {
+        console.log('✅ [SETUP-SECTIONS] Seção artística encontrada');
+        
+        // Remover event listeners existentes para evitar duplicação
+        const newArtisticHeader = artisticSectionHeader.cloneNode(true);
+        artisticSectionHeader.parentNode.replaceChild(newArtisticHeader, artisticSectionHeader);
+        
+        // Adicionar novo event listener
+        newArtisticHeader.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('🎨 [DEBUG] Clique na seção de estilo artístico detectado');
+          toggleImageEditSection('artistic-section-header');
+        });
+        
+        console.log('✅ [SETUP-SECTIONS] Event listener da seção artística configurado');
+      } else {
+        console.error('❌ [SETUP-SECTIONS] Seção artística não encontrada');
+      }
+      
+      // Garantir estado inicial correto
+      resetSectionsToInitialState();
+      
+      console.log('✅ [SETUP-SECTIONS] ===== CONFIGURAÇÃO DAS SEÇÕES CONCLUÍDA =====');
+      
+    }, 500); // Aguardar 500ms para garantir que o modal esteja renderizado
+  }
+  
+  // ===== FUNÇÃO CORRIGIDA PARA ALTERNAR SEÇÕES =====
+  
+  function toggleImageEditSection(headerSectionId) {
+    console.log('🎨 [TOGGLE-SECTION] ===== ALTERNANDO SEÇÃO =====');
     console.log('🎨 [TOGGLE-SECTION] Header ID:', headerSectionId);
     
     // Derivar o ID do content
@@ -6344,7 +6354,7 @@ ${currentActionPlanData.conteudo}`;
     // Obter seta
     const arrow = headerSection.querySelector('.section-toggle i');
     
-    // 🚀 LÓGICA CORRIGIDA: Usar classes expanded como fonte da verdade
+    // Verificar estado atual
     const isCurrentlyExpanded = contentSection.classList.contains('expanded');
     
     console.log('🎨 [TOGGLE-SECTION] Estado atual:', {
@@ -6353,52 +6363,77 @@ ${currentActionPlanData.conteudo}`;
       contentExpanded: contentSection.classList.contains('expanded')
     });
     
-    // 🚀 CORREÇÃO CRÍTICA: Limpar todos os estilos inline para permitir CSS funcionar
-    contentSection.style.maxHeight = '';
-    contentSection.style.opacity = '';
-    contentSection.style.visibility = '';
-    contentSection.style.padding = '';
-    contentSection.style.display = '';
-    
     if (isCurrentlyExpanded) {
-      // CONTRAIR
+      // CONTRAIR SEÇÃO
       console.log('🎨 [TOGGLE-SECTION] ❌ Contraindo seção');
       
       headerSection.classList.remove('active');
       contentSection.classList.remove('expanded');
       
+      // Resetar seta
       if (arrow) {
         arrow.className = 'fas fa-chevron-down';
       }
       
+      // Limpar estilos inline que possam interferir
+      contentSection.style.maxHeight = '';
+      contentSection.style.opacity = '';
+      contentSection.style.visibility = '';
+      contentSection.style.display = '';
+      
     } else {
-      // EXPANDIR
+      // EXPANDIR SEÇÃO
       console.log('🎨 [TOGGLE-SECTION] ✅ Expandindo seção');
       
       headerSection.classList.add('active');
       contentSection.classList.add('expanded');
       
+      // Atualizar seta
       if (arrow) {
         arrow.className = 'fas fa-chevron-up';
       }
       
-      // Ações específicas após expansão
-      if (headerSectionId === 'color-section-header') {
-        setTimeout(() => {
+      // Limpar estilos inline que possam interferir
+      contentSection.style.maxHeight = '';
+      contentSection.style.opacity = '';
+      contentSection.style.visibility = '';
+      contentSection.style.display = '';
+      
+      // 🚀 FORÇAR VISIBILIDADE SE NECESSÁRIO
+      setTimeout(() => {
+        const computedStyle = window.getComputedStyle(contentSection);
+        console.log('🎨 [TOGGLE-SECTION] Estado computado:', {
+          opacity: computedStyle.opacity,
+          visibility: computedStyle.visibility,
+          maxHeight: computedStyle.maxHeight,
+          display: computedStyle.display
+        });
+        
+        // Se ainda não estiver visível, forçar
+        if (computedStyle.opacity === '0' || computedStyle.visibility === 'hidden') {
+          console.log('⚠️ [TOGGLE-SECTION] Forçando visibilidade...');
+          contentSection.style.opacity = '1 !important';
+          contentSection.style.visibility = 'visible !important';
+          contentSection.style.maxHeight = 'none !important';
+          contentSection.style.display = 'block !important';
+        }
+        
+        // Ações específicas por seção
+        if (headerSectionId === 'color-section-header') {
           const textarea = document.getElementById('custom-edit-instructions');
           if (textarea) {
             textarea.focus();
-            console.log('✅ [TOGGLE-SECTION] Foco aplicado no textarea de cores');
+            console.log('✅ [TOGGLE-SECTION] Foco aplicado no textarea');
           }
-          updateProcessButtonValidation();
-        }, 400);
-      } else if (headerSectionId === 'artistic-section-header') {
-        console.log('🎨 [TOGGLE-SECTION] Seção de estilo artístico expandida');
-        setTimeout(() => {
+        } else if (headerSectionId === 'artistic-section-header') {
+          console.log('🎨 [TOGGLE-SECTION] Configurando estilos artísticos...');
           setupStyleOptionEventListeners();
-          updateProcessButtonValidation();
-        }, 400);
-      }
+        }
+        
+        // Sempre atualizar validação
+        updateProcessButtonValidation();
+        
+      }, 300);
     }
     
     console.log('✅ [TOGGLE-SECTION] Toggle concluído');
@@ -6408,6 +6443,43 @@ ${currentActionPlanData.conteudo}`;
     });
   }
   
+  // ===== FUNÇÃO PARA RESETAR ESTADO INICIAL DAS SEÇÕES =====
+  
+  function resetSectionsToInitialState() {
+    console.log('🔧 [RESET-INITIAL] ===== RESETANDO ESTADO INICIAL =====');
+    
+    const sections = [
+      'color-section-header',
+      'artistic-section-header'
+    ];
+    
+    sections.forEach(sectionHeaderId => {
+      const contentSectionId = sectionHeaderId.replace('-header', '-content');
+      const headerSection = document.getElementById(sectionHeaderId);
+      const contentSection = document.getElementById(contentSectionId);
+      
+      if (headerSection && contentSection) {
+        // Garantir estado fechado
+        headerSection.classList.remove('active');
+        contentSection.classList.remove('expanded');
+        
+        // Resetar seta
+        const arrow = headerSection.querySelector('.section-toggle i');
+        if (arrow) {
+          arrow.className = 'fas fa-chevron-down';
+        }
+        
+        // Limpar estilos inline
+        contentSection.style.maxHeight = '';
+        contentSection.style.opacity = '';
+        contentSection.style.visibility = '';
+        contentSection.style.display = '';
+        
+        console.log(`✅ [RESET-INITIAL] Seção ${sectionHeaderId} resetada`);
+      }
+    });
+    
+    console.log('✅ [RESET-INITIAL] Estado inicial aplicado');
   }
   
   // Atualizar preview das instruções de cores
@@ -7919,60 +7991,62 @@ ${currentActionPlanData.conteudo}`;
   setupImageEditorSectionListeners();
   };
 
-  // ===== CONFIGURAÇÃO DOS EVENT LISTENERS DAS SEÇÕES DE EDIÇÃO (CORRIGIDA) =====
+  // ===== CONFIGURAÇÃO DOS EVENT LISTENERS DAS SEÇÕES DE EDIÇÃO (DEFINITIVA) =====
   
   function setupImageEditorSectionListeners() {
     console.log('🎨 [SECTION-LISTENERS] ===== CONFIGURANDO EVENT LISTENERS DAS SEÇÕES =====');
     
-    // 🚀 AGUARDAR UM MOMENTO PARA GARANTIR QUE O DOM ESTEJA PRONTO
-    setTimeout(() => {
-      // Configurar seção de modificação de cores
-      const colorSectionHeader = document.getElementById('color-section-header');
-      if (colorSectionHeader) {
-        console.log('✅ [SECTION-LISTENERS] Elemento color-section-header encontrado');
-        
-        // Adicionar event listener diretamente (sem clonar)
-        colorSectionHeader.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          console.log('🎨 [DEBUG] ===== CLIQUE NA SEÇÃO DE CORES =====');
-          
-          // Chamar função de toggle específica
-          toggleEditSectionFixed('color-section-header');
-        });
-        
-        console.log('✅ [SECTION-LISTENERS] Event listener da seção de cores configurado');
-      } else {
-        console.error('❌ [SECTION-LISTENERS] Seção de cores não encontrada');
-      }
-      
-      // Configurar seção de estilo artístico
-      const artisticSectionHeader = document.getElementById('artistic-section-header');
-      if (artisticSectionHeader) {
-        console.log('✅ [SECTION-LISTENERS] Elemento artistic-section-header encontrado');
-        
-        // Adicionar event listener diretamente (sem clonar)
-        artisticSectionHeader.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          console.log('🎨 [DEBUG] ===== CLIQUE NA SEÇÃO ARTÍSTICA =====');
-          
-          // Chamar função de toggle específica
-          toggleEditSectionFixed('artistic-section-header');
-        });
-        
-        console.log('✅ [SECTION-LISTENERS] Event listener da seção artística configurado');
-      } else {
-        console.error('❌ [SECTION-LISTENERS] Seção artística não encontrada');
-      }
-      
-      console.log('✅ [SECTION-LISTENERS] ===== CONFIGURAÇÃO CONCLUÍDA =====');
-      
-    }, 1000); // Aguardar 1 segundo para garantir que o modal esteja completamente renderizado
+    // 🚀 CONFIGURAÇÃO IMEDIATA E DIRETA - SEM DELAYS
     
-    // Configurar evento do textarea de instruções personalizadas (imediato)
+    // Configurar seção de modificação de cores
+    const colorSectionHeader = document.getElementById('color-section-header');
+    if (colorSectionHeader) {
+      console.log('✅ [SECTION-LISTENERS] Elemento color-section-header encontrado');
+      
+      // 🚀 CORREÇÃO: Remover todos os event listeners existentes e adicionar novo
+      colorSectionHeader.onclick = null;
+      colorSectionHeader.removeAttribute('onclick');
+      
+      colorSectionHeader.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('🎨 [DEBUG] ===== CLIQUE NA SEÇÃO DE CORES =====');
+        
+        // Chamar função de toggle SIMPLES E DIRETA
+        toggleSectionSimple('color-section-header', 'color-section-content');
+      });
+      
+      console.log('✅ [SECTION-LISTENERS] Event listener da seção de cores configurado');
+    } else {
+      console.error('❌ [SECTION-LISTENERS] Seção de cores não encontrada');
+    }
+    
+    // Configurar seção de estilo artístico
+    const artisticSectionHeader = document.getElementById('artistic-section-header');
+    if (artisticSectionHeader) {
+      console.log('✅ [SECTION-LISTENERS] Elemento artistic-section-header encontrado');
+      
+      // 🚀 CORREÇÃO: Remover todos os event listeners existentes e adicionar novo
+      artisticSectionHeader.onclick = null;
+      artisticSectionHeader.removeAttribute('onclick');
+      
+      artisticSectionHeader.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('🎨 [DEBUG] ===== CLIQUE NA SEÇÃO DE ESTILO ARTÍSTICO =====');
+        
+        // Chamar função de toggle SIMPLES E DIRETA
+        toggleSectionSimple('artistic-section-header', 'artistic-section-content');
+      });
+      
+      console.log('✅ [SECTION-LISTENERS] Event listener da seção artística configurado');
+    } else {
+      console.error('❌ [SECTION-LISTENERS] Seção artística não encontrada');
+    }
+    
+    // Configurar evento do textarea de instruções personalizadas
     const customInstructions = document.getElementById('custom-edit-instructions');
     if (customInstructions) {
       customInstructions.addEventListener('input', () => {
@@ -7981,6 +8055,93 @@ ${currentActionPlanData.conteudo}`;
       });
       console.log('✅ [SECTION-LISTENERS] Textarea de instruções configurado');
     }
+    
+    console.log('✅ [SECTION-LISTENERS] ===== CONFIGURAÇÃO CONCLUÍDA =====');
+  }
+  
+  // ===== FUNÇÃO DE TOGGLE SUPER SIMPLES E EFICAZ =====
+  
+  function toggleSectionSimple(headerId, contentId) {
+    console.log('🎨 [TOGGLE-SIMPLE] ===== TOGGLE SIMPLES =====');
+    console.log('🎨 [TOGGLE-SIMPLE] Header:', headerId, 'Content:', contentId);
+    
+    const header = document.getElementById(headerId);
+    const content = document.getElementById(contentId);
+    
+    if (!header || !content) {
+      console.error('❌ [TOGGLE-SIMPLE] Elementos não encontrados!', {
+        header: !!header,
+        content: !!content
+      });
+      return;
+    }
+    
+    const arrow = header.querySelector('.section-toggle i');
+    const isExpanded = content.classList.contains('expanded');
+    
+    console.log('🎨 [TOGGLE-SIMPLE] Estado atual:', {
+      isExpanded: isExpanded,
+      headerClass: header.className,
+      contentClass: content.className
+    });
+    
+    if (isExpanded) {
+      // CONTRAIR
+      console.log('🎨 [TOGGLE-SIMPLE] ❌ Contraindo seção');
+      
+      header.classList.remove('active');
+      content.classList.remove('expanded');
+      
+      // 🚀 FORÇAR ESTADO VISUAL CONTRAÍDO
+      content.style.maxHeight = '0px';
+      content.style.opacity = '0';
+      content.style.visibility = 'hidden';
+      
+      if (arrow) arrow.className = 'fas fa-chevron-down';
+      
+    } else {
+      // EXPANDIR
+      console.log('🎨 [TOGGLE-SIMPLE] ✅ Expandindo seção');
+      
+      header.classList.add('active');
+      content.classList.add('expanded');
+      
+      // 🚀 FORÇAR ESTADO VISUAL EXPANDIDO
+      content.style.maxHeight = 'none';
+      content.style.opacity = '1';
+      content.style.visibility = 'visible';
+      content.style.display = 'block';
+      
+      if (arrow) arrow.className = 'fas fa-chevron-up';
+      
+      // Ações específicas por seção
+      setTimeout(() => {
+        if (headerId === 'color-section-header') {
+          const textarea = document.getElementById('custom-edit-instructions');
+          if (textarea) {
+            textarea.focus();
+            console.log('✅ [TOGGLE-SIMPLE] Foco aplicado no textarea');
+          }
+        } else if (headerId === 'artistic-section-header') {
+          console.log('🎨 [TOGGLE-SIMPLE] Configurando estilos artísticos...');
+          setupStyleOptionEventListeners();
+        }
+        
+        updateProcessButtonValidation();
+      }, 300);
+    }
+    
+    console.log('✅ [TOGGLE-SIMPLE] Estado final:', {
+      headerActive: header.classList.contains('active'),
+      contentExpanded: content.classList.contains('expanded'),
+      contentStyle: {
+        maxHeight: content.style.maxHeight,
+        opacity: content.style.opacity,
+        visibility: content.style.visibility
+      }
+    });
+    
+    console.log('✅ [TOGGLE-SIMPLE] ===== TOGGLE CONCLUÍDO =====');
   }
   
   // 🚀 FUNÇÃO DE TOGGLE ESPECÍFICA E CORRIGIDA
@@ -8094,6 +8255,55 @@ ${currentActionPlanData.conteudo}`;
       headerActive: headerSection.classList.contains('active'),
       contentExpanded: contentSection.classList.contains('expanded')
     });
+  }
+
+  // ===== FUNÇÃO ESPECÍFICA PARA ALTERNAR SEÇÃO DE CORES =====
+  
+  function toggleColorSection() {
+    console.log('🎨 [TOGGLE-COLOR-SECTION] ===== ALTERNANDO SEÇÃO DE CORES =====');
+    
+    const headerSection = document.getElementById('color-section-header');
+    const contentSection = document.getElementById('color-section-content');
+    
+    if (!headerSection || !contentSection) {
+      console.error('❌ [TOGGLE-COLOR-SECTION] Elementos não encontrados!');
+      return;
+    }
+    
+    const arrow = headerSection.querySelector('.section-toggle i');
+    const isCurrentlyExpanded = contentSection.classList.contains('expanded');
+    
+    console.log('🎨 [TOGGLE-COLOR-SECTION] Estado atual:', {
+      isExpanded: isCurrentlyExpanded,
+      headerActive: headerSection.classList.contains('active'),
+      contentExpanded: contentSection.classList.contains('expanded')
+    });
+    
+    if (isCurrentlyExpanded) {
+      // CONTRAIR
+      console.log('🎨 [TOGGLE-COLOR-SECTION] Contraindo seção de cores');
+      headerSection.classList.remove('active');
+      contentSection.classList.remove('expanded');
+      if (arrow) arrow.className = 'fas fa-chevron-down';
+    } else {
+      // EXPANDIR
+      console.log('🎨 [TOGGLE-COLOR-SECTION] Expandindo seção de cores');
+      headerSection.classList.add('active');
+      contentSection.classList.add('expanded');
+      if (arrow) arrow.className = 'fas fa-chevron-up';
+      
+      // Focar no textarea após expansão
+      setTimeout(() => {
+        const textarea = document.getElementById('custom-edit-instructions');
+        if (textarea) {
+          textarea.focus();
+          console.log('✅ [TOGGLE-COLOR-SECTION] Foco aplicado no textarea');
+        }
+        updateProcessButtonValidation();
+      }, 400);
+    }
+    
+    console.log('✅ [TOGGLE-COLOR-SECTION] Toggle de cores concluído');
   }
 
   // Carregar clientes ao iniciar e mostrar tela de boas-vindas
