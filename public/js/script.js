@@ -7667,28 +7667,42 @@ ${currentActionPlanData.conteudo}`;
   
   // Toggle específico para seção de cores - CORREÇÃO: Mostrar prompt diretamente
   function toggleColorSection() {
-    console.log('🎨 [TOGGLE-COLOR] ===== ALTERNANDO SEÇÃO DE CORES =====');
+    console.log('🔍 [RAILWAY-DEBUG] ===== CLIQUE EM MODIFICAÇÃO DE CORES DETECTADO =====');
+    console.log('🔍 [RAILWAY-DEBUG] Função toggleColorSection() executada');
+    console.log('🔍 [RAILWAY-DEBUG] Timestamp:', new Date().toISOString());
     
     const headerSection = document.getElementById('color-section-header');
     const contentSection = document.getElementById('color-section-content');
     
+    console.log('🔍 [RAILWAY-DEBUG] Elementos DOM encontrados:', {
+      headerSection: !!headerSection,
+      contentSection: !!contentSection,
+      headerSectionId: headerSection?.id || 'NÃO ENCONTRADO',
+      contentSectionId: contentSection?.id || 'NÃO ENCONTRADO'
+    });
+    
     if (!headerSection || !contentSection) {
-      console.error('❌ [TOGGLE-COLOR] Elementos não encontrados!');
+      console.error('🔍 [RAILWAY-DEBUG] ❌ ERRO CRÍTICO: Elementos não encontrados!');
+      console.error('🔍 [RAILWAY-DEBUG] headerSection:', headerSection);
+      console.error('🔍 [RAILWAY-DEBUG] contentSection:', contentSection);
       return;
     }
     
     const arrow = headerSection.querySelector('.section-toggle i');
     const isCurrentlyExpanded = contentSection.classList.contains('expanded');
     
-    console.log('🎨 [TOGGLE-COLOR] Estado atual:', {
+    console.log('🔍 [RAILWAY-DEBUG] Estado atual da seção:', {
       isExpanded: isCurrentlyExpanded,
       headerActive: headerSection.classList.contains('active'),
-      contentExpanded: contentSection.classList.contains('expanded')
+      contentExpanded: contentSection.classList.contains('expanded'),
+      arrowFound: !!arrow,
+      headerClasses: headerSection.className,
+      contentClasses: contentSection.className
     });
     
     if (isCurrentlyExpanded) {
       // CONTRAIR SEÇÃO
-      console.log('🎨 [TOGGLE-COLOR] ❌ Contraindo seção de cores');
+      console.log('🔍 [RAILWAY-DEBUG] ❌ CONTRAINDO seção de cores');
       
       headerSection.classList.remove('active');
       contentSection.classList.remove('expanded');
@@ -7699,41 +7713,64 @@ ${currentActionPlanData.conteudo}`;
       const colorContainer = document.getElementById('color-instructions-container');
       if (colorContainer) {
         colorContainer.classList.remove('show');
-        console.log('🎨 [TOGGLE-COLOR] Container de instruções escondido');
+        console.log('🔍 [RAILWAY-DEBUG] Container de instruções escondido');
       }
+      
+      console.log('🔍 [RAILWAY-DEBUG] ✅ Seção contraída com sucesso');
       
     } else {
       // EXPANDIR SEÇÃO E MOSTRAR PROMPT DIRETAMENTE
-      console.log('🎨 [TOGGLE-COLOR] ✅ Expandindo seção de cores E mostrando prompt diretamente');
+      console.log('🔍 [RAILWAY-DEBUG] ✅ EXPANDINDO seção de cores E mostrando prompt diretamente');
       
       headerSection.classList.add('active');
       contentSection.classList.add('expanded');
       
       if (arrow) arrow.className = 'fas fa-chevron-up';
       
+      console.log('🔍 [RAILWAY-DEBUG] Classes aplicadas - verificando container de instruções...');
+      
       // 🚀 CORREÇÃO: Mostrar container de instruções IMEDIATAMENTE (sem delay)
       const colorContainer = document.getElementById('color-instructions-container');
+      console.log('🔍 [RAILWAY-DEBUG] Container de instruções encontrado:', {
+        containerExists: !!colorContainer,
+        containerId: colorContainer?.id || 'NÃO ENCONTRADO',
+        containerClasses: colorContainer?.className || 'N/A'
+      });
+      
       if (colorContainer) {
         // Mostrar container imediatamente
         colorContainer.classList.add('show');
-        console.log('🎨 [TOGGLE-COLOR] ✅ Container de instruções mostrado IMEDIATAMENTE');
+        console.log('🔍 [RAILWAY-DEBUG] ✅ Container de instruções mostrado IMEDIATAMENTE');
+        console.log('🔍 [RAILWAY-DEBUG] Classes do container após show:', colorContainer.className);
         
         // Focar no textarea após pequeno delay para garantir que esteja visível
         setTimeout(() => {
           const textarea = document.getElementById('custom-edit-instructions');
+          console.log('🔍 [RAILWAY-DEBUG] Textarea encontrado:', {
+            textareaExists: !!textarea,
+            textareaId: textarea?.id || 'NÃO ENCONTRADO'
+          });
+          
           if (textarea) {
             textarea.focus();
             textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            console.log('✅ [TOGGLE-COLOR] Foco aplicado no textarea - PROMPT PRONTO PARA USO');
+            console.log('🔍 [RAILWAY-DEBUG] ✅ Foco aplicado no textarea - PROMPT PRONTO PARA USO');
+          } else {
+            console.error('🔍 [RAILWAY-DEBUG] ❌ ERRO: Textarea custom-edit-instructions não encontrado!');
           }
           updateProcessButtonValidation();
         }, 100); // Delay mínimo apenas para garantir renderização
       } else {
-        console.error('❌ [TOGGLE-COLOR] Container color-instructions-container não encontrado!');
+        console.error('🔍 [RAILWAY-DEBUG] ❌ ERRO CRÍTICO: Container color-instructions-container não encontrado!');
       }
     }
     
-    console.log('✅ [TOGGLE-COLOR] Toggle de cores concluído - PROMPT DIRETO ATIVO');
+    console.log('🔍 [RAILWAY-DEBUG] ===== TOGGLE DE CORES CONCLUÍDO =====');
+    console.log('🔍 [RAILWAY-DEBUG] Estado final:', {
+      headerActive: headerSection.classList.contains('active'),
+      contentExpanded: contentSection.classList.contains('expanded'),
+      arrowClass: arrow?.className || 'N/A'
+    });
   }
   
   // Toggle específico para seção de estilo artístico
@@ -7887,23 +7924,42 @@ ${currentActionPlanData.conteudo}`;
   // ===== CONFIGURAÇÃO SIMPLIFICADA DOS EVENT LISTENERS DAS SEÇÕES DE EDIÇÃO =====
   
   function setupImageEditorSectionListeners() {
-    console.log('🎨 [SECTION-LISTENERS] ===== CONFIGURANDO EVENT LISTENERS DAS SEÇÕES =====');
+    console.log('🔍 [RAILWAY-DEBUG] ===== CONFIGURANDO EVENT LISTENERS DAS SEÇÕES =====');
+    console.log('🔍 [RAILWAY-DEBUG] Timestamp de configuração:', new Date().toISOString());
     
     // Configurar seção de modificação de cores
     const colorSectionHeader = document.getElementById('color-section-header');
+    console.log('🔍 [RAILWAY-DEBUG] Elemento color-section-header encontrado:', {
+      exists: !!colorSectionHeader,
+      id: colorSectionHeader?.id || 'NÃO ENCONTRADO',
+      classes: colorSectionHeader?.className || 'N/A',
+      innerHTML: colorSectionHeader?.innerHTML?.substring(0, 100) || 'N/A'
+    });
+    
     if (colorSectionHeader) {
-      console.log('✅ [SECTION-LISTENERS] Elemento color-section-header encontrado');
+      console.log('🔍 [RAILWAY-DEBUG] Removendo event listeners existentes via cloneNode...');
       
       // Remover event listeners existentes
       colorSectionHeader.replaceWith(colorSectionHeader.cloneNode(true));
       const newColorHeader = document.getElementById('color-section-header');
+      
+      console.log('🔍 [RAILWAY-DEBUG] Novo elemento criado:', {
+        exists: !!newColorHeader,
+        id: newColorHeader?.id || 'NÃO ENCONTRADO',
+        classes: newColorHeader?.className || 'N/A'
+      });
       
       // Adicionar event listener limpo
       newColorHeader.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
         
-        console.log('🎨 [DEBUG] ===== CLIQUE NA SEÇÃO DE CORES =====');
+        console.log('🔍 [RAILWAY-DEBUG] ===== EVENT LISTENER ATIVADO =====');
+        console.log('🔍 [RAILWAY-DEBUG] Elemento clicado:', e.target);
+        console.log('🔍 [RAILWAY-DEBUG] Elemento atual (currentTarget):', e.currentTarget);
+        console.log('🔍 [RAILWAY-DEBUG] ID do elemento:', e.currentTarget?.id);
+        console.log('🔍 [RAILWAY-DEBUG] Classes do elemento:', e.currentTarget?.className);
+        console.log('🔍 [RAILWAY-DEBUG] Chamando toggleColorSection()...');
         toggleColorSection();
       });
       
