@@ -7398,7 +7398,102 @@ ${currentActionPlanData.conteudo}`;
 
   // ===== FUNÇÃO PARA ALTERNAR SEÇÕES DE EDIÇÃO (CORRIGIDA) =====
   
-  // 🚀 FUNÇÃO DEFINITIVA: Toggle de seções corrigido
+  // 🚀 FUNÇÃO DEFINITIVA: Toggle de seções corrigido (SEM estilos inline conflitantes)
+  function toggleEditSectionDefinitive(headerSectionId) {
+    console.log('🎨 [TOGGLE-SECTION] Alternando seção:', headerSectionId);
+    
+    // Derivar o ID do content a partir do header
+    const contentSectionId = headerSectionId.replace('-header', '-content');
+    
+    const headerSection = document.getElementById(headerSectionId);
+    const contentSection = document.getElementById(contentSectionId);
+    
+    console.log('🎨 [TOGGLE-SECTION] Elementos encontrados:', {
+      header: !!headerSection,
+      content: !!contentSection,
+      contentSectionId: contentSectionId
+    });
+    
+    if (!headerSection || !contentSection) {
+      console.error('🎨 [TOGGLE-SECTION] Elementos não encontrados:', {
+        headerFound: !!headerSection,
+        contentFound: !!contentSection,
+        headerSectionId: headerSectionId,
+        contentSectionId: contentSectionId
+      });
+      return;
+    }
+    
+    const arrow = headerSection.querySelector('.section-toggle i');
+    
+    // 🚀 CORREÇÃO DEFINITIVA: Usar apenas as classes CSS como fonte única da verdade
+    const isCurrentlyExpanded = contentSection.classList.contains('expanded');
+    
+    console.log('🎨 [TOGGLE-SECTION] Estado atual:', {
+      isCurrentlyExpanded: isCurrentlyExpanded,
+      headerClass: headerSection.className,
+      contentClass: contentSection.className
+    });
+    
+    if (isCurrentlyExpanded) {
+      // Contrair seção
+      console.log('🎨 [TOGGLE-SECTION] Seção contraída:', headerSectionId);
+      headerSection.classList.remove('active');
+      contentSection.classList.remove('expanded');
+      
+      // 🚀 CORREÇÃO CRÍTICA: REMOVER todos os estilos inline para permitir que o CSS funcione
+      contentSection.style.maxHeight = '';
+      contentSection.style.opacity = '';
+      contentSection.style.visibility = '';
+      contentSection.style.padding = '';
+      
+      if (arrow) arrow.className = 'fas fa-chevron-down';
+      
+    } else {
+      // Expandir seção
+      console.log('🎨 [TOGGLE-SECTION] ✅ Seção expandida:', headerSectionId);
+      headerSection.classList.add('active');
+      contentSection.classList.add('expanded');
+      
+      // 🚀 CORREÇÃO CRÍTICA: REMOVER todos os estilos inline para permitir que o CSS funcione
+      contentSection.style.maxHeight = '';
+      contentSection.style.opacity = '';
+      contentSection.style.visibility = '';
+      contentSection.style.padding = '';
+      
+      if (arrow) arrow.className = 'fas fa-chevron-up';
+      
+      // 🚀 FLUXO ESPECÍFICO PARA CADA SEÇÃO
+      if (headerSectionId === 'color-section-header') {
+        console.log('🎨 [TOGGLE-SECTION] Configurando seção de cores...');
+        
+        // Focar no textarea de instruções
+        setTimeout(() => {
+          const textarea = document.getElementById('custom-edit-instructions');
+          if (textarea) {
+            textarea.focus();
+            console.log('✅ [TOGGLE-SECTION] Foco aplicado no textarea de cores');
+          }
+        }, 600); // Delay para aguardar animação CSS
+        
+      } else if (headerSectionId === 'artistic-section-header') {
+        console.log('🎨 [TOGGLE-SECTION] Seção de estilo artístico expandida');
+        
+        // Garantir que os event listeners dos estilos estejam configurados
+        setTimeout(() => {
+          setupStyleOptionEventListeners();
+          updateProcessButtonValidation();
+        }, 600); // Delay para aguardar animação CSS
+      }
+    }
+    
+    console.log('✅ [TOGGLE-SECTION] Toggle concluído para:', headerSectionId);
+    console.log('🎨 [TOGGLE-SECTION] Estado final:', {
+      headerActive: headerSection.classList.contains('active'),
+      contentExpanded: contentSection.classList.contains('expanded')
+    });
+  }
+
   function toggleEditSection(headerSectionId) {
     console.log('🎨 [TOGGLE-SECTION] ===== INICIANDO TOGGLE =====');
     console.log('🎨 [TOGGLE-SECTION] Header ID:', headerSectionId);
@@ -7518,7 +7613,10 @@ ${currentActionPlanData.conteudo}`;
   function setupEditSectionEventListeners() {
     console.log('🎨 [SETUP-EVENTS] ===== CONFIGURANDO EVENT LISTENERS DEFINITIVOS =====');
     
-    // 🚀 AGUARDAR DOM ESTAR COMPLETAMENTE PRONTO
+    // 🚀 PRIMEIRO: Forçar estado inicial correto das seções
+    forceInitialSectionState();
+    
+    // 🚀 SEGUNDO: Configurar event listeners após DOM estar pronto
     setTimeout(() => {
       // 🚀 SEÇÃO DE CORES
       const colorHeader = document.getElementById('color-section-header');
@@ -7531,7 +7629,7 @@ ${currentActionPlanData.conteudo}`;
         newColorHeader.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          console.log('🎨 [DEBUG] Clique DEFINITIVO na seção de modificação de cores');
+          console.log('🎨 [DEBUG] Clique na seção de modificação de cores');
           toggleEditSectionDefinitive('color-section-header');
         });
         
@@ -7551,7 +7649,7 @@ ${currentActionPlanData.conteudo}`;
         newArtisticHeader.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          console.log('🎨 [DEBUG] Clique DEFINITIVO na seção de estilo artístico');
+          console.log('🎨 [DEBUG] Clique na seção de estilo artístico');
           toggleEditSectionDefinitive('artistic-section-header');
         });
         
@@ -7567,8 +7665,57 @@ ${currentActionPlanData.conteudo}`;
         console.log('✅ [SETUP-EVENTS] Textarea de instruções configurado');
       }
       
-    }, 2000); // Aguardar 2 segundos para garantir que o DOM esteja estável
+    }, 1000); // Reduzido para 1 segundo
+  }
+  
+  // 🚀 CORREÇÃO: Função para forçar estado inicial correto das seções (SEM estilos inline)
+  function forceInitialSectionState() {
+    console.log('🔧 [FORCE-INITIAL] ===== FORÇANDO ESTADO INICIAL DAS SEÇÕES =====');
     
+    // Lista de seções que devem começar fechadas
+    const editSections = [
+      'color-section-header',
+      'artistic-section-header'
+    ];
+    
+    editSections.forEach(sectionHeaderId => {
+      const contentSectionId = sectionHeaderId.replace('-header', '-content');
+      
+      const headerSection = document.getElementById(sectionHeaderId);
+      const contentSection = document.getElementById(contentSectionId);
+      
+      console.log(`🔧 [FORCE-INITIAL] Processando seção ${sectionHeaderId}:`, {
+        header: !!headerSection,
+        content: !!contentSection
+      });
+      
+      if (headerSection && contentSection) {
+        // 🚀 FORÇAR ESTADO FECHADO INICIAL
+        headerSection.classList.remove('active');
+        contentSection.classList.remove('expanded');
+        
+        // Resetar seta
+        const arrow = headerSection.querySelector('.section-toggle i');
+        if (arrow) {
+          arrow.className = 'fas fa-chevron-down';
+        }
+        
+        // 🚀 CORREÇÃO CRÍTICA: REMOVER qualquer estilo inline que possa estar interferindo
+        contentSection.style.maxHeight = '';
+        contentSection.style.opacity = '';
+        contentSection.style.visibility = '';
+        contentSection.style.padding = '';
+        contentSection.style.display = '';
+        
+        console.log(`✅ [FORCE-INITIAL] Seção ${sectionHeaderId} forçada para estado fechado SEM estilos inline`);
+      } else {
+        console.error(`❌ [FORCE-INITIAL] Elementos não encontrados para ${sectionHeaderId}`);
+      }
+    });
+    
+    console.log('✅ [FORCE-INITIAL] Estado inicial forçado para todas as seções');
+  }
+  
   // 🚀 CORREÇÃO DEFINITIVA: Configurar event listeners para opções de estilo artístico
   function setupStyleOptionEventListeners() {
     console.log('🎨 [STYLE-LISTENERS] ===== CONFIGURANDO EVENT LISTENERS DE ESTILOS =====');
@@ -7591,17 +7738,13 @@ ${currentActionPlanData.conteudo}`;
       styleOptions.forEach((option, index) => {
         console.log(`🎨 [STYLE-LISTENERS] Configurando estilo ${index + 1}:`, option.dataset.style);
         
-        // Remover event listeners existentes clonando o elemento
-        const newOption = option.cloneNode(true);
-        option.parentNode.replaceChild(newOption, option);
-        
-        // Configurar novo event listener
-        newOption.addEventListener('click', (e) => {
+        // Configurar event listener sem clonar
+        option.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
           
           console.log('🎨 [STYLE-CLICK] ===== CLIQUE EM ESTILO DETECTADO =====');
-          console.log('🎨 [STYLE-CLICK] Estilo clicado:', newOption.dataset.style);
+          console.log('🎨 [STYLE-CLICK] Estilo clicado:', option.dataset.style);
           
           // Remover seleção anterior
           document.querySelectorAll('.style-option').forEach(opt => {
@@ -7609,12 +7752,12 @@ ${currentActionPlanData.conteudo}`;
           });
           
           // Adicionar seleção atual
-          newOption.classList.add('selected');
+          option.classList.add('selected');
           
           // Obter dados do estilo
-          const styleName = newOption.dataset.style;
-          const styleLabel = newOption.querySelector('.style-name')?.textContent || styleName;
-          const styleDescription = newOption.querySelector('.style-description')?.textContent || '';
+          const styleName = option.dataset.style;
+          const styleLabel = option.querySelector('.style-name')?.textContent || styleName;
+          const styleDescription = option.querySelector('.style-description')?.textContent || '';
           
           console.log('🎨 [STYLE-CLICK] Dados extraídos:', {
             name: styleName,
@@ -7645,94 +7788,6 @@ ${currentActionPlanData.conteudo}`;
     }, 500); // Aguardar 500ms para garantir que o DOM esteja pronto
     
     return true;
-  }
-  
-  // 🚀 FUNÇÃO DE FALLBACK: Configurar estilos com múltiplas tentativas
-  function setupStyleOptionsEventListeners() {
-    console.log('🎨 [STYLE-FALLBACK] Tentando configurar estilos artísticos...');
-    
-    // Tentar configurar imediatamente
-    if (setupStyleOptionEventListeners()) {
-      console.log('✅ [STYLE-FALLBACK] Configuração imediata bem-sucedida');
-      return true;
-    }
-    
-    // Se não funcionou, tentar com delay
-    setTimeout(() => {
-      console.log('🎨 [STYLE-FALLBACK] Tentativa com delay de 1.5s...');
-      if (setupStyleOptionEventListeners()) {
-        console.log('✅ [STYLE-FALLBACK] Configuração com delay bem-sucedida');
-        return;
-      }
-      
-      // Se ainda não funcionou, criar um observador DOM
-      console.log('🎨 [STYLE-FALLBACK] Ativando observador DOM...');
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-          if (mutation.type === 'childList') {
-            const styleOptions = document.querySelectorAll('.style-option');
-            if (styleOptions.length > 0) {
-              console.log('🎨 [DOM-OBSERVER] Estilos detectados via observador DOM:', styleOptions.length);
-              if (setupStyleOptionEventListeners()) {
-                console.log('✅ [DOM-OBSERVER] Configuração via observador bem-sucedida');
-                observer.disconnect();
-              }
-            }
-          }
-        });
-      });
-      
-      // Observar mudanças no documento
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
-      
-      console.log('🎨 [STYLE-FALLBACK] Observador DOM ativado');
-      
-      // Timeout de segurança para desconectar o observer
-      setTimeout(() => {
-        observer.disconnect();
-        console.log('🕒 [STYLE-FALLBACK] Observador DOM desconectado por timeout');
-      }, 30000); // 30 segundos
-      
-    }, 1500);
-    
-    return false;
-  }
-    
-    // Tentar configurar imediatamente
-    if (!setupStyleOptionsEventListeners()) {
-      // Se não funcionou, tentar com delay
-      setTimeout(() => {
-        if (!setupStyleOptionsEventListeners()) {
-          // Se ainda não funcionou, criar um observador DOM
-          const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-              if (mutation.type === 'childList') {
-                const styleOptions = document.querySelectorAll('.style-option');
-                if (styleOptions.length > 0) {
-                  console.log('🎨 [DOM-OBSERVER] Estilos detectados via observador DOM');
-                  if (setupStyleOptionsEventListeners()) {
-                    observer.disconnect();
-                  }
-                }
-              }
-            });
-          });
-          
-          // Observar mudanças no documento
-          observer.observe(document.body, {
-            childList: true,
-            subtree: true
-          });
-          
-          console.log('🎨 [SETUP-EVENTS] Observador DOM ativado para detectar estilos artísticos');
-        }
-      }, 1500);
-    }
-    
-    console.log('✅ [SETUP-EVENTS] Configuração de event listeners iniciada');
   }
   
   // Função para alternar instruções de cores
@@ -7870,9 +7925,6 @@ ${currentActionPlanData.conteudo}`;
     // 🚀 CORREÇÃO: Configurar event listeners para seções de edição
     setupEditSectionEventListeners();
   };
-
-  // 🚀 CORREÇÃO FINAL: Event listeners para cabeçalhos das seções removidos desta seção
-  // Event listeners serão configurados apenas na função setupImageEditorEvents
 
   // Carregar clientes ao iniciar e mostrar tela de boas-vindas
   init();
