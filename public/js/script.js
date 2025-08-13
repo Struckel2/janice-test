@@ -8092,10 +8092,11 @@ ${currentActionPlanData.conteudo}`;
       header.classList.remove('active');
       content.classList.remove('expanded');
       
-      // 🚀 FORÇAR ESTADO VISUAL CONTRAÍDO
-      content.style.maxHeight = '0px';
-      content.style.opacity = '0';
-      content.style.visibility = 'hidden';
+      // Limpar estilos inline que podem interferir
+      content.style.maxHeight = '';
+      content.style.opacity = '';
+      content.style.visibility = '';
+      content.style.display = '';
       
       if (arrow) arrow.className = 'fas fa-chevron-down';
       
@@ -8106,15 +8107,15 @@ ${currentActionPlanData.conteudo}`;
       header.classList.add('active');
       content.classList.add('expanded');
       
-      // 🚀 FORÇAR ESTADO VISUAL EXPANDIDO
-      content.style.maxHeight = 'none';
-      content.style.opacity = '1';
-      content.style.visibility = 'visible';
-      content.style.display = 'block';
+      // Limpar estilos inline que podem interferir
+      content.style.maxHeight = '';
+      content.style.opacity = '';
+      content.style.visibility = '';
+      content.style.display = '';
       
       if (arrow) arrow.className = 'fas fa-chevron-up';
       
-      // Ações específicas por seção
+      // Ações específicas por seção após delay para animação CSS
       setTimeout(() => {
         if (headerId === 'color-section-header') {
           const textarea = document.getElementById('custom-edit-instructions');
@@ -8133,12 +8134,7 @@ ${currentActionPlanData.conteudo}`;
     
     console.log('✅ [TOGGLE-SIMPLE] Estado final:', {
       headerActive: header.classList.contains('active'),
-      contentExpanded: content.classList.contains('expanded'),
-      contentStyle: {
-        maxHeight: content.style.maxHeight,
-        opacity: content.style.opacity,
-        visibility: content.style.visibility
-      }
+      contentExpanded: content.classList.contains('expanded')
     });
     
     console.log('✅ [TOGGLE-SIMPLE] ===== TOGGLE CONCLUÍDO =====');
