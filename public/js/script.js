@@ -321,69 +321,19 @@ document.addEventListener('DOMContentLoaded', () => {
           setTimeout(() => {
             this.removeProcess(data.processId);
           }, 3000); // Remover após 3 segundos para dar tempo de ver a conclusão
-        } else {
-          // Para outros tipos, manter o comportamento original (5 segundos)
-          setTimeout(() => {
-            console.log('🔍 [DEBUG-FRONTEND] Removendo processo automaticamente após 5 segundos:', data.processId);
-            this.removeProcess(data.processId);
-          }, 5000);
-        }
       } else {
-        console.log('❌ [DEBUG-FRONTEND] Processo NÃO encontrado no Map local para processId:', data.processId);
-        console.log('🔍 [DEBUG-FRONTEND] Processos disponíveis no Map:', Array.from(this.processes.keys()));
+        console.log('⚠️ [PREENCHER] Nenhuma configuração técnica encontrada');
       }
+    } else {
+      console.log('⚠️ [PREENCHER] Nenhuma configuração encontrada');
     }
-    
-    handleProcessError(data) {
-      const process = this.processes.get(data.processId);
-      if (process) {
-        process.status = 'erro';
-        process.mensagem = data.erro || 'Erro no processamento';
-        this.updateUI();
-      }
-    }
-    
-    handleProcessAutoRemoved(data) {
-      // Remover processo automaticamente (chamado pelo backend)
-      this.removeProcess(data.processId);
-    }
-    
-    addProcess(processData) {
-      this.processes.set(processData.id, processData);
-      this.updateUI();
-    }
-    
-    removeProcess(processId) {
-      this.processes.delete(processId);
-      this.updateUI();
-      
-      // Remover do servidor também
-      fetch(`/api/processos/${processId}`, { method: 'DELETE' })
-        .catch(error => console.error('Erro ao remover processo:', error));
-    }
-    
-    updateUI() {
-      const processCount = this.processes.size;
-      
-      // Atualizar contador
-      this.processCount.textContent = processCount;
-      
-      // Mostrar/esconder painel
-      if (processCount > 0) {
-        this.showPanel();
-      } else {
-        this.hidePanel();
-      }
-      
-      // Renderizar lista de processos
-      this.renderProcesses();
-    }
-    
-    showPanel() {
-      this.panel.classList.remove('hidden');
-      this.panel.classList.add('show');
-      this.appWrapper.classList.add('with-processes');
-    }
+  }
+  
+  showPanel() {
+    this.panel.classList.remove('hidden');
+    this.panel.classList.add('show');
+    this.appWrapper.classList.add('with-processes');
+  }
     
     hidePanel() {
       this.panel.classList.remove('show');
@@ -7717,7 +7667,7 @@ ${currentActionPlanData.conteudo}`;
     console.log('🔍 [RAILWAY-DEBUG] Função toggleColorSection() executada');
     console.log('🔍 [RAILWAY-DEBUG] Timestamp:', new Date().toISOString());
     
-    // 🚀 CORREÇÃO CRÍTICA: Abrir prompt diretamente usando window.prompt()
+    // 🚀 CORREÇÃO CRÍTICA: Mostrar prompt imediatamente sem setTimeout
     const userInput = prompt(
       "🎨 MODIFICAÇÃO DE CORES\n\n" +
       "Descreva como você quer alterar as cores da imagem:\n\n" +
@@ -7818,18 +7768,6 @@ ${currentActionPlanData.conteudo}`;
     // Chamar função original
     originalSetupGalleryEvents();
     
-    // Adicionar eventos para botões de estilo artístico
-    galleryGrid.querySelectorAll('.gallery-artistic-style-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const galleryItem = e.target.closest('.gallery-item');
-        const imageId = galleryItem.dataset.imageId;
-        const image = currentGalleryImages.find(img => img.id === imageId);
-        if (image) {
-          setupImageForArtisticStyle(image);
-        }
-      });
-    });
   };
   
   // Modificar a função renderGallery para incluir botão de estilo artístico
@@ -7860,9 +7798,6 @@ ${currentActionPlanData.conteudo}`;
               </button>
               <button class="gallery-edit-btn" title="Editar imagem">
                 <i class="fas fa-edit"></i>
-              </button>
-              <button class="gallery-artistic-style-btn" title="Aplicar estilo artístico">
-                <i class="fas fa-palette"></i>
               </button>
               <button class="gallery-download-btn" title="Download">
                 <i class="fas fa-download"></i>
@@ -7910,46 +7845,42 @@ ${currentActionPlanData.conteudo}`;
     console.log('🔍 [RAILWAY-DEBUG] ===== CONFIGURANDO EVENT LISTENERS DAS SEÇÕES =====');
     console.log('🔍 [RAILWAY-DEBUG] Timestamp de configuração:', new Date().toISOString());
     
-    // Configurar seção de modificação de cores
-    const colorSectionHeader = document.getElementById('color-section-header');
-    console.log('🔍 [RAILWAY-DEBUG] Elemento color-section-header encontrado:', {
-      exists: !!colorSectionHeader,
-      id: colorSectionHeader?.id || 'NÃO ENCONTRADO',
-      classes: colorSectionHeader?.className || 'N/A',
-      innerHTML: colorSectionHeader?.innerHTML?.substring(0, 100) || 'N/A'
-    });
-    
-    if (colorSectionHeader) {
-      console.log('🔍 [RAILWAY-DEBUG] Removendo event listeners existentes via cloneNode...');
-      
-      // Remover event listeners existentes
-      colorSectionHeader.replaceWith(colorSectionHeader.cloneNode(true));
-      const newColorHeader = document.getElementById('color-section-header');
-      
-      console.log('🔍 [RAILWAY-DEBUG] Novo elemento criado:', {
-        exists: !!newColorHeader,
-        id: newColorHeader?.id || 'NÃO ENCONTRADO',
-        classes: newColorHeader?.className || 'N/A'
+    // Aguardar um momento para garantir que o DOM esteja pronto
+    setTimeout(() => {
+      // Configurar seção de modificação de cores
+      const colorSectionHeader = document.getElementById('color-section-header');
+      console.log('🔍 [RAILWAY-DEBUG] Elemento color-section-header encontrado:', {
+        exists: !!colorSectionHeader,
+        id: colorSectionHeader?.id || 'NÃO ENCONTRADO',
+        classes: colorSectionHeader?.className || 'N/A',
+        innerHTML: colorSectionHeader?.innerHTML?.substring(0, 100) || 'N/A'
       });
       
-      // Adicionar event listener limpo
-      newColorHeader.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
+      if (colorSectionHeader) {
+        console.log('🔍 [RAILWAY-DEBUG] Configurando event listener para seção de cores...');
         
-        console.log('🔍 [RAILWAY-DEBUG] ===== EVENT LISTENER ATIVADO =====');
-        console.log('🔍 [RAILWAY-DEBUG] Elemento clicado:', e.target);
-        console.log('🔍 [RAILWAY-DEBUG] Elemento atual (currentTarget):', e.currentTarget);
-        console.log('🔍 [RAILWAY-DEBUG] ID do elemento:', e.currentTarget?.id);
-        console.log('🔍 [RAILWAY-DEBUG] Classes do elemento:', e.currentTarget?.className);
-        console.log('🔍 [RAILWAY-DEBUG] Chamando toggleColorSection()...');
-        toggleColorSection();
-      });
-      
-      console.log('✅ [SECTION-LISTENERS] Event listener da seção de cores configurado');
-    } else {
-      console.error('❌ [SECTION-LISTENERS] Seção de cores não encontrada');
-    }
+        // Remover event listeners existentes
+        const newColorHeader = colorSectionHeader.cloneNode(true);
+        colorSectionHeader.parentNode.replaceChild(newColorHeader, colorSectionHeader);
+        
+        // Adicionar event listener limpo
+        newColorHeader.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          console.log('🔍 [RAILWAY-DEBUG] ===== EVENT LISTENER ATIVADO =====');
+          console.log('🔍 [RAILWAY-DEBUG] Elemento clicado:', e.target);
+          console.log('🔍 [RAILWAY-DEBUG] Elemento atual (currentTarget):', e.currentTarget);
+          console.log('🔍 [RAILWAY-DEBUG] ID do elemento:', e.currentTarget?.id);
+          console.log('🔍 [RAILWAY-DEBUG] Classes do elemento:', e.currentTarget?.className);
+          console.log('🔍 [RAILWAY-DEBUG] Chamando toggleColorSection()...');
+          toggleColorSection();
+        });
+        
+        console.log('✅ [SECTION-LISTENERS] Event listener da seção de cores configurado');
+      } else {
+        console.error('❌ [SECTION-LISTENERS] Seção de cores não encontrada');
+      }
     
     // Configurar seção de estilo artístico
     const artisticSectionHeader = document.getElementById('artistic-section-header');
