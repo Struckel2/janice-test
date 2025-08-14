@@ -975,7 +975,7 @@ ${currentAnalysisData.analysis}`;
           <div class="client-item-logo">
             ${client.logo 
               ? `<img src="${client.logo}" alt="${client.nome}">`
-              : `<i class="fas fa-building"></i>`
+              : `<i class="fas fa-building"></i>`}
             }
           </div>
           <div class="client-item-info">
