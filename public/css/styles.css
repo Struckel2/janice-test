@@ -5650,7 +5650,13 @@ textarea.required-field {
 /* Container dos grids de estilo */
 .style-grid-container {
   position: relative;
-  min-height: 300px;
+  min-height: 400px;
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: #f9f9f9;
 }
 
 .style-grid {
@@ -5658,6 +5664,7 @@ textarea.required-field {
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 15px;
   animation: fadeInGrid 0.3s ease-in-out;
+  padding: 10px;
 }
 
 .style-grid.active {

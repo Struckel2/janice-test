@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Filtros de Estilo Artístico</title>
+    <link rel="stylesheet" href="public/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container" style="max-width: 800px; margin: 50px auto; padding: 20px;">
+        <h1 style="text-align: center; color: var(--primary-color); margin-bottom: 30px;">
+            🎨 Teste - Filtros de Estilo Artístico
+        </h1>
+        
+        <!-- Seção de Estilo Artístico -->
+        <div class="edit-section artistic-style-section">
+            <div class="edit-section-header" id="artistic-section-header">
+                <div class="edit-type-icon">🎨</div>
+                <div class="edit-type-info">
+                    <h4>Estilo Artístico</h4>
+                    <p>Aplique estilos artísticos únicos à sua imagem automaticamente</p>
+                </div>
+                <div class="section-toggle">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+            
+            <div class="edit-section-content" id="artistic-section-content">
+                <!-- Categorias de estilos -->
+                <div class="style-categories">
+                    <div class="category-tabs">
+                        <button class="category-tab active" data-category="classicos">
+                            <i class="fas fa-palette"></i> Clássicos
+                        </button>
+                        <button class="category-tab" data-category="modernos">
+                            <i class="fas fa-brush"></i> Modernos
+                        </button>
+                        <button class="category-tab" data-category="digitais">
+                            <i class="fas fa-laptop"></i> Digitais
+                        </button>
+                        <button class="category-tab" data-category="especiais">
+                            <i class="fas fa-magic"></i> Especiais
+                        </button>
+                    </div>
+                    
+                    <!-- Container dos grids de estilo -->
+                    <div class="style-grid-container">
+                        <!-- Grid de estilos clássicos -->
+                        <div class="style-grid active" data-category="classicos">
+                            <div class="style-option" data-style="oil-painting">
+                                <div class="style-icon">🎨</div>
+                                <div class="style-name">Pintura a Óleo</div>
+                                <div class="style-description">Estilo clássico de pintura a óleo com texturas ricas</div>
+                            </div>
+                            <div class="style-option" data-style="watercolor">
+                                <div class="style-icon">🖌️</div>
+                                <div class="style-name">Aquarela</div>
+                                <div class="style-description">Efeito suave e translúcido de aquarela</div>
+                            </div>
+                            <div class="style-option" data-style="sketch">
+                                <div class="style-icon">✏️</div>
+                                <div class="style-name">Esboço</div>
+                                <div class="style-description">Desenho a lápis com traços artísticos</div>
+                            </div>
+                            <div class="style-option" data-style="charcoal">
+                                <div class="style-icon">🖤</div>
+                                <div class="style-name">Carvão</div>
+                                <div class="style-description">Desenho dramático com carvão</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Grid de estilos modernos -->
+                        <div class="style-grid" data-category="modernos">
+                            <div class="style-option" data-style="pop-art">
+                                <div class="style-icon">🎭</div>
+                                <div class="style-name">Pop Art</div>
+                                <div class="style-description">Estilo vibrante inspirado na pop art</div>
+                            </div>
+                            <div class="style-option" data-style="abstract">
+                                <div class="style-icon">🌀</div>
+                                <div class="style-name">Abstrato</div>
+                                <div class="style-description">Arte abstrata com formas e cores únicas</div>
+                            </div>
+                            <div class="style-option" data-style="minimalist">
+                                <div class="style-icon">⚪</div>
+                                <div class="style-name">Minimalista</div>
+                                <div class="style-description">Design limpo e minimalista</div>
+                            </div>
+                            <div class="style-option" data-style="geometric">
+                                <div class="style-icon">🔷</div>
+                                <div class="style-name">Geométrico</div>
+                                <div class="style-description">Padrões geométricos modernos</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Grid de estilos digitais -->
+                        <div class="style-grid" data-category="digitais">
+                            <div class="style-option" data-style="pixel-art">
+                                <div class="style-icon">🎮</div>
+                                <div class="style-name">Pixel Art</div>
+                                <div class="style-description">Estilo retrô de jogos 8-bit</div>
+                            </div>
+                            <div class="style-option" data-style="glitch">
+                                <div class="style-icon">📺</div>
+                                <div class="style-name">Glitch</div>
+                                <div class="style-description">Efeito digital com distorções</div>
+                            </div>
+                            <div class="style-option" data-style="neon">
+                                <div class="style-icon">💡</div>
+                                <div class="style-name">Neon</div>
+                                <div class="style-description">Luzes neon vibrantes</div>
+                            </div>
+                            <div class="style-option" data-style="cyberpunk">
+                                <div class="style-icon">🤖</div>
+                                <div class="style-name">Cyberpunk</div>
+                                <div class="style-description">Estética futurística cyberpunk</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Grid de estilos especiais -->
+                        <div class="style-grid" data-category="especiais">
+                            <div class="style-option" data-style="vintage">
+                                <div class="style-icon">📷</div>
+                                <div class="style-name">Vintage</div>
+                                <div class="style-description">Efeito nostálgico vintage</div>
+                            </div>
+                            <div class="style-option" data-style="fantasy">
+                                <div class="style-icon">🧙</div>
+                                <div class="style-name">Fantasia</div>
+                                <div class="style-description">Arte fantástica e mágica</div>
+                            </div>
+                            <div class="style-option" data-style="horror">
+                                <div class="style-icon">👻</div>
+                                <div class="style-name">Terror</div>
+                                <div class="style-description">Atmosfera sombria e assustadora</div>
+                            </div>
+                            <div class="style-option" data-style="surreal">
+                                <div class="style-icon">🌙</div>
+                                <div class="style-name">Surrealista</div>
+                                <div class="style-description">Arte surreal e onírica</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Configurações de intensidade -->
+                <div class="style-settings">
+                    <div class="setting-group">
+                        <label for="style-intensity">Intensidade do Estilo</label>
+                        <div class="slider-container">
+                            <input type="range" id="style-intensity" min="10" max="100" value="50">
+                            <span class="slider-value" id="style-intensity-value">50%</span>
+                        </div>
+                        <small>Controla o quão forte será a aplicação do estilo artístico</small>
+                    </div>
+                </div>
+                
+                <!-- Botão de teste -->
+                <div style="text-align: center; margin-top: 30px;">
+                    <button id="test-selection-btn" class="action-button" style="background: var(--success-color);">
+                        <i class="fas fa-check"></i> Testar Seleção
+                    </button>
+                </div>
+                
+                <!-- Área de resultado do teste -->
+                <div id="test-result" style="margin-top: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px; display: none;">
+                    <h4 style="color: var(--primary-color); margin-bottom: 10px;">Resultado do Teste:</h4>
+                    <div id="test-output"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variável global para armazenar estilo selecionado
+        window.currentSelectedStyle = null;
+        
+        // Função para configurar navegação entre categorias
+        function setupStyleCategoryNavigation() {
+            console.log('🎨 [TESTE] Configurando navegação de categorias...');
+            
+            const categoryTabs = document.querySelectorAll('.category-tab');
+            const styleGrids = document.querySelectorAll('.style-grid');
+            
+            console.log('🎨 [TESTE] Abas encontradas:', categoryTabs.length);
+            console.log('🎨 [TESTE] Grids encontrados:', styleGrids.length);
+            
+            categoryTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    console.log('🎨 [TESTE] Categoria clicada:', tab.dataset.category);
+                    
+                    // Remover classe active de todas as abas
+                    categoryTabs.forEach(t => t.classList.remove('active'));
+                    
+                    // Esconder todos os grids
+                    styleGrids.forEach(grid => grid.classList.remove('active'));
+                    
+                    // Adicionar classe active à aba clicada
+                    tab.classList.add('active');
+                    
+                    // Mostrar grid correspondente
+                    const category = tab.dataset.category;
+                    const targetGrid = document.querySelector(`.style-grid[data-category="${category}"]`);
+                    
+                    if (targetGrid) {
+                        targetGrid.classList.add('active');
+                        console.log('✅ [TESTE] Grid ativado para categoria:', category);
+                    } else {
+                        console.error('❌ [TESTE] Grid não encontrado para categoria:', category);
+                    }
+                });
+            });
+        }
+        
+        // Função para configurar seleção de estilos
+        function setupStyleOptionEventListeners() {
+            console.log('🎨 [TESTE] Configurando event listeners de estilos...');
+            
+            const styleOptions = document.querySelectorAll('.style-option');
+            console.log('🎨 [TESTE] Opções de estilo encontradas:', styleOptions.length);
+            
+            styleOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    console.log('🎨 [TESTE] Estilo clicado:', option.dataset.style);
+                    
+                    // Remover seleção anterior
+                    document.querySelectorAll('.style-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    
+                    // Adicionar seleção atual
+                    option.classList.add('selected');
+                    
+                    // Armazenar estilo selecionado
+                    window.currentSelectedStyle = {
+                        name: option.dataset.style,
+                        label: option.querySelector('.style-name').textContent,
+                        description: option.querySelector('.style-description').textContent
+                    };
+                    
+                    console.log('✅ [TESTE] Estilo selecionado:', window.currentSelectedStyle);
+                });
+            });
+        }
+        
+        // Função para alternar seção
+        function toggleArtisticSection() {
+            console.log('🎨 [TESTE] Alternando seção artística...');
+            
+            const headerSection = document.getElementById('artistic-section-header');
+            const contentSection = document.getElementById('artistic-section-content');
+            const arrow = headerSection.querySelector('.section-toggle i');
+            
+            const isExpanded = contentSection.classList.contains('expanded');
+            
+            if (isExpanded) {
+                headerSection.classList.remove('active');
+                contentSection.classList.remove('expanded');
+                arrow.className = 'fas fa-chevron-down';
+                console.log('❌ [TESTE] Seção contraída');
+            } else {
+                headerSection.classList.add('active');
+                contentSection.classList.add('expanded');
+                arrow.className = 'fas fa-chevron-up';
+                console.log('✅ [TESTE] Seção expandida');
+                
+                // Configurar filtros após expansão
+                setTimeout(() => {
+                    setupStyleCategoryNavigation();
+                    setupStyleOptionEventListeners();
+                }, 100);
+            }
+        }
+        
+        // Configurar slider de intensidade
+        function setupIntensitySlider() {
+            const slider = document.getElementById('style-intensity');
+            const value = document.getElementById('style-intensity-value');
+            
+            slider.addEventListener('input', (e) => {
+                value.textContent = e.target.value + '%';
+            });
+        }
+        
+        // Configurar botão de teste
+        function setupTestButton() {
+            const testBtn = document.getElementById('test-selection-btn');
+            const testResult = document.getElementById('test-result');
+            const testOutput = document.getElementById('test-output');
+            
+            testBtn.addEventListener('click', () => {
+                console.log('🧪 [TESTE] Executando teste...');
+                
+                const intensity = document.getElementById('style-intensity').value;
+                
+                let resultHTML = '<div style="font-family: monospace; font-size: 0.9rem;">';
+                
+                if (window.currentSelectedStyle) {
+                    resultHTML += `
+                        <div style="color: var(--success-color); margin-bottom: 10px;">
+                            ✅ <strong>Estilo Selecionado:</strong>
+                        </div>
+                        <div style="margin-left: 20px; margin-bottom: 15px;">
+                            <div><strong>Nome:</strong> ${window.currentSelectedStyle.name}</div>
+                            <div><strong>Label:</strong> ${window.currentSelectedStyle.label}</div>
+                            <div><strong>Descrição:</strong> ${window.currentSelectedStyle.description}</div>
+                        </div>
+                    `;
+                } else {
+                    resultHTML += `
+                        <div style="color: var(--error-color); margin-bottom: 10px;">
+                            ❌ <strong>Nenhum estilo selecionado</strong>
+                        </div>
+                    `;
+                }
+                
+                resultHTML += `
+                    <div style="color: var(--primary-color); margin-bottom: 10px;">
+                        🎛️ <strong>Configurações:</strong>
+                    </div>
+                    <div style="margin-left: 20px; margin-bottom: 15px;">
+                        <div><strong>Intensidade:</strong> ${intensity}%</div>
+                    </div>
+                `;
+                
+                // Verificar se filtros estão funcionando
+                const activeTab = document.querySelector('.category-tab.active');
+                const activeGrid = document.querySelector('.style-grid.active');
+                const visibleOptions = activeGrid ? activeGrid.querySelectorAll('.style-option').length : 0;
+                
+                resultHTML += `
+                    <div style="color: var(--primary-color); margin-bottom: 10px;">
+                        🔍 <strong>Status dos Filtros:</strong>
+                    </div>
+                    <div style="margin-left: 20px;">
+                        <div><strong>Categoria Ativa:</strong> ${activeTab ? activeTab.dataset.category : 'Nenhuma'}</div>
+                        <div><strong>Grid Ativo:</strong> ${activeGrid ? 'Sim' : 'Não'}</div>
+                        <div><strong>Opções Visíveis:</strong> ${visibleOptions}</div>
+                    </div>
+                `;
+                
+                resultHTML += '</div>';
+                
+                testOutput.innerHTML = resultHTML;
+                testResult.style.display = 'block';
+                
+                console.log('✅ [TESTE] Teste concluído');
+            });
+        }
+        
+        // Inicializar quando a página carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 [TESTE] Inicializando página de teste...');
+            
+            // Configurar header clicável
+            const header = document.getElementById('artistic-section-header');
+            header.addEventListener('click', toggleArtisticSection);
+            
+            // Configurar slider
+            setupIntensitySlider();
+            
+            // Configurar botão de teste
+            setupTestButton();
+            
+            // Expandir seção automaticamente para teste
+            setTimeout(() => {
+                toggleArtisticSection();
+            }, 500);
+            
+            console.log('✅ [TESTE] Inicialização concluída');
+        });
+    </script>
+</body>
+</html>

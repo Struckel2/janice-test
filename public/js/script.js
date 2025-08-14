@@ -7974,6 +7974,14 @@ ${currentActionPlanData.conteudo}`;
       console.error('❌ [SECTION-LISTENERS] Seção artística não encontrada');
     }
     
+    // 🚀 CORREÇÃO: Configurar navegação de categorias de estilo no modal de edição
+    console.log('🎨 [STYLE-CATEGORY-FIX] Configurando filtros de categoria no modal de edição...');
+    setTimeout(() => {
+      setupStyleCategoryNavigation();
+      setupStyleOptionEventListeners();
+      console.log('✅ [STYLE-CATEGORY-FIX] Filtros de categoria configurados no modal de edição');
+    }, 200);
+    
     // Configurar evento do textarea de instruções personalizadas
     const customInstructions = document.getElementById('custom-edit-instructions');
     if (customInstructions) {
