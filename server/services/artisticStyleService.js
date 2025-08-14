@@ -176,16 +176,10 @@ class ArtisticStyleService {
                 message: 'Preparando transformação artística...'
             });
 
-            // Calcular strength baseado na intensidade
-            const baseStrength = styleConfig.strength;
-            const intensityFactor = intensity / 100;
-            const finalStrength = Math.min(0.95, baseStrength * intensityFactor);
+            // 🚀 CALCULAR PARÂMETROS DINÂMICOS BASEADOS NA INTENSIDADE E ESTILO
+            const dynamicParams = this.calculateDynamicParameters(style, intensity, styleConfig);
 
-            console.log('⚙️ [ARTISTIC STYLE SERVICE] Parâmetros Flux:', {
-                strength: finalStrength,
-                guidance_scale: 3.5,
-                num_inference_steps: 28
-            });
+            console.log('⚙️ [ARTISTIC STYLE SERVICE] Parâmetros Flux dinâmicos:', dynamicParams);
 
             // Atualizar progresso - Aplicando estilo
             progressService.updateProcess(processId, {
@@ -194,16 +188,16 @@ class ArtisticStyleService {
                 message: 'Aplicando estilo com IA...'
             });
 
-            // Chamar Flux para aplicar o estilo
+            // Chamar Flux para aplicar o estilo com parâmetros dinâmicos
             const output = await replicate.run(
                 "black-forest-labs/flux-1.1-pro",
                 {
                     input: {
                         image: imageUrl,
                         prompt: prompt,
-                        guidance_scale: 3.5,
-                        num_inference_steps: 28,
-                        strength: finalStrength,
+                        guidance_scale: dynamicParams.guidance_scale,
+                        num_inference_steps: dynamicParams.num_inference_steps,
+                        strength: dynamicParams.strength,
                         output_format: "webp",
                         output_quality: 90,
                         safety_tolerance: 2
@@ -235,11 +229,7 @@ class ArtisticStyleService {
                     intensity,
                     preserveElements,
                     prompt: prompt,
-                    parameters: {
-                        strength: finalStrength,
-                        guidance_scale: 3.5,
-                        num_inference_steps: 28
-                    }
+                    parameters: dynamicParams
                 }
             });
 
@@ -266,9 +256,13 @@ class ArtisticStyleService {
         }
     }
 
-    // Construir prompt otimizado para o estilo
+    // Construir prompt otimizado para o estilo com intensidade dinâmica
     buildStylePrompt(styleConfig, intensity, preserveElements) {
-        let prompt = styleConfig.prompt;
+        let basePrompt = styleConfig.prompt;
+        
+        // 🚀 SISTEMA DE INTENSIDADE DINÂMICA POR ESTILO
+        const intensityPrompts = this.getIntensityPrompts(styleConfig, intensity);
+        let prompt = `${intensityPrompts.prefix} ${basePrompt} ${intensityPrompts.suffix}`;
         
         // Adicionar instruções de preservação
         if (preserveElements && preserveElements.length > 0) {
@@ -276,21 +270,179 @@ class ArtisticStyleService {
             prompt = `${prompt}, ${preservationInstructions}`;
         }
 
-        // Ajustar intensidade no prompt
+        // Adicionar negative prompt específico baseado na intensidade
         if (intensity >= 80) {
-            prompt = `highly stylized ${prompt}, strong artistic effect`;
+            prompt += ", extremely detailed, maximum artistic transformation";
         } else if (intensity >= 60) {
-            prompt = `stylized ${prompt}, moderate artistic effect`;
+            prompt += ", well-defined artistic style, clear transformation";
         } else if (intensity >= 40) {
-            prompt = `subtle ${prompt}, gentle artistic effect`;
+            prompt += ", balanced artistic effect, moderate transformation";
         } else {
-            prompt = `lightly ${prompt}, minimal artistic effect`;
+            prompt += ", subtle artistic touch, gentle transformation";
         }
 
         // Adicionar instruções gerais de qualidade
-        prompt += ", high quality, detailed, professional artwork";
+        prompt += ", high quality, professional artwork";
+
+        console.log(`🎨 [PROMPT-BUILDER] Estilo: ${styleConfig.prompt.split(',')[0]}, Intensidade: ${intensity}%`);
+        console.log(`🎨 [PROMPT-BUILDER] Prompt final: ${prompt}`);
 
         return prompt;
+    }
+
+    // 🚀 NOVO: Obter prompts específicos baseados na intensidade
+    getIntensityPrompts(styleConfig, intensity) {
+        // Extrair nome do estilo do prompt base
+        const styleName = Object.keys(this.stylePrompts).find(key => 
+            this.stylePrompts[key] === styleConfig
+        );
+
+        // Prompts específicos por intensidade para cada estilo
+        const intensityMap = {
+            // ===== ESTILOS CLÁSSICOS =====
+            'aquarela': {
+                low: { prefix: "watercolor touch,", suffix: ", soft washes, gentle transparency" },
+                medium: { prefix: "watercolor painting style,", suffix: ", flowing colors, artistic brush strokes" },
+                high: { prefix: "intense watercolor,", suffix: ", dramatic color bleeds, maximum transparency effects" }
+            },
+            'oleo': {
+                low: { prefix: "oil painting hint,", suffix: ", subtle brushstrokes, gentle texture" },
+                medium: { prefix: "oil painting style,", suffix: ", thick brushstrokes, rich colors" },
+                high: { prefix: "heavy impasto oil painting,", suffix: ", dramatic brushwork, maximum texture, classical technique" }
+            },
+            'impressionista': {
+                low: { prefix: "impressionist touch,", suffix: ", soft brushwork, gentle light effects" },
+                medium: { prefix: "impressionist painting style,", suffix: ", loose brushwork, atmospheric effects" },
+                high: { prefix: "bold impressionist style,", suffix: ", dramatic brushstrokes, maximum light and color emphasis" }
+            },
+            'sketch': {
+                low: { prefix: "light pencil sketch,", suffix: ", soft graphite lines, minimal shading" },
+                medium: { prefix: "detailed pencil drawing,", suffix: ", clear sketch lines, artistic shading" },
+                high: { prefix: "bold charcoal sketch,", suffix: ", strong contrast, dramatic pencil strokes" }
+            },
+            'cubista': {
+                low: { prefix: "cubist inspired,", suffix: ", subtle geometric shapes, gentle fragmentation" },
+                medium: { prefix: "cubist art style,", suffix: ", geometric shapes, multiple perspectives" },
+                high: { prefix: "extreme cubist transformation,", suffix: ", dramatic fragmentation, maximum geometric abstraction" }
+            },
+            'surrealista': {
+                low: { prefix: "surrealist touch,", suffix: ", dreamlike hints, subtle impossibilities" },
+                medium: { prefix: "surrealist art style,", suffix: ", dreamlike imagery, fantastical elements" },
+                high: { prefix: "extreme surrealism,", suffix: ", maximum dreamlike distortion, impossible combinations" }
+            },
+
+            // ===== ESTILOS MODERNOS =====
+            'pop-art': {
+                low: { prefix: "pop art inspired,", suffix: ", bright colors, comic book hints" },
+                medium: { prefix: "classic pop art style,", suffix: ", bold colors, comic aesthetic" },
+                high: { prefix: "extreme pop art transformation,", suffix: ", maximum contrast, Andy Warhol style, vibrant colors" }
+            },
+            'street-art': {
+                low: { prefix: "street art touch,", suffix: ", urban hints, subtle spray paint texture" },
+                medium: { prefix: "street art graffiti style,", suffix: ", urban wall art, bold colors" },
+                high: { prefix: "extreme street art,", suffix: ", maximum graffiti effect, underground art culture" }
+            },
+            'minimalista': {
+                low: { prefix: "minimalist touch,", suffix: ", clean lines, simple forms" },
+                medium: { prefix: "minimalist art style,", suffix: ", geometric simplicity, limited palette" },
+                high: { prefix: "extreme minimalism,", suffix: ", maximum simplicity, pure geometric forms" }
+            },
+            'abstrato': {
+                low: { prefix: "abstract hints,", suffix: ", subtle non-representational forms" },
+                medium: { prefix: "abstract art style,", suffix: ", expressive colors, gestural brushwork" },
+                high: { prefix: "extreme abstraction,", suffix: ", maximum non-representational transformation" }
+            },
+            'vintage': {
+                low: { prefix: "vintage touch,", suffix: ", slight aging effect, warm tones" },
+                medium: { prefix: "retro vintage style,", suffix: ", aged paper texture, nostalgic feel" },
+                high: { prefix: "heavily aged vintage,", suffix: ", strong sepia tones, old photograph aesthetic" }
+            },
+            'art-deco': {
+                low: { prefix: "art deco touch,", suffix: ", elegant patterns, subtle luxury" },
+                medium: { prefix: "art deco style,", suffix: ", geometric patterns, 1920s design" },
+                high: { prefix: "extreme art deco,", suffix: ", maximum luxury aesthetics, dramatic symmetry" }
+            },
+
+            // ===== ESTILOS DIGITAIS =====
+            'vetorial': {
+                low: { prefix: "vector art hint,", suffix: ", clean shapes, subtle flat colors" },
+                medium: { prefix: "vector art style,", suffix: ", geometric shapes, flat colors" },
+                high: { prefix: "extreme vector art,", suffix: ", maximum geometric precision, pure flat design" }
+            },
+            'pixel-art': {
+                low: { prefix: "subtle pixelated effect,", suffix: ", slight blockiness, soft pixel edges" },
+                medium: { prefix: "clear pixel art style,", suffix: ", 16-bit aesthetic, defined pixels" },
+                high: { prefix: "extreme 8-bit pixelation,", suffix: ", sharp blocky pixels, retro game graphics, no anti-aliasing" }
+            },
+            'low-poly': {
+                low: { prefix: "low poly hint,", suffix: ", subtle geometric surfaces, gentle faceting" },
+                medium: { prefix: "low poly 3D style,", suffix: ", geometric faceted surfaces, angular shapes" },
+                high: { prefix: "extreme low poly,", suffix: ", maximum geometric faceting, dramatic angular forms" }
+            },
+            'neon': {
+                low: { prefix: "subtle neon glow,", suffix: ", soft electric colors, minimal glow" },
+                medium: { prefix: "neon cyberpunk style,", suffix: ", glowing colors, futuristic lighting" },
+                high: { prefix: "extreme neon cyberpunk,", suffix: ", intense electric glow, maximum synthwave aesthetic" }
+            },
+            'glitch': {
+                low: { prefix: "subtle glitch effect,", suffix: ", minor digital artifacts, slight distortion" },
+                medium: { prefix: "glitch art style,", suffix: ", digital corruption, RGB shift" },
+                high: { prefix: "extreme glitch distortion,", suffix: ", heavy digital artifacts, maximum data corruption aesthetic" }
+            },
+            'holografico': {
+                low: { prefix: "holographic touch,", suffix: ", subtle iridescence, gentle shimmer" },
+                medium: { prefix: "holographic style,", suffix: ", rainbow reflections, metallic sheen" },
+                high: { prefix: "extreme holographic,", suffix: ", maximum iridescence, dramatic prismatic colors" }
+            },
+
+            // ===== ESTILOS ESPECIAIS =====
+            'cartoon': {
+                low: { prefix: "cartoon touch,", suffix: ", subtle stylization, gentle outlines" },
+                medium: { prefix: "cartoon style,", suffix: ", bold outlines, vibrant colors" },
+                high: { prefix: "extreme cartoon,", suffix: ", maximum stylization, dramatic animated features" }
+            },
+            'anime': {
+                low: { prefix: "anime inspired,", suffix: ", subtle manga style, gentle cel-shading" },
+                medium: { prefix: "anime manga style,", suffix: ", cel-shaded, clean lines" },
+                high: { prefix: "extreme anime,", suffix: ", maximum manga transformation, dramatic anime features" }
+            },
+            'steampunk': {
+                low: { prefix: "steampunk touch,", suffix: ", subtle brass elements, gentle industrial hints" },
+                medium: { prefix: "steampunk style,", suffix: ", brass gears, mechanical elements" },
+                high: { prefix: "extreme steampunk,", suffix: ", maximum victorian industrial, dramatic machinery" }
+            },
+            'gothic': {
+                low: { prefix: "gothic touch,", suffix: ", subtle dark elements, gentle shadows" },
+                medium: { prefix: "gothic style,", suffix: ", dramatic shadows, ornate details" },
+                high: { prefix: "extreme gothic,", suffix: ", maximum dark atmosphere, dramatic medieval elements" }
+            },
+            'fantasia': {
+                low: { prefix: "fantasy touch,", suffix: ", subtle magical elements, gentle enchantment" },
+                medium: { prefix: "fantasy style,", suffix: ", mystical elements, magical atmosphere" },
+                high: { prefix: "extreme fantasy,", suffix: ", maximum magical transformation, dramatic mythical elements" }
+            },
+            'sci-fi': {
+                low: { prefix: "sci-fi touch,", suffix: ", subtle futuristic elements, gentle technology" },
+                medium: { prefix: "sci-fi style,", suffix: ", advanced technology, futuristic design" },
+                high: { prefix: "extreme sci-fi,", suffix: ", maximum futuristic transformation, dramatic space age design" }
+            }
+        };
+
+        // Obter configuração específica ou usar padrão
+        const styleIntensity = intensityMap[styleName] || {
+            low: { prefix: "subtle", suffix: ", gentle artistic effect" },
+            medium: { prefix: "stylized", suffix: ", moderate artistic transformation" },
+            high: { prefix: "highly stylized", suffix: ", strong artistic effect" }
+        };
+
+        // Determinar nível de intensidade
+        if (intensity >= 70) {
+            return styleIntensity.high;
+        } else if (intensity >= 40) {
+            return styleIntensity.medium;
+        } else {
+            return styleIntensity.low;
+        }
     }
 
     // Obter instruções de preservação
@@ -500,6 +652,120 @@ class ArtisticStyleService {
         }
 
         return recommendations.slice(0, 3); // Máximo 3 recomendações
+    }
+
+    // 🚀 NOVO: Calcular parâmetros dinâmicos baseados no estilo e intensidade
+    calculateDynamicParameters(style, intensity, styleConfig) {
+        // Parâmetros base
+        let baseStrength = styleConfig.strength;
+        let baseGuidanceScale = 3.5;
+        let baseSteps = 28;
+
+        // 🎯 AJUSTES ESPECÍFICOS POR ESTILO
+        const styleAdjustments = {
+            'pixel-art': {
+                strengthMultiplier: 1.1,  // Mais agressivo
+                guidanceScale: 6.0,       // Guidance mais alto para forçar pixelação
+                steps: 35                 // Mais steps para melhor definição
+            },
+            'glitch': {
+                strengthMultiplier: 1.05,
+                guidanceScale: 5.0,       // Alto para efeitos dramáticos
+                steps: 32
+            },
+            'neon': {
+                strengthMultiplier: 1.0,
+                guidanceScale: 4.5,       // Médio-alto para cores vibrantes
+                steps: 30
+            },
+            'sketch': {
+                strengthMultiplier: 0.9,  // Mais sutil
+                guidanceScale: 3.0,       // Mais baixo para naturalidade
+                steps: 25
+            },
+            'aquarela': {
+                strengthMultiplier: 0.95,
+                guidanceScale: 3.2,
+                steps: 26
+            },
+            'pop-art': {
+                strengthMultiplier: 1.05,
+                guidanceScale: 4.8,       // Alto para cores vibrantes
+                steps: 32
+            },
+            'vintage': {
+                strengthMultiplier: 0.9,
+                guidanceScale: 3.8,
+                steps: 28
+            },
+            'oleo': {
+                strengthMultiplier: 1.0,
+                guidanceScale: 4.0,
+                steps: 30
+            }
+        };
+
+        // Obter ajustes específicos do estilo ou usar padrão
+        const adjustments = styleAdjustments[style] || {
+            strengthMultiplier: 1.0,
+            guidanceScale: 3.5,
+            steps: 28
+        };
+
+        // 🎚️ CALCULAR PARÂMETROS BASEADOS NA INTENSIDADE
+        const intensityFactor = intensity / 100;
+
+        // Strength: varia baseado na intensidade e estilo
+        let finalStrength;
+        if (intensity >= 80) {
+            // Alta intensidade: usar strength máximo do estilo
+            finalStrength = Math.min(0.98, baseStrength * adjustments.strengthMultiplier * 1.1);
+        } else if (intensity >= 60) {
+            // Média-alta: strength padrão do estilo
+            finalStrength = Math.min(0.95, baseStrength * adjustments.strengthMultiplier);
+        } else if (intensity >= 40) {
+            // Média: reduzir um pouco
+            finalStrength = Math.min(0.90, baseStrength * adjustments.strengthMultiplier * 0.9);
+        } else {
+            // Baixa: bem mais sutil
+            finalStrength = Math.min(0.85, baseStrength * adjustments.strengthMultiplier * 0.7);
+        }
+
+        // Guidance Scale: ajustar baseado na intensidade
+        let finalGuidanceScale;
+        if (intensity >= 80) {
+            finalGuidanceScale = adjustments.guidanceScale * 1.2;
+        } else if (intensity >= 60) {
+            finalGuidanceScale = adjustments.guidanceScale;
+        } else if (intensity >= 40) {
+            finalGuidanceScale = adjustments.guidanceScale * 0.9;
+        } else {
+            finalGuidanceScale = adjustments.guidanceScale * 0.8;
+        }
+
+        // Steps: mais steps para intensidades altas
+        let finalSteps;
+        if (intensity >= 80) {
+            finalSteps = Math.min(50, adjustments.steps + 8);
+        } else if (intensity >= 60) {
+            finalSteps = adjustments.steps + 4;
+        } else if (intensity >= 40) {
+            finalSteps = adjustments.steps;
+        } else {
+            finalSteps = Math.max(20, adjustments.steps - 4);
+        }
+
+        const result = {
+            strength: Math.round(finalStrength * 100) / 100,
+            guidance_scale: Math.round(finalGuidanceScale * 10) / 10,
+            num_inference_steps: finalSteps
+        };
+
+        console.log(`🎛️ [DYNAMIC-PARAMS] Estilo: ${style}, Intensidade: ${intensity}%`);
+        console.log(`🎛️ [DYNAMIC-PARAMS] Parâmetros calculados:`, result);
+        console.log(`🎛️ [DYNAMIC-PARAMS] Ajustes aplicados:`, adjustments);
+
+        return result;
     }
 
     // Validar se a imagem é adequada para estilização
