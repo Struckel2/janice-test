@@ -7421,30 +7421,80 @@ ${currentActionPlanData.conteudo}`;
   
   // Configurar navegação entre categorias de estilos
   function setupStyleCategoryNavigation() {
+    console.log('🎨 [STYLE-CATEGORY] ===== CONFIGURANDO NAVEGAÇÃO DE CATEGORIAS =====');
+    
     const categoryTabs = document.querySelectorAll('.category-tab');
     const styleGrids = document.querySelectorAll('.style-grid');
     
-    categoryTabs.forEach(tab => {
+    console.log('🎨 [STYLE-CATEGORY] Elementos encontrados:', {
+      categoryTabs: categoryTabs.length,
+      styleGrids: styleGrids.length
+    });
+    
+    if (categoryTabs.length === 0) {
+      console.error('❌ [STYLE-CATEGORY] Nenhuma aba de categoria encontrada!');
+      return;
+    }
+    
+    if (styleGrids.length === 0) {
+      console.error('❌ [STYLE-CATEGORY] Nenhum grid de estilo encontrado!');
+      return;
+    }
+    
+    categoryTabs.forEach((tab, index) => {
+      console.log(`🎨 [STYLE-CATEGORY] Configurando aba ${index + 1}:`, tab.dataset.category);
+      
       tab.addEventListener('click', () => {
+        console.log('🎨 [STYLE-CATEGORY] ===== CLIQUE EM CATEGORIA DETECTADO =====');
+        console.log('🎨 [STYLE-CATEGORY] Categoria clicada:', tab.dataset.category);
+        
         // Remover classe active de todas as abas
-        categoryTabs.forEach(t => t.classList.remove('active'));
+        categoryTabs.forEach(t => {
+          t.classList.remove('active');
+          console.log('🎨 [STYLE-CATEGORY] Removendo active de:', t.dataset.category);
+        });
+        
+        // Esconder todos os grids
+        styleGrids.forEach(grid => {
+          grid.classList.remove('active');
+          console.log('🎨 [STYLE-CATEGORY] Escondendo grid:', grid.dataset.category);
+        });
         
         // Adicionar classe active à aba clicada
         tab.classList.add('active');
-        
-        // Esconder todos os grids
-        styleGrids.forEach(grid => grid.classList.remove('active'));
+        console.log('🎨 [STYLE-CATEGORY] Ativando aba:', tab.dataset.category);
         
         // Mostrar grid correspondente
         const category = tab.dataset.category;
-        const targetGrid = document.querySelector(`[data-category="${category}"]`);
+        const targetGrid = document.querySelector(`.style-grid[data-category="${category}"]`);
+        
+        console.log('🎨 [STYLE-CATEGORY] Procurando grid para categoria:', category);
+        console.log('🎨 [STYLE-CATEGORY] Grid encontrado:', !!targetGrid);
+        
         if (targetGrid) {
           targetGrid.classList.add('active');
+          console.log('✅ [STYLE-CATEGORY] Grid ativado para categoria:', category);
+          
+          // Verificar quantos estilos estão visíveis
+          const visibleStyles = targetGrid.querySelectorAll('.style-option');
+          console.log('🎨 [STYLE-CATEGORY] Estilos visíveis na categoria:', visibleStyles.length);
+          
+        } else {
+          console.error('❌ [STYLE-CATEGORY] Grid não encontrado para categoria:', category);
+          
+          // Debug: listar todos os grids disponíveis
+          const allGrids = document.querySelectorAll('.style-grid');
+          console.log('🔍 [STYLE-CATEGORY] Grids disponíveis:');
+          allGrids.forEach(grid => {
+            console.log('  -', grid.dataset.category, grid.classList.contains('active') ? '(ativo)' : '(inativo)');
+          });
         }
         
-        console.log('🎨 [STYLE-CATEGORY] Categoria alterada para:', category);
+        console.log('✅ [STYLE-CATEGORY] Mudança de categoria concluída');
       });
     });
+    
+    console.log('✅ [STYLE-CATEGORY] ===== CONFIGURAÇÃO CONCLUÍDA =====');
   }
 
 
