@@ -5,6 +5,22 @@
   border-radius: var(--border-radius);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
+  display: none !important;
+}
+
+/* Mostrar apenas quando explicitamente definido */
+.analysis-content-container.show {
+  display: block !important;
+}
+
+/* Esconder Nova Análise Empresarial por padrão */
+.analysis-header, 
+.analysis-preview, 
+.analysis-container h2, 
+.analysis-container p, 
+.analysis-container ul, 
+.analysis-container li {
+  display: none !important;
 }
 
 .analysis-content {

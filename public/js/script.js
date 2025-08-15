@@ -753,6 +753,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const section = document.getElementById(sectionId);
       if (section) {
         section.style.display = 'none';
+        
+        // Também esconder conteúdo interno para análise
+        if (sectionId === 'analysis-container') {
+          const headers = section.querySelectorAll('.analysis-header, .analysis-preview, h2, p, ul, li');
+          headers.forEach(el => {
+            el.style.display = 'none';
+          });
+        }
       }
     });
     
@@ -760,6 +768,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const targetSection = document.getElementById(targetSectionId);
     if (targetSection) {
       targetSection.style.display = 'block';
+      
+      // Se for a seção de análise, mostrar também o conteúdo interno
+      if (targetSectionId === 'analysis-container') {
+        const headers = targetSection.querySelectorAll('.analysis-header, .analysis-preview, h2, p, ul, li');
+        headers.forEach(el => {
+          el.style.display = 'block';
+        });
+      }
     }
   }
   

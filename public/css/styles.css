@@ -1108,7 +1108,7 @@ header h1 {
 
 /* Analysis Container - Fix for visibility issue */
 #analysis-container {
-  display: none;
+  display: none !important;
 }
 
 /* Ensure all sections are properly hidden by default */
@@ -1121,7 +1121,18 @@ header h1 {
 #result-container,
 #loading-container,
 #error-container {
-  display: none;
+  display: none !important;
+}
+
+/* Hide all content inside the analysis container by default */
+.analysis-header,
+.analysis-preview,
+.analysis-content,
+.analysis-container h2,
+.analysis-container p,
+.analysis-container ul,
+.analysis-container li {
+  display: none !important;
 }
 
 /* Only show sections when explicitly set to display:block via JavaScript */
