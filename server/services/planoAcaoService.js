@@ -104,7 +104,7 @@ async function generateActionPlan(transcricaoIds, analiseIds, clienteId, titulo)
     });
     
     // ETAPA 4: Gerar PDF
-    progressService.sendProgressUpdate(clienteId, {
+    progressService.sendProgressUpdate(clientId, {
       percentage: 90,
       message: 'Gerando documento PDF...',
       step: 4,
@@ -114,13 +114,33 @@ async function generateActionPlan(transcricaoIds, analiseIds, clienteId, titulo)
     console.log('ETAPA 4: Gerando PDF do plano de ação');
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `plano_acao_${clienteId}_${timestamp}`;
+    
+    console.log(`🔍 [PLANO-ACAO-PDF] Preparando geração de PDF:`);
+    console.log(`📊 [PLANO-ACAO-PDF] Título: ${titulo}`);
+    console.log(`📊 [PLANO-ACAO-PDF] Filename: ${filename}`);
+    console.log(`📊 [PLANO-ACAO-PDF] Tamanho do conteúdo: ${planoAcao.length} caracteres`);
+    
     const pdfUrl = await generateGenericPDF({
       filename: filename,
       title: titulo,
       content: planoAcao,
-      folder: 'janice/analises'
+      folder: 'janice/planos-acao' // Alterado para pasta específica para planos de ação
     });
-    console.log(`PDF gerado: ${pdfUrl}`);
+    
+    console.log(`✅ [PLANO-ACAO-PDF] PDF gerado com sucesso`);
+    console.log(`📊 [PLANO-ACAO-PDF] URL do PDF: ${pdfUrl}`);
+    
+    // Verificar se a URL é acessível
+    try {
+      const checkResponse = await fetch(pdfUrl, { method: 'HEAD' });
+      console.log(`📊 [PLANO-ACAO-PDF] Verificação de acesso à URL: ${checkResponse.status} ${checkResponse.statusText}`);
+      
+      if (!checkResponse.ok) {
+        console.warn(`⚠️ [PLANO-ACAO-PDF] A URL do PDF pode não ser acessível: ${checkResponse.status}`);
+      }
+    } catch (checkError) {
+      console.warn(`⚠️ [PLANO-ACAO-PDF] Erro ao verificar acesso à URL: ${checkError.message}`);
+    }
     
     progressService.sendProgressUpdate(clienteId, {
       percentage: 99,

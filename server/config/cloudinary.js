@@ -96,11 +96,11 @@ const uploadImage = async (fileBuffer, options = {}) => {
 const uploadPDF = async (fileBuffer, options = {}) => {
   // Verificar se o Cloudinary está configurado
   if (!cloudinaryConfigured) {
-    console.error('Tentativa de upload de PDF para Cloudinary, mas configuração está incompleta');
+    console.error('❌ [CLOUDINARY-PDF] Tentativa de upload de PDF para Cloudinary, mas configuração está incompleta');
     
     // Em produção, retornar um objeto com URL dummy para não quebrar a aplicação
     if (process.env.NODE_ENV === 'production') {
-      console.warn('Retornando URL placeholder em vez de fazer upload de PDF (modo produção)');
+      console.warn('⚠️ [CLOUDINARY-PDF] Retornando URL placeholder em vez de fazer upload de PDF (modo produção)');
       return {
         secure_url: '/placeholder-pdf.pdf',
         public_id: 'placeholder-pdf',
@@ -118,25 +118,54 @@ const uploadPDF = async (fileBuffer, options = {}) => {
     ...options
   };
 
+  console.log(`🔍 [CLOUDINARY-PDF] Iniciando upload de PDF para Cloudinary...`);
+  console.log(`📊 [CLOUDINARY-PDF] Opções de upload:`, {
+    folder: uploadOptions.folder,
+    public_id: uploadOptions.public_id,
+    resource_type: uploadOptions.resource_type,
+    format: uploadOptions.format || 'pdf'
+  });
+  console.log(`📊 [CLOUDINARY-PDF] Tamanho do buffer: ${fileBuffer.length} bytes`);
+
   try {
-    console.log('Iniciando upload de PDF para Cloudinary...');
-    
     // Converter o buffer para base64 para upload
     return new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         uploadOptions,
         (error, result) => {
           if (error) {
-            console.error('Erro durante upload de PDF para Cloudinary:', error);
+            console.error('❌ [CLOUDINARY-PDF] Erro durante upload de PDF para Cloudinary:', error);
+            console.error('❌ [CLOUDINARY-PDF] Detalhes do erro:', {
+              message: error.message,
+              code: error.http_code || error.code,
+              type: error.name
+            });
             return reject(error);
           }
-          console.log('Upload de PDF para Cloudinary bem-sucedido');
+          
+          console.log('✅ [CLOUDINARY-PDF] Upload de PDF para Cloudinary bem-sucedido');
+          console.log('📊 [CLOUDINARY-PDF] URL gerada:', result.secure_url);
+          console.log('📊 [CLOUDINARY-PDF] Public ID:', result.public_id);
+          
+          // Verificar se a URL gerada é acessível
+          fetch(result.secure_url, { method: 'HEAD' })
+            .then(response => {
+              console.log(`📊 [CLOUDINARY-PDF] Verificação de acesso à URL: ${response.status} ${response.statusText}`);
+              if (!response.ok) {
+                console.warn(`⚠️ [CLOUDINARY-PDF] A URL gerada pode não ser acessível: ${response.status}`);
+              }
+            })
+            .catch(err => {
+              console.warn(`⚠️ [CLOUDINARY-PDF] Erro ao verificar acesso à URL: ${err.message}`);
+            });
+          
           resolve(result);
         }
       ).end(fileBuffer);
     });
   } catch (error) {
-    console.error('Erro ao fazer upload de PDF para Cloudinary:', error);
+    console.error('❌ [CLOUDINARY-PDF] Erro ao fazer upload de PDF para Cloudinary:', error);
+    console.error('❌ [CLOUDINARY-PDF] Stack trace:', error.stack);
     throw error;
   }
 };
@@ -217,20 +246,41 @@ const deletePDF = async (publicId) => {
 
 /**
  * Extrai o public_id de uma URL do Cloudinary
- * @param {string} url - URL completa da imagem
+ * @param {string} url - URL completa da imagem ou arquivo
  * @returns {string|null} - public_id ou null se não for uma URL do Cloudinary
  */
 const getPublicIdFromUrl = (url) => {
   if (!url || typeof url !== 'string') return null;
   
+  console.log(`🔍 [CLOUDINARY] Extraindo public_id da URL: ${url}`);
+  
   // Tentar extrair o public_id de uma URL do Cloudinary
-  // Formato típico: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/pasta/nome_arquivo.jpg
+  // Formato típico para imagens: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/pasta/nome_arquivo.jpg
+  // Formato típico para PDFs: https://res.cloudinary.com/cloud_name/raw/upload/v1234567890/pasta/nome_arquivo.pdf
   try {
-    const regex = /\/v\d+\/(.+)\.\w+$/;
+    // Regex melhorada para capturar tanto arquivos raw quanto imagens
+    // Captura o caminho após o número de versão, sem a extensão
+    const regex = /\/v\d+\/(.+?)(?:\.\w+)?$/;
     const match = url.match(regex);
-    return match ? match[1] : null;
+    
+    if (match && match[1]) {
+      console.log(`✅ [CLOUDINARY] Public ID extraído: ${match[1]}`);
+      return match[1];
+    } else {
+      // Tentar regex alternativa para URLs sem versão
+      const altRegex = /\/upload\/(.+?)(?:\.\w+)?$/;
+      const altMatch = url.match(altRegex);
+      
+      if (altMatch && altMatch[1]) {
+        console.log(`✅ [CLOUDINARY] Public ID extraído (formato alternativo): ${altMatch[1]}`);
+        return altMatch[1];
+      }
+      
+      console.log(`❌ [CLOUDINARY] Não foi possível extrair public_id da URL`);
+      return null;
+    }
   } catch (error) {
-    console.error('Erro ao extrair public_id:', error);
+    console.error('❌ [CLOUDINARY] Erro ao extrair public_id:', error);
     return null;
   }
 };

@@ -94,6 +94,78 @@ router.use((req, res, next) => {
 });
 
 /**
+ * GET /api/planos-acao/teste-pdf/:id
+ * Endpoint de teste para verificar se o PDF de um plano de ação é acessível
+ */
+router.get('/teste-pdf/:id', validateObjectId, async (req, res) => {
+  try {
+    console.log(`🔍 [PLANO-ACAO-TESTE] Verificando PDF para plano de ação ID: ${req.params.id}`);
+    
+    // Buscar o plano de ação no banco de dados
+    const plano = await PlanoAcao.findById(req.params.id);
+    
+    if (!plano) {
+      console.log('❌ [PLANO-ACAO-TESTE] Plano de ação não encontrado');
+      return res.status(404).json({ error: 'Plano de ação não encontrado' });
+    }
+    
+    console.log(`✅ [PLANO-ACAO-TESTE] Plano encontrado: ${plano._id}`);
+    console.log(`📊 [PLANO-ACAO-TESTE] Título: ${plano.titulo}`);
+    console.log(`📊 [PLANO-ACAO-TESTE] Data de criação: ${plano.dataCriacao}`);
+    
+    if (!plano.pdfUrl) {
+      console.log('❌ [PLANO-ACAO-TESTE] PDF não disponível para este plano de ação');
+      return res.status(404).json({ error: 'PDF não disponível para este plano de ação' });
+    }
+    
+    console.log(`🔍 [PLANO-ACAO-TESTE] URL do PDF: ${plano.pdfUrl}`);
+    
+    // Verificar se a URL é válida
+    if (!plano.pdfUrl.startsWith('http')) {
+      console.error(`❌ [PLANO-ACAO-TESTE] URL do PDF inválida: ${plano.pdfUrl}`);
+      return res.status(400).json({ error: 'URL do PDF inválida' });
+    }
+    
+    // Verificar se a URL é acessível
+    try {
+      console.log(`🔄 [PLANO-ACAO-TESTE] Verificando acesso à URL: ${plano.pdfUrl}`);
+      const response = await fetch(plano.pdfUrl, { method: 'HEAD' });
+      
+      console.log(`📊 [PLANO-ACAO-TESTE] Status da resposta: ${response.status} ${response.statusText}`);
+      console.log(`📊 [PLANO-ACAO-TESTE] Headers da resposta:`, response.headers);
+      
+      const result = {
+        url: plano.pdfUrl,
+        accessible: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        contentType: response.headers.get('content-type'),
+        contentLength: response.headers.get('content-length'),
+        folder: plano.pdfUrl.includes('/janice/analises/') ? 'janice/analises' : 
+                plano.pdfUrl.includes('/janice/planos-acao/') ? 'janice/planos-acao' : 'desconhecida'
+      };
+      
+      return res.json(result);
+      
+    } catch (error) {
+      console.error(`❌ [PLANO-ACAO-TESTE] Erro ao verificar acesso à URL: ${error.message}`);
+      return res.status(500).json({ 
+        error: 'Erro ao verificar acesso à URL do PDF',
+        message: error.message,
+        url: plano.pdfUrl
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ [PLANO-ACAO-TESTE] Erro ao testar PDF:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor ao testar PDF',
+      message: error.message
+    });
+  }
+});
+
+/**
  * GET /api/planos-acao/:clienteId
  * Busca todos os planos de ação de um cliente
  */
@@ -418,34 +490,71 @@ router.get('/:clienteId/status', validateObjectId, async (req, res) => {
  */
 router.get('/pdf/:id', validateObjectId, async (req, res) => {
   try {
-    console.log(`Solicitação de PDF para plano de ação ID: ${req.params.id}`);
+    console.log(`🔍 [PLANO-ACAO-PDF] Solicitação de PDF para plano de ação ID: ${req.params.id}`);
     
     // Buscar o plano de ação no banco de dados
     const plano = await PlanoAcao.findById(req.params.id);
     
     if (!plano) {
-      console.log('Plano de ação não encontrado');
+      console.log('❌ [PLANO-ACAO-PDF] Plano de ação não encontrado');
       return res.status(404).json({ error: 'Plano de ação não encontrado' });
     }
     
+    console.log(`✅ [PLANO-ACAO-PDF] Plano encontrado: ${plano._id}`);
+    console.log(`📊 [PLANO-ACAO-PDF] Título: ${plano.titulo}`);
+    console.log(`📊 [PLANO-ACAO-PDF] Data de criação: ${plano.dataCriacao}`);
+    
     if (!plano.pdfUrl) {
-      console.log('PDF não disponível para este plano de ação');
+      console.log('❌ [PLANO-ACAO-PDF] PDF não disponível para este plano de ação');
       return res.status(404).json({ error: 'PDF não disponível para este plano de ação' });
     }
     
-    console.log(`Buscando PDF do Cloudinary: ${plano.pdfUrl}`);
+    console.log(`🔍 [PLANO-ACAO-PDF] URL do PDF: ${plano.pdfUrl}`);
+    
+    // Verificar se a URL é válida
+    if (!plano.pdfUrl.startsWith('http')) {
+      console.error(`❌ [PLANO-ACAO-PDF] URL do PDF inválida: ${plano.pdfUrl}`);
+      return res.status(400).json({ error: 'URL do PDF inválida' });
+    }
+    
+    console.log(`🔄 [PLANO-ACAO-PDF] Buscando PDF do Cloudinary: ${plano.pdfUrl}`);
     
     // Buscar o PDF do Cloudinary
     const response = await fetch(plano.pdfUrl);
     
+    console.log(`📊 [PLANO-ACAO-PDF] Status da resposta: ${response.status} ${response.statusText}`);
+    console.log(`📊 [PLANO-ACAO-PDF] Headers da resposta:`, response.headers);
+    
     if (!response.ok) {
-      console.error(`Erro ao buscar PDF do Cloudinary: ${response.status} ${response.statusText}`);
-      return res.status(502).json({ error: 'Erro ao carregar PDF do servidor de arquivos' });
+      console.error(`❌ [PLANO-ACAO-PDF] Erro ao buscar PDF do Cloudinary: ${response.status} ${response.statusText}`);
+      
+      // Tentar obter mais detalhes do erro
+      let errorBody = '';
+      try {
+        errorBody = await response.text();
+        console.error(`❌ [PLANO-ACAO-PDF] Corpo da resposta de erro: ${errorBody}`);
+      } catch (textError) {
+        console.error(`❌ [PLANO-ACAO-PDF] Não foi possível ler o corpo da resposta: ${textError.message}`);
+      }
+      
+      return res.status(502).json({ 
+        error: 'Erro ao carregar PDF do servidor de arquivos',
+        details: `Status: ${response.status}, Mensagem: ${response.statusText}`,
+        body: errorBody
+      });
+    }
+    
+    // Verificar o tipo de conteúdo
+    const contentType = response.headers.get('content-type');
+    console.log(`📊 [PLANO-ACAO-PDF] Tipo de conteúdo: ${contentType}`);
+    
+    if (!contentType || !contentType.includes('application/pdf')) {
+      console.warn(`⚠️ [PLANO-ACAO-PDF] Tipo de conteúdo inesperado: ${contentType}`);
     }
     
     // Obter o buffer do PDF
     const pdfBuffer = Buffer.from(await response.arrayBuffer());
-    console.log(`PDF carregado com sucesso (${pdfBuffer.length} bytes)`);
+    console.log(`✅ [PLANO-ACAO-PDF] PDF carregado com sucesso (${pdfBuffer.length} bytes)`);
     
     // Configurar headers para visualização inline do PDF
     res.set({
@@ -458,13 +567,15 @@ router.get('/pdf/:id', validateObjectId, async (req, res) => {
     
     // Enviar o PDF
     res.send(pdfBuffer);
-    console.log('PDF enviado com sucesso');
+    console.log('✅ [PLANO-ACAO-PDF] PDF enviado com sucesso');
     
   } catch (error) {
-    console.error('Erro ao servir PDF:', error);
+    console.error('❌ [PLANO-ACAO-PDF] Erro ao servir PDF:', error);
+    console.error('❌ [PLANO-ACAO-PDF] Stack trace:', error.stack);
     res.status(500).json({ 
       error: 'Erro interno do servidor ao carregar PDF',
-      message: error.message
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
