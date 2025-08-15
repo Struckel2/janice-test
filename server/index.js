@@ -103,26 +103,63 @@ app.get('/pending', (req, res) => {
 });
 
 // Rotas específicas da API (devem vir antes da rota geral /api)
-// Rota de clientes - agora com autenticação para sub-rotas específicas
 console.log('📋 [ROUTE-REGISTER] Registrando /api/clientes (com auth para sub-rotas)');
+
+// Middleware para verificar se a requisição é AJAX
+const isAjaxRequest = (req, res, next) => {
+  req.isAjaxRequest = 
+    req.xhr || 
+    (req.headers.accept && req.headers.accept.indexOf('json') > -1) ||
+    req.headers['x-requested-with'] === 'XMLHttpRequest';
+  
+  console.log(`🔍 [AJAX-CHECK] Requisição para ${req.path} é AJAX: ${req.isAjaxRequest}`);
+  next();
+};
+
+// Middleware para extrair o ID do cliente
+const extractClientId = (req, res, next) => {
+  const clientId = req.params.clientId;
+  console.log(`🔍 [CLIENT-ID] Extraído ID do cliente: ${clientId}`);
+  req.clientId = clientId;
+  next();
+};
+
+// Aplicar middleware global para verificar se é AJAX
+app.use(isAjaxRequest);
+
 // Rota base de clientes sem autenticação para listar/buscar
 app.use('/api/clientes', clientesRoutes);
+
+// Middleware para sub-rotas de clientes
+app.use('/api/clientes/:clientId', extractClientId, requireAuth);
+
 // Sub-rotas específicas de clientes com autenticação
-app.use('/api/clientes/:clientId/analises', requireAuth, (req, res, next) => {
-  req.url = '/'; // Resetar URL para que o router de análises funcione corretamente
-  analisesRoutes(req, res, next);
+app.get('/api/clientes/:clientId/analises', (req, res) => {
+  console.log(`📋 [ROUTE] GET /api/clientes/${req.params.clientId}/analises`);
+  // Redirecionar para a rota de análises com o ID do cliente
+  req.url = `/cliente/${req.params.clientId}`;
+  analisesRoutes(req, res);
 });
-app.use('/api/clientes/:clientId/transcricoes', requireAuth, (req, res, next) => {
-  req.url = '/'; // Resetar URL para que o router de transcrições funcione corretamente
-  transcricoesRoutes(req, res, next);
+
+app.get('/api/clientes/:clientId/transcricoes', (req, res) => {
+  console.log(`📋 [ROUTE] GET /api/clientes/${req.params.clientId}/transcricoes`);
+  // Redirecionar para a rota de transcrições com o ID do cliente
+  req.url = `/cliente/${req.params.clientId}`;
+  transcricoesRoutes(req, res);
 });
-app.use('/api/clientes/:clientId/planos-acao', requireAuth, (req, res, next) => {
-  req.url = '/'; // Resetar URL para que o router de planos de ação funcione corretamente
-  planosAcaoRoutes(req, res, next);
+
+app.get('/api/clientes/:clientId/planos-acao', (req, res) => {
+  console.log(`📋 [ROUTE] GET /api/clientes/${req.params.clientId}/planos-acao`);
+  // Redirecionar para a rota de planos de ação com o ID do cliente
+  req.url = `/cliente/${req.params.clientId}`;
+  planosAcaoRoutes(req, res);
 });
-app.use('/api/clientes/:clientId/mockups', requireAuth, (req, res, next) => {
-  req.url = '/'; // Resetar URL para que o router de mockups funcione corretamente
-  mockupRoutes(req, res, next);
+
+app.get('/api/clientes/:clientId/mockups', (req, res) => {
+  console.log(`📋 [ROUTE] GET /api/clientes/${req.params.clientId}/mockups`);
+  // Redirecionar para a rota de mockups com o ID do cliente
+  req.url = `/cliente/${req.params.clientId}`;
+  mockupRoutes(req, res);
 });
 
 // Rotas principais da API
