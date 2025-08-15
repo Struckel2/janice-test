@@ -134,32 +134,28 @@ app.use('/api/clientes', clientesRoutes);
 app.use('/api/clientes/:clientId', extractClientId, requireAuth);
 
 // Sub-rotas específicas de clientes com autenticação
-app.get('/api/clientes/:clientId/analises', (req, res) => {
+app.get('/api/clientes/:clientId/analises', (req, res, next) => {
   console.log(`📋 [ROUTE] GET /api/clientes/${req.params.clientId}/analises`);
-  // Redirecionar para a rota de análises com o ID do cliente
-  req.url = `/cliente/${req.params.clientId}`;
-  analisesRoutes(req, res);
+  // Redirecionar para a rota principal de análises
+  res.redirect(307, `/api/analises/cliente/${req.params.clientId}`);
 });
 
-app.get('/api/clientes/:clientId/transcricoes', (req, res) => {
+app.get('/api/clientes/:clientId/transcricoes', (req, res, next) => {
   console.log(`📋 [ROUTE] GET /api/clientes/${req.params.clientId}/transcricoes`);
-  // Redirecionar para a rota de transcrições com o ID do cliente
-  req.url = `/cliente/${req.params.clientId}`;
-  transcricoesRoutes(req, res);
+  // Redirecionar para a rota principal de transcrições
+  res.redirect(307, `/api/transcricoes/cliente/${req.params.clientId}`);
 });
 
-app.get('/api/clientes/:clientId/planos-acao', (req, res) => {
+app.get('/api/clientes/:clientId/planos-acao', (req, res, next) => {
   console.log(`📋 [ROUTE] GET /api/clientes/${req.params.clientId}/planos-acao`);
-  // Redirecionar para a rota de planos de ação com o ID do cliente
-  req.url = `/cliente/${req.params.clientId}`;
-  planosAcaoRoutes(req, res);
+  // Redirecionar para a rota principal de planos de ação
+  res.redirect(307, `/api/planos-acao/${req.params.clientId}`);
 });
 
-app.get('/api/clientes/:clientId/mockups', (req, res) => {
+app.get('/api/clientes/:clientId/mockups', (req, res, next) => {
   console.log(`📋 [ROUTE] GET /api/clientes/${req.params.clientId}/mockups`);
-  // Redirecionar para a rota de mockups com o ID do cliente
-  req.url = `/cliente/${req.params.clientId}`;
-  mockupRoutes(req, res);
+  // Redirecionar para a rota principal de mockups
+  res.redirect(307, `/api/mockups/cliente/${req.params.clientId}`);
 });
 
 // Rotas principais da API
