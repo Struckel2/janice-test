@@ -691,11 +691,16 @@ window.AppModules.ArtisticStyle = (function() {
     // Configurar eventos
     setupArtisticStyleEvents();
     
-    // Escutar evento de cliente selecionado
+  // Escutar evento de cliente selecionado
     document.addEventListener('client-selected', (event) => {
       const { clientId } = event.detail;
-      if (clientId && document.getElementById('artistic-style-container').style.display !== 'none') {
+      const artisticStyleContainer = document.getElementById('artistic-style-container');
+      
+      // Verificar se o elemento existe e se está visível
+      if (clientId && artisticStyleContainer && artisticStyleContainer.style.display !== 'none') {
         showArtisticStyleSection();
+      } else {
+        console.log('🔄 [DEBUG] Evento client-selected recebido, mas artistic-style-container não existe ou está oculto');
       }
     });
     

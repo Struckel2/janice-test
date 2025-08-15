@@ -58,6 +58,7 @@ window.AppModules.Utils = (function() {
         
         // Se for outro tipo de erro, tentar obter texto da resposta
         const responseText = await response.text();
+        console.log(`🔄 [DEBUG-FETCH] Resposta não-JSON recebida: ${responseText.substring(0, 100)}...`);
         
         // Se a resposta contém HTML (provavelmente página de erro)
         if (responseText.includes('<!DOCTYPE') || responseText.includes('<html>')) {
@@ -79,8 +80,25 @@ window.AppModules.Utils = (function() {
       
       // Tentar fazer o parse do JSON com tratamento de erro melhorado
       try {
-        const jsonData = await response.json();
-        console.log(`✅ [DEBUG-FETCH] Dados JSON recebidos com sucesso: ${url}`);
+        // Clonar a resposta para poder lê-la duas vezes (para debug e para uso)
+        const clonedResponse = response.clone();
+        
+        // Ler o texto da resposta para debug
+        const responseText = await clonedResponse.text();
+        console.log(`🔄 [DEBUG-FETCH] Resposta JSON recebida: ${responseText.substring(0, 100)}...`);
+        
+        // Verificar se a resposta começa com caracteres estranhos (como 'a<!DOCTYPE')
+        if (responseText.trim().startsWith('a<!DOCTYPE') || 
+            responseText.trim().startsWith('<!DOCTYPE') || 
+            responseText.trim().startsWith('<html>')) {
+          console.log('🔄 [DEBUG-FETCH] Resposta HTML detectada em vez de JSON, redirecionando para login...');
+          window.location.href = '/login';
+          return null;
+        }
+        
+        // Fazer o parse do JSON
+        const jsonData = JSON.parse(responseText);
+        console.log(`✅ [DEBUG-FETCH] Dados JSON processados com sucesso: ${url}`);
         return jsonData;
       } catch (parseError) {
         console.error(`❌ [DEBUG-FETCH] Erro ao fazer parse do JSON: ${parseError.message}`);
@@ -101,7 +119,8 @@ window.AppModules.Utils = (function() {
       if (error.message.includes('Sessão expirada') || 
           error.message.includes('Unexpected token') || 
           error.message.includes('<!DOCTYPE') || 
-          error.message.includes('<html>')) {
+          error.message.includes('<html>') ||
+          error.message.includes('a<!DOCTYPE')) {
         console.log('🔄 [DEBUG-FETCH] Erro de parsing JSON ou HTML detectado, redirecionando para login...');
         window.location.href = '/login';
         return null;
