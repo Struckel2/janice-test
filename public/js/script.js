@@ -5077,7 +5077,8 @@ ${currentActionPlanData.conteudo}`;
       'mockup-produto': 'Produto'
     };
     
-    return labels[tipoArte] || tipoArte;
+    // Return a default label "Imagem" if tipoArte is undefined or not recognized
+    return (tipoArte && labels[tipoArte]) ? labels[tipoArte] : 'Imagem';
   }
   
   // Visualizar mockup
