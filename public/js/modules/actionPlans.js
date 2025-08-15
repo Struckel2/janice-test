@@ -24,15 +24,13 @@ window.AppModules.ActionPlans = (function() {
         </div>
       `;
       
-      // Fazer requisição para o servidor
-      const response = await fetch(`/api/clientes/${clientId}/planos-acao`);
+      // Fazer requisição para o servidor usando safeFetch
+      const actionPlans = await Utils.safeFetch(`/api/clientes/${clientId}/planos-acao`);
       
-      if (!response.ok) {
-        throw new Error('Erro ao carregar planos de ação');
+      // Se a resposta for null (redirecionamento de autenticação), sair da função
+      if (actionPlans === null) {
+        return;
       }
-      
-      // Processar resposta
-      const actionPlans = await response.json();
       
       // Verificar se há planos de ação
       if (!actionPlans.length) {

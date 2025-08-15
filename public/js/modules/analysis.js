@@ -201,15 +201,13 @@ window.AppModules.Analysis = (function() {
         </div>
       `;
       
-      // Fazer requisição para o servidor
-      const response = await fetch(`/api/clientes/${clientId}/analises`);
+      // Fazer requisição para o servidor usando safeFetch
+      const analyses = await Utils.safeFetch(`/api/clientes/${clientId}/analises`);
       
-      if (!response.ok) {
-        throw new Error('Erro ao carregar análises');
+      // Se a resposta for null (redirecionamento de autenticação), sair da função
+      if (analyses === null) {
+        return;
       }
-      
-      // Processar resposta
-      const analyses = await response.json();
       
       // Verificar se há análises
       if (!analyses.length) {

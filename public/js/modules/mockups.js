@@ -26,15 +26,13 @@ window.AppModules.Mockups = (function() {
         </div>
       `;
       
-      // Fazer requisição para o servidor
-      const response = await fetch(`/api/clientes/${clientId}/mockups`);
+      // Fazer requisição para o servidor usando safeFetch
+      const mockups = await Utils.safeFetch(`/api/clientes/${clientId}/mockups`);
       
-      if (!response.ok) {
-        throw new Error('Erro ao carregar mockups');
+      // Se a resposta for null (redirecionamento de autenticação), sair da função
+      if (mockups === null) {
+        return;
       }
-      
-      // Processar resposta
-      const mockups = await response.json();
       
       // Verificar se há mockups
       if (!mockups.length) {

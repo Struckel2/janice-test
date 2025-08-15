@@ -26,15 +26,13 @@ window.AppModules.Transcriptions = (function() {
         </div>
       `;
       
-      // Fazer requisição para o servidor
-      const response = await fetch(`/api/clientes/${clientId}/transcricoes`);
+      // Fazer requisição para o servidor usando safeFetch
+      const transcriptions = await Utils.safeFetch(`/api/clientes/${clientId}/transcricoes`);
       
-      if (!response.ok) {
-        throw new Error('Erro ao carregar transcrições');
+      // Se a resposta for null (redirecionamento de autenticação), sair da função
+      if (transcriptions === null) {
+        return;
       }
-      
-      // Processar resposta
-      const transcriptions = await response.json();
       
       // Verificar se há transcrições
       if (!transcriptions.length) {
