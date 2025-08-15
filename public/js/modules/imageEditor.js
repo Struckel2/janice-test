@@ -436,14 +436,30 @@ window.AppModules.ImageEditor = (function() {
     // Implementação simplificada - normalmente aplicaria filtros CSS à imagem de preview
     console.log('Atualizando preview de edição de cor');
     
-    // Obter valores dos controles
-    const brightness = document.getElementById('brightness-control').value;
-    const contrast = document.getElementById('contrast-control').value;
-    const saturation = document.getElementById('saturation-control').value;
-    
-    // Atualizar preview
+    // Obter elementos dos controles
+    const brightnessControl = document.getElementById('brightness-control');
+    const contrastControl = document.getElementById('contrast-control');
+    const saturationControl = document.getElementById('saturation-control');
     const previewImage = document.getElementById('edit-preview-image');
-    if (previewImage && previewImage.style.display !== 'none') {
+    
+    // Verificar se todos os elementos existem
+    if (!brightnessControl || !contrastControl || !saturationControl || !previewImage) {
+      console.log('Elementos para preview de cor não encontrados:', {
+        brightnessControl: !!brightnessControl,
+        contrastControl: !!contrastControl,
+        saturationControl: !!saturationControl,
+        previewImage: !!previewImage
+      });
+      return;
+    }
+    
+    // Obter valores dos controles
+    const brightness = brightnessControl.value;
+    const contrast = contrastControl.value;
+    const saturation = saturationControl.value;
+    
+    // Atualizar preview apenas se a imagem estiver visível
+    if (previewImage.style.display !== 'none') {
       // Aplicar filtros CSS
       previewImage.style.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
     }
@@ -474,10 +490,22 @@ window.AppModules.ImageEditor = (function() {
   // Atualizar validação do botão de processamento
   function updateProcessButtonValidation() {
     const processButton = document.getElementById('process-edit-btn');
-    const imageUrl = document.getElementById('edit-image-url').value;
-    const instructions = document.getElementById('edit-instructions').value;
+    const imageUrlElement = document.getElementById('edit-image-url');
+    const instructionsElement = document.getElementById('edit-instructions');
     
     if (!processButton) return;
+    
+    // Verificar se os elementos existem antes de acessar suas propriedades
+    if (!imageUrlElement || !instructionsElement) {
+      console.log('Elementos de formulário não encontrados:', {
+        imageUrlElement: !!imageUrlElement,
+        instructionsElement: !!instructionsElement
+      });
+      return;
+    }
+    
+    const imageUrl = imageUrlElement.value;
+    const instructions = instructionsElement.value;
     
     // Verificar se há URL e instruções
     const isValid = imageUrl && instructions;
@@ -486,8 +514,14 @@ window.AppModules.ImageEditor = (function() {
   
   // Analisar instruções de edição
   function analyzeEditInstructions() {
-    const instructions = document.getElementById('edit-instructions').value;
+    const instructionsElement = document.getElementById('edit-instructions');
     
+    if (!instructionsElement) {
+      console.log('Elemento de instruções não encontrado');
+      return;
+    }
+    
+    const instructions = instructionsElement.value;
     if (!instructions) return;
     
     // Implementação simplificada - normalmente faria uma análise mais complexa
@@ -532,10 +566,30 @@ window.AppModules.ImageEditor = (function() {
   
   // Obter ajustes de cor
   function getColorAdjustments() {
+    const brightnessControl = document.getElementById('brightness-control');
+    const contrastControl = document.getElementById('contrast-control');
+    const saturationControl = document.getElementById('saturation-control');
+    
+    // Verificar se os elementos existem
+    if (!brightnessControl || !contrastControl || !saturationControl) {
+      console.log('Controles de ajuste de cor não encontrados:', {
+        brightnessControl: !!brightnessControl,
+        contrastControl: !!contrastControl,
+        saturationControl: !!saturationControl
+      });
+      
+      // Retornar valores padrão
+      return {
+        brightness: 100,
+        contrast: 100,
+        saturation: 100
+      };
+    }
+    
     return {
-      brightness: parseInt(document.getElementById('brightness-control').value),
-      contrast: parseInt(document.getElementById('contrast-control').value),
-      saturation: parseInt(document.getElementById('saturation-control').value)
+      brightness: parseInt(brightnessControl.value),
+      contrast: parseInt(contrastControl.value),
+      saturation: parseInt(saturationControl.value)
     };
   }
   
