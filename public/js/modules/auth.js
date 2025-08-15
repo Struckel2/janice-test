@@ -31,6 +31,11 @@ window.AppModules.Auth = (function() {
       
       console.log('✅ Usuário autenticado:', data.user.email, 'Role:', data.user.role);
       
+      // Disparar evento de autenticação bem-sucedida
+      const authEvent = new CustomEvent('auth-success', { detail: data.user });
+      document.dispatchEvent(authEvent);
+      console.log('🔔 Evento auth-success disparado');
+      
       return data.user;
     } catch (error) {
       console.error('Erro ao verificar autenticação:', error);

@@ -217,6 +217,26 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // ===== INICIALIZAÇÃO DA APLICAÇÃO =====
   
+  // Adicionar listener para o evento de autenticação bem-sucedida
+  document.addEventListener('auth-success', (event) => {
+    console.log('🔄 Evento auth-success recebido, carregando clientes...');
+    
+    // Pequeno atraso para garantir que todos os módulos estejam inicializados
+    setTimeout(() => {
+      // Carregar clientes após autenticação bem-sucedida
+      if (Clients && typeof Clients.loadClients === 'function') {
+        console.log('🔄 Carregando lista de clientes após autenticação...');
+        Clients.loadClients().then(clients => {
+          console.log(`✅ ${clients?.length || 0} clientes carregados com sucesso`);
+        }).catch(error => {
+          console.error('❌ Erro ao carregar clientes após autenticação:', error);
+        });
+      } else {
+        console.error('❌ Módulo Clients não disponível ou método loadClients não encontrado');
+      }
+    }, 500);
+  });
+  
   // Inicializar a aplicação
   init();
 });
