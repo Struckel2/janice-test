@@ -6,8 +6,17 @@ window.AppModules.Utils = (function() {
   'use strict';
   
   // ===== FUNÇÃO PARA REQUISIÇÕES SEGURAS =====
+  // Variável para controlar redirecionamentos em cascata
+  let redirectingToLogin = false;
+  
   async function safeFetch(url, options = {}) {
     try {
+      // Se já estamos redirecionando, não fazer mais requisições
+      if (redirectingToLogin) {
+        console.log(`🔄 [DEBUG-FETCH] Ignorando requisição para ${url} porque já estamos redirecionando para login`);
+        return null;
+      }
+      
       console.log(`🔄 [DEBUG-FETCH] Iniciando requisição para: ${url}`);
       
       // Verificar se é uma rota de planos de ação (sem verificação de auth)
@@ -49,21 +58,41 @@ window.AppModules.Utils = (function() {
       
       // Se a resposta não for JSON, pode ser um redirect de autenticação
       if (!contentType.includes('application/json')) {
-        // Verificar se é um redirect de autenticação
-        if (response.status === 302 || response.status === 401) {
-          console.log('🔄 [DEBUG-FETCH] Redirecionamento de autenticação detectado, redirecionando para login...');
+        // Verificar se é um redirect de autenticação explícito (401 Unauthorized)
+        if (response.status === 401) {
+          console.log('🔄 [DEBUG-FETCH] Resposta 401 Unauthorized, redirecionando para login...');
+          redirectingToLogin = true;
           window.location.href = '/login';
           return null;
+        }
+        
+        // Se for redirecionamento 302, não redirecionar automaticamente para login
+        if (response.status === 302) {
+          console.log('🔄 [DEBUG-FETCH] Redirecionamento 302 detectado, mas não redirecionando automaticamente');
+          const location = response.headers.get('location');
+          console.log(`🔄 [DEBUG-FETCH] Location header: ${location}`);
+          
+          // Só redirecionar para login se o location for explicitamente /login
+          if (location && location.includes('/login')) {
+            console.log('🔄 [DEBUG-FETCH] Redirecionamento para login detectado, redirecionando...');
+            redirectingToLogin = true;
+            window.location.href = '/login';
+            return null;
+          }
+          
+          // Caso contrário, tratar como erro normal
+          throw new Error(`Redirecionamento para ${location || 'desconhecido'}`);
         }
         
         // Se for outro tipo de erro, tentar obter texto da resposta
         const responseText = await response.text();
         console.log(`🔄 [DEBUG-FETCH] Resposta não-JSON recebida: ${responseText.substring(0, 100)}...`);
         
-        // Se a resposta contém HTML (provavelmente página de erro)
-        if (responseText.includes('<!DOCTYPE') || responseText.includes('<html>')) {
-          console.log('🔄 [DEBUG-FETCH] Resposta HTML detectada, sessão pode ter expirado');
-          console.log('🔄 [DEBUG-FETCH] Redirecionando para login...');
+        // Se a resposta contém HTML de login, então redirecionar
+        if ((responseText.includes('<!DOCTYPE') || responseText.includes('<html>')) && 
+            (responseText.includes('login') || responseText.includes('Login'))) {
+          console.log('🔄 [DEBUG-FETCH] Página de login detectada, redirecionando...');
+          redirectingToLogin = true;
           window.location.href = '/login';
           return null;
         }
@@ -88,10 +117,13 @@ window.AppModules.Utils = (function() {
         console.log(`🔄 [DEBUG-FETCH] Resposta JSON recebida: ${responseText.substring(0, 100)}...`);
         
         // Verificar se a resposta começa com caracteres estranhos (como 'a<!DOCTYPE')
-        if (responseText.trim().startsWith('a<!DOCTYPE') || 
-            responseText.trim().startsWith('<!DOCTYPE') || 
-            responseText.trim().startsWith('<html>')) {
-          console.log('🔄 [DEBUG-FETCH] Resposta HTML detectada em vez de JSON, redirecionando para login...');
+        // e contém elementos de página de login
+        if ((responseText.trim().startsWith('a<!DOCTYPE') || 
+             responseText.trim().startsWith('<!DOCTYPE') || 
+             responseText.trim().startsWith('<html>')) && 
+            (responseText.includes('login') || responseText.includes('Login'))) {
+          console.log('🔄 [DEBUG-FETCH] Página de login detectada em vez de JSON, redirecionando...');
+          redirectingToLogin = true;
           window.location.href = '/login';
           return null;
         }
@@ -102,9 +134,21 @@ window.AppModules.Utils = (function() {
         return jsonData;
       } catch (parseError) {
         console.error(`❌ [DEBUG-FETCH] Erro ao fazer parse do JSON: ${parseError.message}`);
-        console.log('🔄 [DEBUG-FETCH] Redirecionando para login devido a erro de parsing...');
-        window.location.href = '/login';
-        return null;
+        
+        // Só redirecionar para login se o erro for de parsing JSON e a resposta parecer HTML de login
+        if (parseError.message.includes('Unexpected token') && 
+            (parseError.message.includes('<!DOCTYPE') || 
+             parseError.message.includes('<html>') || 
+             parseError.message.includes('login') || 
+             parseError.message.includes('Login'))) {
+          console.log('🔄 [DEBUG-FETCH] Erro de parsing com HTML de login detectado, redirecionando...');
+          redirectingToLogin = true;
+          window.location.href = '/login';
+          return null;
+        }
+        
+        // Caso contrário, lançar o erro normalmente
+        throw parseError;
       }
       
     } catch (error) {
@@ -115,13 +159,15 @@ window.AppModules.Utils = (function() {
         throw error;
       }
       
-      // Se o erro menciona sessão expirada ou erro de parsing JSON, redirecionar para login
+      // Se o erro menciona sessão expirada ou contém elementos de página de login, redirecionar
       if (error.message.includes('Sessão expirada') || 
-          error.message.includes('Unexpected token') || 
-          error.message.includes('<!DOCTYPE') || 
-          error.message.includes('<html>') ||
-          error.message.includes('a<!DOCTYPE')) {
-        console.log('🔄 [DEBUG-FETCH] Erro de parsing JSON ou HTML detectado, redirecionando para login...');
+          (error.message.includes('Unexpected token') && 
+           (error.message.includes('<!DOCTYPE') || 
+            error.message.includes('<html>')) && 
+           (error.message.includes('login') || 
+            error.message.includes('Login')))) {
+        console.log('🔄 [DEBUG-FETCH] Erro com página de login detectado, redirecionando...');
+        redirectingToLogin = true;
         window.location.href = '/login';
         return null;
       }
