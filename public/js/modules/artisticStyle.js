@@ -671,7 +671,10 @@ window.AppModules.ArtisticStyle = (function() {
   // Alternar seção artística
   function toggleArtisticSection(show) {
     const artisticStyleContainer = document.getElementById('artistic-style-container');
-    if (!artisticStyleContainer) return;
+    if (!artisticStyleContainer) {
+      console.log('Elemento artistic-style-container não encontrado');
+      return;
+    }
     
     if (show) {
       artisticStyleContainer.style.display = 'block';

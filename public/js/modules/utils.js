@@ -8,6 +8,8 @@ window.AppModules.Utils = (function() {
   // ===== FUNÇÃO PARA REQUISIÇÕES SEGURAS =====
   async function safeFetch(url, options = {}) {
     try {
+      console.log(`🔄 [DEBUG-FETCH] Iniciando requisição para: ${url}`);
+      
       // Verificar se é uma rota de planos de ação (sem verificação de auth)
       const isActionPlanRoute = url.includes('/api/planos-acao');
       
@@ -30,6 +32,8 @@ window.AppModules.Utils = (function() {
         headers
       });
       
+      console.log(`🔄 [DEBUG-FETCH] Resposta recebida: ${url} - Status: ${response.status}`);
+      
       // Para rotas de planos de ação, não verificar autenticação
       if (isActionPlanRoute) {
         if (!response.ok) {
@@ -41,12 +45,13 @@ window.AppModules.Utils = (function() {
       
       // Verificar o tipo de conteúdo da resposta (apenas para outras rotas)
       const contentType = response.headers.get('content-type') || '';
+      console.log(`🔄 [DEBUG-FETCH] Content-Type: ${contentType}`);
       
       // Se a resposta não for JSON, pode ser um redirect de autenticação
       if (!contentType.includes('application/json')) {
         // Verificar se é um redirect de autenticação
         if (response.status === 302 || response.status === 401) {
-          console.log('🔄 Redirecionamento de autenticação detectado, redirecionando para login...');
+          console.log('🔄 [DEBUG-FETCH] Redirecionamento de autenticação detectado, redirecionando para login...');
           window.location.href = '/login';
           return null;
         }
@@ -56,7 +61,10 @@ window.AppModules.Utils = (function() {
         
         // Se a resposta contém HTML (provavelmente página de erro)
         if (responseText.includes('<!DOCTYPE') || responseText.includes('<html>')) {
-          throw new Error('Sessão expirada. Redirecionando para login...');
+          console.log('🔄 [DEBUG-FETCH] Resposta HTML detectada, sessão pode ter expirado');
+          console.log('🔄 [DEBUG-FETCH] Redirecionando para login...');
+          window.location.href = '/login';
+          return null;
         }
         
         // Caso contrário, usar o texto como mensagem de erro
@@ -69,17 +77,32 @@ window.AppModules.Utils = (function() {
         throw new Error(errorData.error || errorData.message || `Erro HTTP ${response.status}`);
       }
       
-      return await response.json();
+      // Tentar fazer o parse do JSON com tratamento de erro melhorado
+      try {
+        const jsonData = await response.json();
+        console.log(`✅ [DEBUG-FETCH] Dados JSON recebidos com sucesso: ${url}`);
+        return jsonData;
+      } catch (parseError) {
+        console.error(`❌ [DEBUG-FETCH] Erro ao fazer parse do JSON: ${parseError.message}`);
+        console.log('🔄 [DEBUG-FETCH] Redirecionando para login devido a erro de parsing...');
+        window.location.href = '/login';
+        return null;
+      }
       
     } catch (error) {
+      console.error(`❌ [DEBUG-FETCH] Erro na requisição para ${url}:`, error.message);
+      
       // Para rotas de planos de ação, não redirecionar para login
       if (url.includes('/api/planos-acao')) {
         throw error;
       }
       
-      // Se o erro menciona sessão expirada, redirecionar para login
-      if (error.message.includes('Sessão expirada') || error.message.includes('Unexpected token')) {
-        console.log('🔄 Erro de parsing JSON detectado, redirecionando para login...');
+      // Se o erro menciona sessão expirada ou erro de parsing JSON, redirecionar para login
+      if (error.message.includes('Sessão expirada') || 
+          error.message.includes('Unexpected token') || 
+          error.message.includes('<!DOCTYPE') || 
+          error.message.includes('<html>')) {
+        console.log('🔄 [DEBUG-FETCH] Erro de parsing JSON ou HTML detectado, redirecionando para login...');
         window.location.href = '/login';
         return null;
       }
