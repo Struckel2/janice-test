@@ -258,27 +258,62 @@ const getPublicIdFromUrl = (url) => {
   // Formato típico para imagens: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/pasta/nome_arquivo.jpg
   // Formato típico para PDFs: https://res.cloudinary.com/cloud_name/raw/upload/v1234567890/pasta/nome_arquivo.pdf
   try {
-    // Regex melhorada para capturar tanto arquivos raw quanto imagens
-    // Captura o caminho após o número de versão, sem a extensão
-    const regex = /\/v\d+\/(.+?)(?:\.\w+)?$/;
-    const match = url.match(regex);
-    
-    if (match && match[1]) {
-      console.log(`✅ [CLOUDINARY] Public ID extraído: ${match[1]}`);
-      return match[1];
-    } else {
-      // Tentar regex alternativa para URLs sem versão
-      const altRegex = /\/upload\/(.+?)(?:\.\w+)?$/;
-      const altMatch = url.match(altRegex);
-      
-      if (altMatch && altMatch[1]) {
-        console.log(`✅ [CLOUDINARY] Public ID extraído (formato alternativo): ${altMatch[1]}`);
-        return altMatch[1];
-      }
-      
-      console.log(`❌ [CLOUDINARY] Não foi possível extrair public_id da URL`);
+    // Verificar se a URL é do Cloudinary
+    if (!url.includes('cloudinary.com')) {
+      console.log(`❌ [CLOUDINARY] URL não é do Cloudinary: ${url}`);
       return null;
     }
+    
+    // Remover parâmetros de query se existirem
+    const urlWithoutParams = url.split('?')[0];
+    
+    // Estratégia 1: Regex para URLs com número de versão (formato padrão)
+    const versionRegex = /\/v\d+\/(.+?)(?:\.\w+)?$/;
+    const versionMatch = urlWithoutParams.match(versionRegex);
+    
+    if (versionMatch && versionMatch[1]) {
+      console.log(`✅ [CLOUDINARY] Public ID extraído (formato com versão): ${versionMatch[1]}`);
+      return versionMatch[1];
+    }
+    
+    // Estratégia 2: Regex para URLs sem número de versão
+    const uploadRegex = /\/upload\/(.+?)(?:\.\w+)?$/;
+    const uploadMatch = urlWithoutParams.match(uploadRegex);
+    
+    if (uploadMatch && uploadMatch[1]) {
+      console.log(`✅ [CLOUDINARY] Public ID extraído (formato sem versão): ${uploadMatch[1]}`);
+      return uploadMatch[1];
+    }
+    
+    // Estratégia 3: Regex para URLs de tipo raw (PDFs e outros arquivos)
+    const rawRegex = /\/raw\/(?:upload\/)?(?:v\d+\/)?(.+?)(?:\.\w+)?$/;
+    const rawMatch = urlWithoutParams.match(rawRegex);
+    
+    if (rawMatch && rawMatch[1]) {
+      console.log(`✅ [CLOUDINARY] Public ID extraído (formato raw): ${rawMatch[1]}`);
+      return rawMatch[1];
+    }
+    
+    // Estratégia 4: Extrair a parte após a última barra e antes da extensão
+    const pathParts = urlWithoutParams.split('/');
+    const lastPart = pathParts[pathParts.length - 1];
+    const fileNameWithoutExt = lastPart.split('.')[0];
+    
+    if (fileNameWithoutExt) {
+      // Verificar se o último segmento parece ser um nome de arquivo válido
+      if (fileNameWithoutExt.length > 0 && !fileNameWithoutExt.includes('?')) {
+        // Reconstruir o public_id incluindo a pasta
+        const folderPath = pathParts[pathParts.length - 2] || '';
+        const publicId = folderPath && folderPath !== 'upload' && folderPath !== 'raw' ? 
+                         `${folderPath}/${fileNameWithoutExt}` : fileNameWithoutExt;
+        
+        console.log(`✅ [CLOUDINARY] Public ID extraído (último recurso): ${publicId}`);
+        return publicId;
+      }
+    }
+    
+    console.log(`❌ [CLOUDINARY] Não foi possível extrair public_id da URL: ${url}`);
+    return null;
   } catch (error) {
     console.error('❌ [CLOUDINARY] Erro ao extrair public_id:', error);
     return null;

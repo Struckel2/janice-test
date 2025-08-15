@@ -2599,6 +2599,31 @@ footer {
   margin-bottom: 25px;
 }
 
+/* Estilos para preview de PDF */
+.pdf-preview-container {
+  margin-top: 25px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  background: #f8f8f8;
+}
+
+.pdf-preview-container h4 {
+  padding: 15px;
+  margin: 0;
+  background: #f0f0f0;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--primary-color);
+  font-size: 1rem;
+}
+
+.pdf-preview-frame {
+  width: 100%;
+  height: 500px;
+  border: none;
+  display: block;
+}
+
 .action-plan-content .markdown-content {
   line-height: 1.8;
 }

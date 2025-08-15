@@ -1365,12 +1365,20 @@ ${currentAnalysisData.analysis}`;
   // Visualizar uma análise específica
   async function viewAnalysis(analysisId) {
     try {
+      console.log(`🔍 [ANALISE-VIEW] Carregando análise: ${analysisId}`);
+      
       const response = await fetch(`/api/analises/${analysisId}`);
       if (!response.ok) {
         throw new Error('Erro ao carregar análise');
       }
       
       const analysis = await response.json();
+      console.log(`✅ [ANALISE-VIEW] Análise carregada:`, {
+        id: analysis._id,
+        cnpj: analysis.cnpj,
+        dataCriacao: analysis.dataCriacao,
+        hasPdf: !!analysis.pdfUrl
+      });
       
       // Preencher dados da análise
       companyNameEl.textContent = analysis.cliente ? analysis.cliente.nome : 'Empresa';
@@ -1379,6 +1387,12 @@ ${currentAnalysisData.analysis}`;
       
       // Configurar PDF
       if (analysis.pdfUrl) {
+        console.log(`🔍 [ANALISE-VIEW] PDF URL encontrada: ${analysis.pdfUrl}`);
+        
+        // Usar a rota proxy para visualização do PDF
+        const pdfProxyUrl = `/api/analises/pdf/${analysis._id}`;
+        console.log(`🔍 [ANALISE-VIEW] URL proxy para PDF: ${pdfProxyUrl}`);
+        
         pdfViewer.innerHTML = `
           <div class="pdf-ready">
             <div class="pdf-icon">
@@ -1386,7 +1400,7 @@ ${currentAnalysisData.analysis}`;
             </div>
             <h3>Relatório PDF Pronto</h3>
             <p>Seu relatório estratégico foi gerado com sucesso e está pronto para visualização.</p>
-            <button class="open-pdf-btn" onclick="window.open('/api/analises/pdf/${analysis._id}', '_blank')">
+            <button class="open-pdf-btn" onclick="window.open('${pdfProxyUrl}', '_blank')">
               <i class="fas fa-external-link-alt"></i> Abrir Relatório PDF
             </button>
             <div class="pdf-info">
@@ -1395,13 +1409,25 @@ ${currentAnalysisData.analysis}`;
           </div>
         `;
         
+        // Adicionar iframe para preview embutido (como nos planos de ação)
+        pdfViewer.innerHTML += `
+          <div class="pdf-preview-container">
+            <h4>Pré-visualização do PDF</h4>
+            <iframe src="${pdfProxyUrl}" class="pdf-preview-frame"></iframe>
+          </div>
+        `;
+        
         exportPdfButton.disabled = false;
         exportPdfButton.innerHTML = '<i class="fas fa-file-pdf"></i> Abrir Relatório PDF';
+        exportPdfButton.onclick = () => window.open(pdfProxyUrl, '_blank');
+        
         currentAnalysisData = {
-          pdfUrl: `/api/analises/pdf/${analysis._id}`,
+          pdfUrl: pdfProxyUrl,
           analysis: analysis.conteudo
         };
       } else {
+        console.log(`⚠️ [ANALISE-VIEW] PDF não disponível para esta análise`);
+        
         pdfViewer.innerHTML = `
           <div class="pdf-error">
             <i class="fas fa-exclamation-triangle"></i>
@@ -1422,8 +1448,10 @@ ${currentAnalysisData.analysis}`;
       // Scroll automático para a seção de resultados
       scrollToElement('result-container');
       
+      console.log(`✅ [ANALISE-VIEW] Visualização da análise concluída`);
+      
     } catch (error) {
-      console.error('Erro ao visualizar análise:', error);
+      console.error('❌ [ANALISE-VIEW] Erro ao visualizar análise:', error);
       alert('Não foi possível carregar a análise. Tente novamente.');
     }
   }

@@ -373,34 +373,71 @@ router.get('/cnpj/:cnpj', async (req, res) => {
 // Servir PDF via proxy com headers corretos para visualização
 router.get('/pdf/:id', validateObjectId, async (req, res) => {
   try {
-    console.log(`Solicitação de PDF para análise ID: ${req.params.id}`);
+    console.log(`🔍 [ANALISE-PDF] Solicitação de PDF para análise ID: ${req.params.id}`);
     
     // Buscar a análise no banco de dados
     const analise = await Analise.findById(req.params.id);
     
     if (!analise) {
-      console.log('Análise não encontrada');
+      console.log('❌ [ANALISE-PDF] Análise não encontrada');
       return res.status(404).json({ error: 'Análise não encontrada' });
     }
     
+    console.log(`✅ [ANALISE-PDF] Análise encontrada: ${analise._id}`);
+    console.log(`📊 [ANALISE-PDF] CNPJ: ${analise.cnpj}`);
+    console.log(`📊 [ANALISE-PDF] Data de criação: ${analise.dataCriacao}`);
+    
     if (!analise.pdfUrl) {
-      console.log('PDF não disponível para esta análise');
+      console.log('❌ [ANALISE-PDF] PDF não disponível para esta análise');
       return res.status(404).json({ error: 'PDF não disponível para esta análise' });
     }
     
-    console.log(`Buscando PDF do Cloudinary: ${analise.pdfUrl}`);
+    console.log(`🔍 [ANALISE-PDF] URL do PDF: ${analise.pdfUrl}`);
+    
+    // Verificar se a URL é válida
+    if (!analise.pdfUrl.startsWith('http')) {
+      console.error(`❌ [ANALISE-PDF] URL do PDF inválida: ${analise.pdfUrl}`);
+      return res.status(400).json({ error: 'URL do PDF inválida' });
+    }
+    
+    console.log(`🔄 [ANALISE-PDF] Buscando PDF do Cloudinary: ${analise.pdfUrl}`);
     
     // Buscar o PDF do Cloudinary
     const response = await fetch(analise.pdfUrl);
     
+    console.log(`📊 [ANALISE-PDF] Status da resposta: ${response.status} ${response.statusText}`);
+    console.log(`📊 [ANALISE-PDF] Headers da resposta:`, response.headers);
+    
     if (!response.ok) {
-      console.error(`Erro ao buscar PDF do Cloudinary: ${response.status} ${response.statusText}`);
-      return res.status(502).json({ error: 'Erro ao carregar PDF do servidor de arquivos' });
+      console.error(`❌ [ANALISE-PDF] Erro ao buscar PDF do Cloudinary: ${response.status} ${response.statusText}`);
+      
+      // Tentar obter mais detalhes do erro
+      let errorBody = '';
+      try {
+        errorBody = await response.text();
+        console.error(`❌ [ANALISE-PDF] Corpo da resposta de erro: ${errorBody}`);
+      } catch (textError) {
+        console.error(`❌ [ANALISE-PDF] Não foi possível ler o corpo da resposta: ${textError.message}`);
+      }
+      
+      return res.status(502).json({ 
+        error: 'Erro ao carregar PDF do servidor de arquivos',
+        details: `Status: ${response.status}, Mensagem: ${response.statusText}`,
+        body: errorBody
+      });
+    }
+    
+    // Verificar o tipo de conteúdo
+    const contentType = response.headers.get('content-type');
+    console.log(`📊 [ANALISE-PDF] Tipo de conteúdo: ${contentType}`);
+    
+    if (!contentType || !contentType.includes('application/pdf')) {
+      console.warn(`⚠️ [ANALISE-PDF] Tipo de conteúdo inesperado: ${contentType}`);
     }
     
     // Obter o buffer do PDF
     const pdfBuffer = Buffer.from(await response.arrayBuffer());
-    console.log(`PDF carregado com sucesso (${pdfBuffer.length} bytes)`);
+    console.log(`✅ [ANALISE-PDF] PDF carregado com sucesso (${pdfBuffer.length} bytes)`);
     
     // Configurar headers para visualização inline do PDF
     res.set({
@@ -413,12 +450,86 @@ router.get('/pdf/:id', validateObjectId, async (req, res) => {
     
     // Enviar o PDF
     res.send(pdfBuffer);
-    console.log('PDF enviado com sucesso');
+    console.log('✅ [ANALISE-PDF] PDF enviado com sucesso');
     
   } catch (error) {
-    console.error('Erro ao servir PDF:', error);
+    console.error('❌ [ANALISE-PDF] Erro ao servir PDF:', error);
+    console.error('❌ [ANALISE-PDF] Stack trace:', error.stack);
     res.status(500).json({ 
       error: 'Erro interno do servidor ao carregar PDF',
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+/**
+ * GET /api/analises/teste-pdf/:id
+ * Endpoint de teste para verificar se o PDF de uma análise é acessível
+ */
+router.get('/teste-pdf/:id', validateObjectId, async (req, res) => {
+  try {
+    console.log(`🔍 [ANALISE-TESTE] Verificando PDF para análise ID: ${req.params.id}`);
+    
+    // Buscar a análise no banco de dados
+    const analise = await Analise.findById(req.params.id);
+    
+    if (!analise) {
+      console.log('❌ [ANALISE-TESTE] Análise não encontrada');
+      return res.status(404).json({ error: 'Análise não encontrada' });
+    }
+    
+    console.log(`✅ [ANALISE-TESTE] Análise encontrada: ${analise._id}`);
+    console.log(`📊 [ANALISE-TESTE] CNPJ: ${analise.cnpj}`);
+    console.log(`📊 [ANALISE-TESTE] Data de criação: ${analise.dataCriacao}`);
+    
+    if (!analise.pdfUrl) {
+      console.log('❌ [ANALISE-TESTE] PDF não disponível para esta análise');
+      return res.status(404).json({ error: 'PDF não disponível para esta análise' });
+    }
+    
+    console.log(`🔍 [ANALISE-TESTE] URL do PDF: ${analise.pdfUrl}`);
+    
+    // Verificar se a URL é válida
+    if (!analise.pdfUrl.startsWith('http')) {
+      console.error(`❌ [ANALISE-TESTE] URL do PDF inválida: ${analise.pdfUrl}`);
+      return res.status(400).json({ error: 'URL do PDF inválida' });
+    }
+    
+    // Verificar se a URL é acessível
+    try {
+      console.log(`🔄 [ANALISE-TESTE] Verificando acesso à URL: ${analise.pdfUrl}`);
+      const response = await fetch(analise.pdfUrl, { method: 'HEAD' });
+      
+      console.log(`📊 [ANALISE-TESTE] Status da resposta: ${response.status} ${response.statusText}`);
+      console.log(`📊 [ANALISE-TESTE] Headers da resposta:`, response.headers);
+      
+      const result = {
+        url: analise.pdfUrl,
+        accessible: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        contentType: response.headers.get('content-type'),
+        contentLength: response.headers.get('content-length'),
+        folder: analise.pdfUrl.includes('/janice/analises/') ? 'janice/analises' : 
+                analise.pdfUrl.includes('/janice/planos-acao/') ? 'janice/planos-acao' : 'desconhecida'
+      };
+      
+      return res.json(result);
+      
+    } catch (error) {
+      console.error(`❌ [ANALISE-TESTE] Erro ao verificar acesso à URL: ${error.message}`);
+      return res.status(500).json({ 
+        error: 'Erro ao verificar acesso à URL do PDF',
+        message: error.message,
+        url: analise.pdfUrl
+      });
+    }
+    
+  } catch (error) {
+    console.error('❌ [ANALISE-TESTE] Erro ao testar PDF:', error);
+    res.status(500).json({ 
+      error: 'Erro interno do servidor ao testar PDF',
       message: error.message
     });
   }
