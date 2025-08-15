@@ -9,20 +9,13 @@ const isAuthenticated = (req, res, next) => {
   }
   
   console.log(`❌ [AUTH-FAIL] Usuário não autenticado`);
-  console.log(`🔍 [AUTH-HEADERS] xhr: ${req.xhr}, accept: ${req.headers.accept}, x-requested-with: ${req.headers['x-requested-with']}`);
+  console.log(`🔍 [AUTH-HEADERS] xhr: ${req.xhr}, accept: ${req.headers.accept}`);
   
-  // Melhorar a detecção de requisições AJAX/API
-  const isAjaxRequest = 
-    req.xhr || 
-    (req.headers.accept && req.headers.accept.indexOf('json') > -1) ||
-    req.headers['x-requested-with'] === 'XMLHttpRequest' ||
-    req.path.startsWith('/api/');
-  
-  if (isAjaxRequest) {
-    console.log(`📤 [AUTH-RESPONSE] Retornando JSON 401 para requisição AJAX/API`);
+  // Se é uma requisição AJAX/API, retornar JSON
+  if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('json') > -1)) {
+    console.log(`📤 [AUTH-RESPONSE] Retornando JSON 401`);
     return res.status(401).json({ 
       error: 'Não autenticado',
-      message: 'Sessão expirada ou usuário não autenticado',
       redirect: '/login'
     });
   }
@@ -36,25 +29,16 @@ const isAuthenticated = (req, res, next) => {
 const isActive = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ 
-      error: 'Usuário não encontrado',
-      message: 'Sessão expirada ou usuário não autenticado',
-      redirect: '/login'
+      error: 'Usuário não encontrado' 
     });
   }
   
   if (!req.user.isAtivo()) {
-    // Melhorar a detecção de requisições AJAX/API
-    const isAjaxRequest = 
-      req.xhr || 
-      (req.headers.accept && req.headers.accept.indexOf('json') > -1) ||
-      req.headers['x-requested-with'] === 'XMLHttpRequest' ||
-      req.path.startsWith('/api/');
-    
-    if (isAjaxRequest) {
+    // Se é uma requisição AJAX/API, retornar JSON
+    if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('json') > -1)) {
       return res.status(403).json({ 
         error: 'Usuário não ativo',
-        message: 'Sua conta está pendente de aprovação.',
-        redirect: '/pending'
+        message: 'Sua conta está pendente de aprovação.'
       });
     }
     

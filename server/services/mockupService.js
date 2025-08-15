@@ -398,74 +398,30 @@ class MockupService {
   }
 
   /**
-   * Deleta mockup (preservando imagens da galeria)
+   * Deleta mockup (e remove do Cloudinary)
    */
   async deletarMockup(mockupId) {
     try {
-      console.log('🗑️ [MOCKUP-DELETE] ===== INICIANDO EXCLUSÃO DE MOCKUP =====');
-      console.log('🗑️ [MOCKUP-DELETE] Mockup ID:', mockupId);
-      
       const mockup = await Mockup.findById(mockupId);
       if (!mockup) {
         throw new Error('Mockup não encontrado');
       }
       
-      console.log('🗑️ [MOCKUP-DELETE] Mockup encontrado:', {
-        titulo: mockup.titulo,
-        status: mockup.status,
-        imagemUrl: mockup.imagemUrl ? 'presente' : 'ausente',
-        imagensSalvas: mockup.metadados?.imagensSalvas?.length || 0
-      });
-      
-      // 🚀 CORREÇÃO: Deletar APENAS a imagem principal, preservar galeria
+      // Extrair public_id do Cloudinary da URL
       if (mockup.imagemUrl) {
         const publicId = this._extrairPublicIdCloudinary(mockup.imagemUrl);
         if (publicId) {
-          console.log('🗑️ [MOCKUP-DELETE] Removendo imagem principal do Cloudinary:', publicId);
           await cloudinary.uploader.destroy(publicId);
-          console.log('✅ [MOCKUP-DELETE] Imagem principal removida do Cloudinary');
-        } else {
-          console.log('⚠️ [MOCKUP-DELETE] Não foi possível extrair public_id da imagem principal');
+          console.log('🗑️ Imagem removida do Cloudinary');
         }
-      } else {
-        console.log('ℹ️ [MOCKUP-DELETE] Mockup não possui imagem principal para deletar');
       }
       
-      // 🚀 PRESERVAR IMAGENS DA GALERIA
-      const imagensSalvas = mockup.metadados?.imagensSalvas || [];
-      if (imagensSalvas.length > 0) {
-        console.log(`🖼️ [MOCKUP-DELETE] PRESERVANDO ${imagensSalvas.length} imagens da galeria`);
-        console.log('🖼️ [MOCKUP-DELETE] Imagens preservadas:', imagensSalvas.map(img => ({
-          url: img.url,
-          seed: img.seed,
-          dataSalvamento: img.dataSalvamento
-        })));
-        
-        // As imagens da galeria NÃO são deletadas do Cloudinary
-        // Elas permanecem disponíveis na galeria do cliente
-        console.log('✅ [MOCKUP-DELETE] Imagens da galeria preservadas com sucesso');
-      } else {
-        console.log('ℹ️ [MOCKUP-DELETE] Nenhuma imagem da galeria para preservar');
-      }
-      
-      // Deletar apenas o registro do mockup do banco de dados
       await Mockup.findByIdAndDelete(mockupId);
-      console.log('✅ [MOCKUP-DELETE] Registro do mockup removido do banco de dados');
+      console.log('✅ Mockup deletado com sucesso');
       
-      console.log('🎉 [MOCKUP-DELETE] ===== EXCLUSÃO CONCLUÍDA COM SUCESSO =====');
-      console.log('🎉 [MOCKUP-DELETE] Resumo:');
-      console.log('🎉 [MOCKUP-DELETE] - Mockup deletado: ✅');
-      console.log('🎉 [MOCKUP-DELETE] - Imagem principal removida: ✅');
-      console.log(`🎉 [MOCKUP-DELETE] - Imagens da galeria preservadas: ${imagensSalvas.length}`);
-      
-      return {
-        success: true,
-        imagensGaleriaPreservadas: imagensSalvas.length,
-        message: `Mockup deletado com sucesso. ${imagensSalvas.length} imagens preservadas na galeria.`
-      };
-      
+      return true;
     } catch (error) {
-      console.error('❌ [MOCKUP-DELETE] Erro ao deletar mockup:', error);
+      console.error('❌ Erro ao deletar mockup:', error);
       throw error;
     }
   }

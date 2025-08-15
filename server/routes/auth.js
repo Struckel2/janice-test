@@ -64,19 +64,7 @@ router.get('/user', requireAuth, addUserInfo, (req, res) => {
 
 // Rota para verificar status de autenticação (sem middleware requireAuth)
 router.get('/status', (req, res) => {
-  console.log(`🔐 [AUTH-STATUS] Verificando status para ${req.method} ${req.path}`);
-  console.log(`🔐 [AUTH-STATUS] Autenticado: ${req.isAuthenticated()}`);
-  console.log(`🔍 [AUTH-STATUS-HEADERS] xhr: ${req.xhr}, accept: ${req.headers.accept}, x-requested-with: ${req.headers['x-requested-with']}`);
-  
-  // Verificar se é uma requisição AJAX
-  const isAjaxRequest = 
-    req.xhr || 
-    (req.headers.accept && req.headers.accept.indexOf('json') > -1) ||
-    req.headers['x-requested-with'] === 'XMLHttpRequest';
-  
   if (req.isAuthenticated() && req.user) {
-    console.log(`✅ [AUTH-STATUS] Usuário autenticado: ${req.user.email}`);
-    
     res.json({
       authenticated: true,
       user: {
@@ -90,20 +78,6 @@ router.get('/status', (req, res) => {
       }
     });
   } else {
-    console.log(`❌ [AUTH-STATUS] Usuário não autenticado`);
-    
-    // Se for AJAX, retornar JSON com status 401
-    if (isAjaxRequest) {
-      return res.status(401).json({
-        authenticated: false,
-        error: 'Não autenticado',
-        message: 'Sessão expirada ou usuário não autenticado',
-        redirect: '/login',
-        user: null
-      });
-    }
-    
-    // Se não for AJAX, retornar JSON normal
     res.json({
       authenticated: false,
       user: null

@@ -103,79 +103,23 @@ app.get('/pending', (req, res) => {
 });
 
 // Rotas específicas da API (devem vir antes da rota geral /api)
-console.log('📋 [ROUTE-REGISTER] Registrando /api/clientes (com auth para sub-rotas)');
+console.log('📋 [ROUTE-REGISTER] Registrando /api/clientes (sem auth)');
+app.use('/api/clientes', clientesRoutes); // Sem autenticação por enquanto
 
-// Middleware para verificar se a requisição é AJAX
-const isAjaxRequest = (req, res, next) => {
-  req.isAjaxRequest = 
-    req.xhr || 
-    (req.headers.accept && req.headers.accept.indexOf('json') > -1) ||
-    req.headers['x-requested-with'] === 'XMLHttpRequest';
-  
-  console.log(`🔍 [AJAX-CHECK] Requisição para ${req.path} é AJAX: ${req.isAjaxRequest}`);
-  next();
-};
-
-// Middleware para extrair o ID do cliente
-const extractClientId = (req, res, next) => {
-  const clientId = req.params.clientId;
-  console.log(`🔍 [CLIENT-ID] Extraído ID do cliente: ${clientId}`);
-  req.clientId = clientId;
-  next();
-};
-
-// Aplicar middleware global para verificar se é AJAX
-app.use(isAjaxRequest);
-
-// Rota base de clientes sem autenticação para listar/buscar
-app.use('/api/clientes', clientesRoutes);
-
-// Middleware para sub-rotas de clientes
-app.use('/api/clientes/:clientId', extractClientId, requireAuth);
-
-// Sub-rotas específicas de clientes com autenticação
-app.get('/api/clientes/:clientId/analises', (req, res, next) => {
-  console.log(`📋 [ROUTE] GET /api/clientes/${req.params.clientId}/analises`);
-  // Redirecionar para a rota principal de análises
-  res.redirect(307, `/api/analises/cliente/${req.params.clientId}`);
-});
-
-app.get('/api/clientes/:clientId/transcricoes', (req, res, next) => {
-  console.log(`📋 [ROUTE] GET /api/clientes/${req.params.clientId}/transcricoes`);
-  // Redirecionar para a rota principal de transcrições
-  res.redirect(307, `/api/transcricoes/cliente/${req.params.clientId}`);
-});
-
-app.get('/api/clientes/:clientId/planos-acao', (req, res, next) => {
-  console.log(`📋 [ROUTE] GET /api/clientes/${req.params.clientId}/planos-acao`);
-  // Redirecionar para a rota principal de planos de ação
-  res.redirect(307, `/api/planos-acao/${req.params.clientId}`);
-});
-
-app.get('/api/clientes/:clientId/mockups', (req, res, next) => {
-  console.log(`📋 [ROUTE] GET /api/clientes/${req.params.clientId}/mockups`);
-  // Redirecionar para a rota principal de mockups
-  res.redirect(307, `/api/mockups/cliente/${req.params.clientId}`);
-});
-
-// Rotas principais da API
 console.log('📋 [ROUTE-REGISTER] Registrando /api/analises (com auth)');
 app.use('/api/analises', requireAuth, analisesRoutes);
 
 console.log('📋 [ROUTE-REGISTER] Registrando /api/transcricoes (com auth)');
 app.use('/api/transcricoes', requireAuth, transcricoesRoutes);
 
-console.log('📋 [ROUTE-REGISTER] Registrando /api/planos-acao (com auth)');
-app.use('/api/planos-acao', requireAuth, planosAcaoRoutes);
+console.log('📋 [ROUTE-REGISTER] Registrando /api/planos-acao (SEM auth - temporário)');
+app.use('/api/planos-acao', planosAcaoRoutes);
 
 console.log('📋 [ROUTE-REGISTER] Registrando /api/processos (com auth)');
 app.use('/api/processos', requireAuth, require('./routes/processos'));
 
 console.log('📋 [ROUTE-REGISTER] Registrando /api/mockups (com auth)');
 app.use('/api/mockups', requireAuth, mockupRoutes);
-
-console.log('📋 [ROUTE-REGISTER] Registrando /api/artistic-style (com auth)');
-app.use('/api/artistic-style', requireAuth, require('./routes/artisticStyle'));
 
 // Rota geral da API (deve vir por último)
 console.log('📋 [ROUTE-REGISTER] Registrando /api (geral - por último)');
