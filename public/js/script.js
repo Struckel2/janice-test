@@ -1385,7 +1385,23 @@ ${currentAnalysisData.analysis}`;
       resultCnpjEl.textContent = formatCnpj(analysis.cnpj);
       resultDateEl.textContent = new Date(analysis.dataCriacao).toLocaleString('pt-BR');
       
-      // Configurar PDF
+      // Renderizar conteúdo da análise em HTML formatado
+      const formattedContent = formatMarkdownForAnalysis(analysis.conteudo);
+      
+      // Criar container para o conteúdo formatado
+      const analysisContentContainer = document.createElement('div');
+      analysisContentContainer.className = 'analysis-content-container';
+      analysisContentContainer.innerHTML = formattedContent;
+      
+      // Limpar conteúdo anterior e adicionar o novo conteúdo formatado
+      pdfViewer.innerHTML = '';
+      pdfViewer.appendChild(analysisContentContainer);
+      
+      // Adicionar botões de ação abaixo do conteúdo
+      const actionButtons = document.createElement('div');
+      actionButtons.className = 'analysis-action-buttons';
+      
+      // Configurar botão de PDF se disponível
       if (analysis.pdfUrl) {
         console.log(`🔍 [ANALISE-VIEW] PDF URL encontrada: ${analysis.pdfUrl}`);
         
@@ -1393,28 +1409,10 @@ ${currentAnalysisData.analysis}`;
         const pdfProxyUrl = `/api/analises/pdf/${analysis._id}`;
         console.log(`🔍 [ANALISE-VIEW] URL proxy para PDF: ${pdfProxyUrl}`);
         
-        pdfViewer.innerHTML = `
-          <div class="pdf-ready">
-            <div class="pdf-icon">
-              <i class="fas fa-file-pdf"></i>
-            </div>
-            <h3>Relatório PDF Pronto</h3>
-            <p>Seu relatório estratégico foi gerado com sucesso e está pronto para visualização.</p>
-            <button class="open-pdf-btn" onclick="window.open('${pdfProxyUrl}', '_blank')">
-              <i class="fas fa-external-link-alt"></i> Abrir Relatório PDF
-            </button>
-            <div class="pdf-info">
-              <small><i class="fas fa-info-circle"></i> O PDF será aberto em uma nova aba do navegador</small>
-            </div>
-          </div>
-        `;
-        
-        // Adicionar iframe para preview embutido (como nos planos de ação)
-        pdfViewer.innerHTML += `
-          <div class="pdf-preview-container">
-            <h4>Pré-visualização do PDF</h4>
-            <iframe src="${pdfProxyUrl}" class="pdf-preview-frame"></iframe>
-          </div>
+        actionButtons.innerHTML = `
+          <button class="open-pdf-btn" onclick="window.open('${pdfProxyUrl}', '_blank')">
+            <i class="fas fa-file-pdf"></i> Abrir Relatório PDF
+          </button>
         `;
         
         exportPdfButton.disabled = false;
@@ -1428,19 +1426,15 @@ ${currentAnalysisData.analysis}`;
       } else {
         console.log(`⚠️ [ANALISE-VIEW] PDF não disponível para esta análise`);
         
-        pdfViewer.innerHTML = `
-          <div class="pdf-error">
-            <i class="fas fa-exclamation-triangle"></i>
-            <p>PDF não disponível. Você ainda pode copiar o relatório usando o botão abaixo.</p>
-          </div>
-        `;
-        
         exportPdfButton.disabled = true;
         exportPdfButton.innerHTML = '<i class="fas fa-file-pdf"></i> PDF Indisponível';
         currentAnalysisData = {
           analysis: analysis.conteudo
         };
       }
+      
+      // Adicionar botões de ação ao container
+      pdfViewer.appendChild(actionButtons);
       
       // Mostrar apenas a seção de resultados (estado exclusivo)
       showOnlySection('result-container');
@@ -3448,6 +3442,19 @@ ${currentAnalysisData.analysis}`;
     formatted = formatted.replace(/(<\/ul>)<\/p>/g, '$1');
     formatted = formatted.replace(/<p>(<table>)/g, '$1');
     formatted = formatted.replace(/(<\/table>)<\/p>/g, '$1');
+    
+    return formatted;
+  }
+  
+  // Formatar markdown específico para análises de mercado
+  function formatMarkdownForAnalysis(text) {
+    if (!text) return '';
+    
+    // Usar a mesma lógica de formatação dos planos de ação
+    let formatted = formatMarkdownForActionPlan(text);
+    
+    // Adicionar classe específica para estilização
+    formatted = `<div class="analysis-content">${formatted}</div>`;
     
     return formatted;
   }
