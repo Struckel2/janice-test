@@ -276,3 +276,251 @@ window.AppModules.ActiveProcesses = (function() {
       const clientName = process.cliente ? process.cliente.nome : 'Cliente';
       const timeAgo = this.getTimeAgo(process.criadoEm);
       
+      const progressPercent = process.progresso || 0;
+      const progressStyle = `width: ${progressPercent}%`;
+      
+      return `
+        <div class="process-item ${statusClass} ${typeClass}" data-id="${process.id}">
+          <div class="process-header">
+            <div class="process-type">
+              <i class="fas ${this.getProcessIcon(process.tipo)}"></i>
+              <span>${typeLabel}</span>
+            </div>
+            <div class="process-client">${clientName}</div>
+            <div class="process-time">${timeAgo}</div>
+          </div>
+          
+          <div class="process-content">
+            <div class="process-message">${process.mensagem || 'Processando...'}</div>
+            <div class="process-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" style="${progressStyle}"></div>
+              </div>
+              <div class="progress-text">${progressPercent}%</div>
+            </div>
+          </div>
+          
+          <div class="process-actions">
+            ${process.status === 'concluido' ? 
+              `<button class="view-result-btn" data-id="${process.id}" data-resource="${process.resourceId}" data-type="${process.tipo}">
+                <i class="fas fa-eye"></i> Ver Resultado
+              </button>` : ''
+            }
+            <button class="remove-process-btn" data-id="${process.id}">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+    
+    getProcessIcon(processType) {
+      switch (processType) {
+        case 'transcricao':
+          return 'fa-microphone';
+        case 'analise':
+          return 'fa-chart-line';
+        case 'plano-acao':
+          return 'fa-tasks';
+        case 'mockup':
+          return 'fa-image';
+        default:
+          return 'fa-cog';
+      }
+    }
+    
+    getTimeAgo(timestamp) {
+      if (!timestamp) return 'Agora';
+      
+      const now = new Date();
+      const date = new Date(timestamp);
+      const seconds = Math.floor((now - date) / 1000);
+      
+      if (seconds < 60) {
+        return 'Agora mesmo';
+      }
+      
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) {
+        return `${minutes} min atrás`;
+      }
+      
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) {
+        return `${hours}h atrás`;
+      }
+      
+      const days = Math.floor(hours / 24);
+      if (days < 30) {
+        return `${days}d atrás`;
+      }
+      
+      const months = Math.floor(days / 30);
+      if (months < 12) {
+        return `${months} meses atrás`;
+      }
+      
+      const years = Math.floor(months / 12);
+      return `${years} anos atrás`;
+    }
+    
+    addProcess(process) {
+      if (!process || !process.id) {
+        console.error('❌ [DEBUG-FRONTEND] Tentativa de adicionar processo inválido:', process);
+        return;
+      }
+      
+      console.log('🔍 [DEBUG-FRONTEND] Adicionando processo:', process);
+      
+      // Adicionar ao Map
+      this.processes.set(process.id, process);
+      
+      // Atualizar UI
+      this.updateUI();
+      
+      // Mostrar painel se estiver escondido
+      if (this.panel.classList.contains('hidden')) {
+        this.showPanel();
+      }
+    }
+    
+    removeProcess(processId) {
+      if (!processId) return;
+      
+      console.log('🔍 [DEBUG-FRONTEND] Removendo processo:', processId);
+      
+      // Remover do Map
+      this.processes.delete(processId);
+      
+      // Atualizar UI
+      this.updateUI();
+      
+      // Esconder painel se não houver mais processos
+      if (this.processes.size === 0) {
+        this.hidePanel();
+      }
+    }
+    
+    updateUI() {
+      // Atualizar contador de processos
+      if (this.processCount) {
+        this.processCount.textContent = this.processes.size;
+      }
+      
+      // Renderizar processos
+      this.renderProcesses();
+      
+      // Configurar eventos para os botões
+      this.setupProcessButtons();
+    }
+    
+    setupProcessButtons() {
+      // Botões de visualização de resultado
+      document.querySelectorAll('.view-result-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+          const processId = e.target.closest('.view-result-btn').dataset.id;
+          const resourceId = e.target.closest('.view-result-btn').dataset.resource;
+          const processType = e.target.closest('.view-result-btn').dataset.type;
+          
+          this.viewProcessResult(processId, resourceId, processType);
+        });
+      });
+      
+      // Botões de remoção de processo
+      document.querySelectorAll('.remove-process-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+          const processId = e.target.closest('.remove-process-btn').dataset.id;
+          this.removeProcess(processId);
+        });
+      });
+    }
+    
+    viewProcessResult(processId, resourceId, processType) {
+      if (!processId || !resourceId || !processType) return;
+      
+      console.log('🔍 [DEBUG-FRONTEND] Visualizando resultado do processo:', {
+        processId,
+        resourceId,
+        processType
+      });
+      
+      // Direcionar para a visualização apropriada com base no tipo
+      switch (processType) {
+        case 'transcricao':
+          if (window.viewTranscription) {
+            window.viewTranscription(resourceId);
+          }
+          break;
+        case 'analise':
+          if (window.viewAnalysis) {
+            window.viewAnalysis(resourceId);
+          }
+          break;
+        case 'plano-acao':
+          if (window.viewActionPlan) {
+            window.viewActionPlan(resourceId);
+          }
+          break;
+        case 'mockup':
+          if (window.viewMockup) {
+            window.viewMockup(resourceId);
+          }
+          break;
+        default:
+          console.warn('⚠️ [DEBUG-FRONTEND] Tipo de processo desconhecido:', processType);
+      }
+    }
+    
+    scheduleReconnect() {
+      console.log('🔄 [DEBUG-SSE] Agendando reconexão em 5 segundos...');
+      
+      // Limpar timeout anterior se existir
+      if (this.reconnectTimeout) {
+        clearTimeout(this.reconnectTimeout);
+      }
+      
+      // Agendar nova tentativa em 5 segundos
+      this.reconnectTimeout = setTimeout(() => {
+        console.log('🔄 [DEBUG-SSE] Tentando reconectar...');
+        this.startSSEConnection();
+      }, 5000);
+    }
+    
+    handleProcessError(data) {
+      console.error('❌ [DEBUG-FRONTEND] Erro no processo:', data);
+      
+      const process = this.processes.get(data.processId);
+      if (process) {
+        process.status = 'erro';
+        process.mensagem = data.mensagem || 'Erro no processamento';
+        process.erro = data.erro;
+        
+        this.updateUI();
+      }
+    }
+    
+    handleProcessAutoRemoved(data) {
+      console.log('🔍 [DEBUG-FRONTEND] Processo removido automaticamente:', data);
+      this.removeProcess(data.processId);
+    }
+    
+    setupEventListeners() {
+      // Botão para mostrar/esconder painel
+      const toggleButton = document.getElementById('toggle-processes-panel');
+      if (toggleButton) {
+        toggleButton.addEventListener('click', () => {
+          if (this.panel.classList.contains('show')) {
+            this.hidePanel();
+          } else {
+            this.showPanel();
+          }
+        });
+      }
+    }
+  }
+  
+  // ===== EXPORTAR FUNÇÕES PÚBLICAS =====
+  return {
+    ActiveProcessesManager
+  };
+})();
