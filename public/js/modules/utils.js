@@ -5,15 +5,37 @@ window.AppModules = window.AppModules || {};
 window.AppModules.Utils = (function() {
   'use strict';
   
-  // ===== FUNÇÃO PARA REQUISIÇÕES SEGURAS =====
+// ===== FUNÇÃO PARA REQUISIÇÕES SEGURAS =====
   // Variável para controlar redirecionamentos em cascata
   let redirectingToLogin = false;
+  // Contador para evitar loops infinitos de redirecionamento
+  let redirectAttempts = 0;
+  // Timestamp da última tentativa de redirecionamento
+  let lastRedirectTime = 0;
+  // Limite máximo de redirecionamentos em um período
+  const MAX_REDIRECT_ATTEMPTS = 3;
+  // Período de tempo para resetar o contador (5 minutos)
+  const REDIRECT_RESET_PERIOD = 5 * 60 * 1000;
   
   async function safeFetch(url, options = {}) {
     try {
-      // Se já estamos redirecionando, não fazer mais requisições
+      // Verificar se já estamos redirecionando
       if (redirectingToLogin) {
         console.log(`🔄 [DEBUG-FETCH] Ignorando requisição para ${url} porque já estamos redirecionando para login`);
+        return null;
+      }
+      
+      // Verificar se excedemos o limite de redirecionamentos
+      const currentTime = Date.now();
+      if (currentTime - lastRedirectTime > REDIRECT_RESET_PERIOD) {
+        // Resetar contador após o período
+        redirectAttempts = 0;
+      }
+      
+      if (redirectAttempts >= MAX_REDIRECT_ATTEMPTS) {
+        console.error(`❌ [DEBUG-FETCH] Limite de redirecionamentos excedido (${MAX_REDIRECT_ATTEMPTS}). Possível loop de redirecionamento.`);
+        // Mostrar mensagem de erro ao usuário
+        alert("Erro de autenticação: Muitos redirecionamentos detectados. Por favor, recarregue a página manualmente.");
         return null;
       }
       
@@ -25,7 +47,8 @@ window.AppModules.Utils = (function() {
       // Garantir que headers corretos sejam enviados para requisições AJAX
       const defaultHeaders = {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest' // Adicionar header para identificar requisições AJAX
       };
       
       // Mesclar headers padrão com os fornecidos
@@ -38,7 +61,8 @@ window.AppModules.Utils = (function() {
       
       const response = await fetch(url, {
         ...options,
-        headers
+        headers,
+        credentials: 'same-origin' // Garantir que cookies sejam enviados
       });
       
       console.log(`🔄 [DEBUG-FETCH] Resposta recebida: ${url} - Status: ${response.status}`);
@@ -56,26 +80,52 @@ window.AppModules.Utils = (function() {
       const contentType = response.headers.get('content-type') || '';
       console.log(`🔄 [DEBUG-FETCH] Content-Type: ${contentType}`);
       
-      // Se a resposta não for JSON, pode ser um redirect de autenticação
-      if (!contentType.includes('application/json')) {
-        // Verificar se é um redirect de autenticação explícito (401 Unauthorized)
-        if (response.status === 401) {
-          console.log('🔄 [DEBUG-FETCH] Resposta 401 Unauthorized, redirecionando para login...');
+      // Tratar respostas 401 e 403 explicitamente
+      if (response.status === 401 || response.status === 403) {
+        console.log(`🔄 [DEBUG-FETCH] Resposta ${response.status} recebida, tratando como erro de autenticação`);
+        
+        // Verificar se é JSON ou HTML
+        if (contentType.includes('application/json')) {
+          const errorData = await response.json();
+          console.error(`❌ [DEBUG-FETCH] Erro de autenticação: ${JSON.stringify(errorData)}`);
+          
+          // Se tiver um campo redirect, usar esse valor
+          if (errorData.redirect) {
+            redirectAttempts++;
+            lastRedirectTime = Date.now();
+            redirectingToLogin = true;
+            console.log(`🔄 [DEBUG-FETCH] Redirecionando para ${errorData.redirect}`);
+            window.location.href = errorData.redirect;
+            return null;
+          }
+        } else {
+          // Se não for JSON, provavelmente é HTML de login
+          redirectAttempts++;
+          lastRedirectTime = Date.now();
           redirectingToLogin = true;
+          console.log('🔄 [DEBUG-FETCH] Redirecionando para /login');
           window.location.href = '/login';
           return null;
         }
         
-        // Se for redirecionamento 302, não redirecionar automaticamente para login
+        // Se chegou aqui, tratar como erro normal
+        throw new Error(`Erro de autenticação: ${response.status}`);
+      }
+      
+      // Se a resposta não for JSON, tratar com mais cuidado
+      if (!contentType.includes('application/json')) {
+        // Se for redirecionamento 302, verificar o header Location
         if (response.status === 302) {
-          console.log('🔄 [DEBUG-FETCH] Redirecionamento 302 detectado, mas não redirecionando automaticamente');
+          console.log('🔄 [DEBUG-FETCH] Redirecionamento 302 detectado');
           const location = response.headers.get('location');
           console.log(`🔄 [DEBUG-FETCH] Location header: ${location}`);
           
           // Só redirecionar para login se o location for explicitamente /login
           if (location && location.includes('/login')) {
-            console.log('🔄 [DEBUG-FETCH] Redirecionamento para login detectado, redirecionando...');
+            redirectAttempts++;
+            lastRedirectTime = Date.now();
             redirectingToLogin = true;
+            console.log('🔄 [DEBUG-FETCH] Redirecionamento para login detectado');
             window.location.href = '/login';
             return null;
           }
@@ -84,21 +134,30 @@ window.AppModules.Utils = (function() {
           throw new Error(`Redirecionamento para ${location || 'desconhecido'}`);
         }
         
-        // Se for outro tipo de erro, tentar obter texto da resposta
+        // Tentar obter o texto da resposta
         const responseText = await response.text();
-        console.log(`🔄 [DEBUG-FETCH] Resposta não-JSON recebida: ${responseText.substring(0, 100)}...`);
         
-        // Se a resposta contém HTML de login, então redirecionar
-        if ((responseText.includes('<!DOCTYPE') || responseText.includes('<html>')) && 
-            (responseText.includes('login') || responseText.includes('Login'))) {
-          console.log('🔄 [DEBUG-FETCH] Página de login detectada, redirecionando...');
-          redirectingToLogin = true;
-          window.location.href = '/login';
-          return null;
+        // Verificar se é uma página HTML de login (com mais critérios)
+        if (responseText.includes('<!DOCTYPE') || responseText.includes('<html>')) {
+          console.log(`🔄 [DEBUG-FETCH] Resposta HTML recebida: ${responseText.substring(0, 100)}...`);
+          
+          // Verificar se é realmente uma página de login com critérios mais específicos
+          const isLoginPage = responseText.includes('<form') && 
+                             (responseText.includes('login') || responseText.includes('Login')) &&
+                             (responseText.includes('password') || responseText.includes('senha'));
+          
+          if (isLoginPage) {
+            console.log('🔄 [DEBUG-FETCH] Página de login detectada');
+            redirectAttempts++;
+            lastRedirectTime = Date.now();
+            redirectingToLogin = true;
+            window.location.href = '/login';
+            return null;
+          }
         }
         
-        // Caso contrário, usar o texto como mensagem de erro
-        throw new Error(responseText || `Erro HTTP ${response.status}`);
+        // Se não for identificado como página de login, tratar como erro normal
+        throw new Error(`Resposta não-JSON: ${responseText.substring(0, 100)}...`);
       }
       
       // Se chegou até aqui, a resposta é JSON válida
@@ -107,48 +166,35 @@ window.AppModules.Utils = (function() {
         throw new Error(errorData.error || errorData.message || `Erro HTTP ${response.status}`);
       }
       
-      // Tentar fazer o parse do JSON com tratamento de erro melhorado
+      // Processar resposta JSON com tratamento de erro melhorado
       try {
-        // Clonar a resposta para poder lê-la duas vezes (para debug e para uso)
-        const clonedResponse = response.clone();
-        
-        // Ler o texto da resposta para debug
-        const responseText = await clonedResponse.text();
-        console.log(`🔄 [DEBUG-FETCH] Resposta JSON recebida: ${responseText.substring(0, 100)}...`);
-        
-        // Verificar se a resposta começa com caracteres estranhos (como 'a<!DOCTYPE')
-        // e contém elementos de página de login
-        if ((responseText.trim().startsWith('a<!DOCTYPE') || 
-             responseText.trim().startsWith('<!DOCTYPE') || 
-             responseText.trim().startsWith('<html>')) && 
-            (responseText.includes('login') || responseText.includes('Login'))) {
-          console.log('🔄 [DEBUG-FETCH] Página de login detectada em vez de JSON, redirecionando...');
-          redirectingToLogin = true;
-          window.location.href = '/login';
-          return null;
-        }
-        
-        // Fazer o parse do JSON
-        const jsonData = JSON.parse(responseText);
+        const jsonData = await response.json();
         console.log(`✅ [DEBUG-FETCH] Dados JSON processados com sucesso: ${url}`);
         return jsonData;
       } catch (parseError) {
         console.error(`❌ [DEBUG-FETCH] Erro ao fazer parse do JSON: ${parseError.message}`);
         
-        // Só redirecionar para login se o erro for de parsing JSON e a resposta parecer HTML de login
-        if (parseError.message.includes('Unexpected token') && 
-            (parseError.message.includes('<!DOCTYPE') || 
-             parseError.message.includes('<html>') || 
-             parseError.message.includes('login') || 
-             parseError.message.includes('Login'))) {
-          console.log('🔄 [DEBUG-FETCH] Erro de parsing com HTML de login detectado, redirecionando...');
-          redirectingToLogin = true;
-          window.location.href = '/login';
-          return null;
+        // Tentar obter o texto da resposta para diagnóstico
+        const responseText = await response.clone().text().catch(() => '');
+        
+        // Verificar se parece HTML de login (com critérios mais específicos)
+        if (responseText.includes('<!DOCTYPE') || responseText.includes('<html>')) {
+          const isLoginPage = responseText.includes('<form') && 
+                             (responseText.includes('login') || responseText.includes('Login')) &&
+                             (responseText.includes('password') || responseText.includes('senha'));
+          
+          if (isLoginPage) {
+            console.log('🔄 [DEBUG-FETCH] Página de login detectada em resposta JSON inválida');
+            redirectAttempts++;
+            lastRedirectTime = Date.now();
+            redirectingToLogin = true;
+            window.location.href = '/login';
+            return null;
+          }
         }
         
-        // Caso contrário, lançar o erro normalmente
-        throw parseError;
+        // Caso contrário, lançar o erro de parsing
+        throw new Error(`Erro ao processar resposta JSON: ${parseError.message}`);
       }
       
     } catch (error) {
@@ -159,20 +205,43 @@ window.AppModules.Utils = (function() {
         throw error;
       }
       
-      // Se o erro menciona sessão expirada ou contém elementos de página de login, redirecionar
-      if (error.message.includes('Sessão expirada') || 
-          (error.message.includes('Unexpected token') && 
-           (error.message.includes('<!DOCTYPE') || 
-            error.message.includes('<html>')) && 
-           (error.message.includes('login') || 
-            error.message.includes('Login')))) {
-        console.log('🔄 [DEBUG-FETCH] Erro com página de login detectado, redirecionando...');
-        redirectingToLogin = true;
-        window.location.href = '/login';
-        return null;
+      // Verificar se o erro indica problema de autenticação
+      const authErrorIndicators = [
+        'Sessão expirada',
+        'Não autenticado',
+        'Unauthorized',
+        'Forbidden',
+        'Authentication failed',
+        'Login required'
+      ];
+      
+      const isAuthError = authErrorIndicators.some(indicator => 
+        error.message.toLowerCase().includes(indicator.toLowerCase())
+      );
+      
+      // Verificar se o erro contém HTML de login
+      const containsLoginHTML = error.message.includes('<!DOCTYPE') || 
+                               error.message.includes('<html>') && 
+                               error.message.includes('login');
+      
+      if (isAuthError || containsLoginHTML) {
+        console.log('🔄 [DEBUG-FETCH] Erro de autenticação detectado');
+        
+        // Verificar se não excedemos o limite de redirecionamentos
+        if (redirectAttempts < MAX_REDIRECT_ATTEMPTS) {
+          redirectAttempts++;
+          lastRedirectTime = Date.now();
+          redirectingToLogin = true;
+          console.log('🔄 [DEBUG-FETCH] Redirecionando para /login');
+          window.location.href = '/login';
+          return null;
+        } else {
+          console.error(`❌ [DEBUG-FETCH] Limite de redirecionamentos excedido (${MAX_REDIRECT_ATTEMPTS})`);
+          alert("Erro de autenticação: Muitos redirecionamentos detectados. Por favor, recarregue a página manualmente.");
+        }
       }
       
-      // Re-lançar outros erros
+      // Re-lançar o erro para tratamento pelo chamador
       throw error;
     }
   }

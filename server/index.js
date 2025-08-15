@@ -103,17 +103,37 @@ app.get('/pending', (req, res) => {
 });
 
 // Rotas específicas da API (devem vir antes da rota geral /api)
-console.log('📋 [ROUTE-REGISTER] Registrando /api/clientes (sem auth)');
-app.use('/api/clientes', clientesRoutes); // Sem autenticação por enquanto
+// Rota de clientes - agora com autenticação para sub-rotas específicas
+console.log('📋 [ROUTE-REGISTER] Registrando /api/clientes (com auth para sub-rotas)');
+// Rota base de clientes sem autenticação para listar/buscar
+app.use('/api/clientes', clientesRoutes);
+// Sub-rotas específicas de clientes com autenticação
+app.use('/api/clientes/:clientId/analises', requireAuth, (req, res, next) => {
+  req.url = '/'; // Resetar URL para que o router de análises funcione corretamente
+  analisesRoutes(req, res, next);
+});
+app.use('/api/clientes/:clientId/transcricoes', requireAuth, (req, res, next) => {
+  req.url = '/'; // Resetar URL para que o router de transcrições funcione corretamente
+  transcricoesRoutes(req, res, next);
+});
+app.use('/api/clientes/:clientId/planos-acao', requireAuth, (req, res, next) => {
+  req.url = '/'; // Resetar URL para que o router de planos de ação funcione corretamente
+  planosAcaoRoutes(req, res, next);
+});
+app.use('/api/clientes/:clientId/mockups', requireAuth, (req, res, next) => {
+  req.url = '/'; // Resetar URL para que o router de mockups funcione corretamente
+  mockupRoutes(req, res, next);
+});
 
+// Rotas principais da API
 console.log('📋 [ROUTE-REGISTER] Registrando /api/analises (com auth)');
 app.use('/api/analises', requireAuth, analisesRoutes);
 
 console.log('📋 [ROUTE-REGISTER] Registrando /api/transcricoes (com auth)');
 app.use('/api/transcricoes', requireAuth, transcricoesRoutes);
 
-console.log('📋 [ROUTE-REGISTER] Registrando /api/planos-acao (SEM auth - temporário)');
-app.use('/api/planos-acao', planosAcaoRoutes);
+console.log('📋 [ROUTE-REGISTER] Registrando /api/planos-acao (com auth)');
+app.use('/api/planos-acao', requireAuth, planosAcaoRoutes);
 
 console.log('📋 [ROUTE-REGISTER] Registrando /api/processos (com auth)');
 app.use('/api/processos', requireAuth, require('./routes/processos'));

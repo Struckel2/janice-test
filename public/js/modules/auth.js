@@ -4,26 +4,41 @@ window.AppModules = window.AppModules || {};
 window.AppModules.Auth = (function() {
   'use strict';
   
+  // Importar módulos dependentes
+  const Utils = window.AppModules.Utils;
+  
   // ===== FUNÇÃO DE VERIFICAÇÃO DE AUTENTICAÇÃO =====
   
   // Verificar se o usuário está autenticado
   async function checkAuthentication() {
     try {
-      const response = await fetch('/auth/status');
-      const data = await response.json();
+      console.log('🔄 [AUTH] Verificando autenticação...');
+      
+      // Usar safeFetch para lidar com redirecionamentos e erros de autenticação
+      const data = await Utils.safeFetch('/auth/status', {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      
+      // Se safeFetch retornar null, significa que já está redirecionando
+      if (!data) {
+        console.log('🔄 [AUTH] Redirecionamento em andamento...');
+        return null;
+      }
       
       if (!data.authenticated) {
         // Usuário não autenticado, redirecionar para login
-        console.log('Usuário não autenticado, redirecionando para login...');
+        console.log('❌ [AUTH] Usuário não autenticado, redirecionando para login...');
         window.location.href = '/login';
-        return;
+        return null;
       }
       
       if (!data.user.ativo) {
         // Usuário não ativo, redirecionar para página de pendência
-        console.log('Usuário não ativo, redirecionando para página de pendência...');
-        window.location.href = '/auth/pending';
-        return;
+        console.log('⚠️ [AUTH] Usuário não ativo, redirecionando para página de pendência...');
+        window.location.href = '/pending';
+        return null;
       }
       
       // Usuário autenticado e ativo, adicionar informações do usuário à interface
@@ -38,9 +53,22 @@ window.AppModules.Auth = (function() {
       
       return data.user;
     } catch (error) {
-      console.error('Erro ao verificar autenticação:', error);
-      // Em caso de erro, redirecionar para login por segurança
-      window.location.href = '/login';
+      console.error('❌ [AUTH] Erro ao verificar autenticação:', error);
+      
+      // Verificar se o erro é de autenticação
+      if (error.message && (
+          error.message.includes('Não autenticado') || 
+          error.message.includes('Unauthorized') || 
+          error.message.includes('401')
+      )) {
+        console.log('🔄 [AUTH] Erro de autenticação, redirecionando para login...');
+        window.location.href = '/login';
+      } else {
+        // Mostrar mensagem de erro genérica
+        alert('Erro ao verificar autenticação. Por favor, recarregue a página.');
+      }
+      
+      return null;
     }
   }
   
