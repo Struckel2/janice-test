@@ -1124,14 +1124,14 @@ header h1 {
   display: none !important;
 }
 
-/* Hide all content inside the analysis container by default */
-.analysis-header,
-.analysis-preview,
-.analysis-content,
-.analysis-container h2,
-.analysis-container p,
-.analysis-container ul,
-.analysis-container li {
+/* Hide all content inside the analysis container by default, but preserve navigation buttons */
+.analysis-container .analysis-header,
+.analysis-container .analysis-preview,
+.analysis-container .analysis-content,
+.analysis-container h2:not(.tab-title),
+.analysis-container p:not(.tab-description),
+.analysis-container ul:not(.tab-list),
+.analysis-container li:not(.tab-item) {
   display: none !important;
 }
 

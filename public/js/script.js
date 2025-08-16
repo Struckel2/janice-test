@@ -754,10 +754,19 @@ document.addEventListener('DOMContentLoaded', () => {
       if (section) {
         section.style.display = 'none';
         
-        // Também esconder conteúdo interno para análise
+        // Também esconder conteúdo interno para análise, mas preservar botões de navegação
         if (sectionId === 'analysis-container') {
-          const headers = section.querySelectorAll('.analysis-header, .analysis-preview, h2, p, ul, li');
-          headers.forEach(el => {
+          // Seletores mais específicos para não afetar botões de navegação
+          const contentElements = section.querySelectorAll(
+            '.analysis-header:not(.tab-header), ' + 
+            '.analysis-preview:not(.tab-preview), ' + 
+            'h2:not(.tab-title), ' + 
+            'p:not(.tab-description), ' + 
+            'ul:not(.tab-list), ' + 
+            'li:not(.tab-item)'
+          );
+          
+          contentElements.forEach(el => {
             el.style.display = 'none';
           });
         }
@@ -769,10 +778,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (targetSection) {
       targetSection.style.display = 'block';
       
-      // Se for a seção de análise, mostrar também o conteúdo interno
+      // Se for a seção de análise, mostrar também o conteúdo interno, mas preservar botões de navegação
       if (targetSectionId === 'analysis-container') {
-        const headers = targetSection.querySelectorAll('.analysis-header, .analysis-preview, h2, p, ul, li');
-        headers.forEach(el => {
+        // Seletores mais específicos para não afetar botões de navegação
+        const contentElements = targetSection.querySelectorAll(
+          '.analysis-header:not(.tab-header), ' + 
+          '.analysis-preview:not(.tab-preview), ' + 
+          'h2:not(.tab-title), ' + 
+          'p:not(.tab-description), ' + 
+          'ul:not(.tab-list), ' + 
+          'li:not(.tab-item)'
+        );
+        
+        contentElements.forEach(el => {
           el.style.display = 'block';
         });
       }
