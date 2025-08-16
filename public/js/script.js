@@ -1421,8 +1421,23 @@ ${currentAnalysisData.analysis}`;
         existingContent.remove();
       }
       
-      // Inserir o conteúdo da análise antes do visualizador de PDF
-      pdfViewer.parentNode.insertBefore(analysisContentContainer, pdfViewer);
+      // Inserir o conteúdo da análise no container de resultado
+      // Verificar se o pdfViewer existe antes de tentar acessar seu parentNode
+      const resultContentContainer = document.querySelector('.result-content');
+      if (resultContentContainer) {
+        resultContentContainer.prepend(analysisContentContainer);
+      } else if (pdfViewer && pdfViewer.parentNode) {
+        // Fallback para o método anterior se resultContentContainer não existir
+        pdfViewer.parentNode.insertBefore(analysisContentContainer, pdfViewer);
+      } else {
+        // Último fallback: adicionar ao container de resultado
+        const resultContainer = document.getElementById('result-container');
+        if (resultContainer) {
+          resultContainer.prepend(analysisContentContainer);
+        } else {
+          console.error('Não foi possível encontrar um container para inserir o conteúdo da análise');
+        }
+      }
       
       // Configurar PDF
       if (analysis.pdfUrl) {
