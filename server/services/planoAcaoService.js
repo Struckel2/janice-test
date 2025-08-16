@@ -358,12 +358,73 @@ ${contexto}
 
 # 📋 ${titulo.toUpperCase()}
 
-## 1. 📊 RESUMO EXECUTIVO DA REUNIÃO
+## 1. 🏢 PERFIL COMPLETO DO CLIENTE
+### Informações Gerais
+- Nome da empresa e segmento
+- Histórico e trajetória
+- Missão, visão e valores (quando identificáveis)
+
+### Análise de Mercado
+- Tamanho e características do mercado de atuação
+- Tendências atuais e futuras do setor
+- Oportunidades e desafios específicos do mercado
+
+### Análise de Concorrência
+- Principais concorrentes diretos e indiretos
+- Posicionamento da empresa em relação aos concorrentes
+- Vantagens competitivas dos principais players
+
+### Situação Atual e Expectativas de Crescimento
+- Estado atual do negócio (fase de desenvolvimento, desempenho)
+- Metas de crescimento identificadas
+- Obstáculos atuais para o crescimento
+
+### Análise SWOT Detalhada
+- **💪 Forças:** Vantagens competitivas e diferenciais identificados
+- **⚠️ Fraquezas:** Áreas que precisam de melhorias
+- **🚀 Oportunidades:** Tendências favoráveis do mercado
+- **⚡ Ameaças:** Desafios e riscos do setor
+
+### Perfil Psicológico da Liderança
+- Estilo de tomada de decisão observado nas reuniões
+- Valores e prioridades demonstrados
+- Aversão ou propensão a riscos
+- Visão de longo prazo vs. foco em resultados imediatos
+
+### Insights Adicionais
+- Particularidades culturais da organização
+- Desafios internos identificados
+- Relacionamento com stakeholders
+
+*Nota: Se alguma informação acima não estiver disponível na documentação fornecida, indique claramente que "Não há informações suficientes para determinar [item específico]" em vez de fazer suposições.*
+
+## 2. 📝 ORIENTAÇÃO DE LINHA EDITORIAL PARA COPY
+### Tom de Voz
+- Personalidade da marca (formal/informal, técnico/acessível, etc.)
+- Linguagem recomendada
+- Termos a utilizar e evitar
+
+### Mensagens-Chave
+- Principais argumentos de venda
+- Diferenciais a serem destacados
+- Valores a serem comunicados
+
+### Abordagem por Canal
+- Recomendações para comunicação em diferentes plataformas
+- Adaptações necessárias por público-alvo
+- Gatilhos emocionais a explorar
+
+### Exemplos Práticos
+- Sugestões de headlines
+- Abordagens para call-to-action
+- Estruturas de argumentação recomendadas
+
+## 3. 📊 RESUMO EXECUTIVO DA REUNIÃO
 - Participantes identificados
 - Contexto e objetivos
 - Principais decisões tomadas
 
-## 2. 🎯 DIAGNÓSTICO SITUACIONAL
+## 4. 🎯 DIAGNÓSTICO SITUACIONAL
 ### Análise SWOT
 - **💪 Forças:** Vantagens competitivas e diferenciais identificados
 - **⚠️ Fraquezas:** Áreas que precisam de melhorias
@@ -374,7 +435,7 @@ ${contexto}
 - Lista dos principais obstáculos
 - Recursos disponíveis
 
-## 3. 📈 PLANO DE AÇÃO DETALHADO
+## 5. 📈 PLANO DE AÇÃO DETALHADO
 
 ### 🔄 Fase 1: Fundação (0-3 meses)
 - [ ] Ação específica 1
@@ -404,7 +465,7 @@ ${contexto}
 **Responsável:** [Quando identificado]
 **Prazo:** [Data específica]
 
-## 4. 📊 MÉTRICAS E KPIs
+## 6. 📊 MÉTRICAS E KPIs
 
 | Métrica | Meta | Prazo | Responsável |
 |---------|------|-------|-------------|
@@ -417,7 +478,7 @@ ${contexto}
 - Métrica 2: Descrição e meta
 - Métrica 3: Descrição e meta
 
-## 5. 💰 INVESTIMENTOS E ROI
+## 7. 💰 INVESTIMENTOS E ROI
 
 ### Custos Estimados por Categoria
 | Categoria | Investimento | Período |
@@ -432,7 +493,7 @@ ${contexto}
 - **Payback:** X meses
 - **Análise de Viabilidade:** Descrição
 
-## 6. ⚠️ RISCOS E MITIGAÇÕES
+## 8. ⚠️ RISCOS E MITIGAÇÕES
 
 ### Principais Riscos Identificados
 1. **Risco 1:** Descrição
@@ -449,7 +510,7 @@ ${contexto}
 - Cenário A: Descrição e ações
 - Cenário B: Descrição e ações
 
-## 7. ⚡ PRÓXIMOS PASSOS IMEDIATOS
+## 9. ⚡ PRÓXIMOS PASSOS IMEDIATOS
 
 ### 📅 Esta Semana
 - [ ] Ação urgente 1
