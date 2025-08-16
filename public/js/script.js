@@ -930,13 +930,46 @@ document.addEventListener('DOMContentLoaded', () => {
     resetUI();
   });
   
-  // Abrir o PDF da análise em uma nova aba
+  // Exportar PDF da análise
   exportPdfButton.addEventListener('click', () => {
-    if (currentAnalysisData && currentAnalysisData.pdfUrl) {
-      window.open(currentAnalysisData.pdfUrl, '_blank');
-    } else {
-      alert('PDF não disponível. Por favor, tente novamente.');
+    if (!currentAnalysisData) return;
+    
+    // Gerar PDF no cliente usando html2pdf.js
+    const element = document.querySelector('.analysis-content-container');
+    if (!element) {
+      alert('Erro ao gerar PDF: conteúdo não encontrado.');
+      return;
     }
+    
+    // Mostrar feedback visual
+    const originalText = exportPdfButton.innerHTML;
+    exportPdfButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando PDF...';
+    exportPdfButton.disabled = true;
+    
+    // Configurações do PDF
+    const options = {
+      margin: [15, 15, 15, 15],
+      filename: `Análise_${companyNameEl.textContent.replace(/\s+/g, '_')}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    // Gerar e baixar o PDF
+    html2pdf().from(element).set(options).save()
+      .then(() => {
+        // Restaurar botão após download
+        setTimeout(() => {
+          exportPdfButton.innerHTML = originalText;
+          exportPdfButton.disabled = false;
+        }, 1500);
+      })
+      .catch(error => {
+        console.error('Erro ao gerar PDF:', error);
+        alert('Ocorreu um erro ao gerar o PDF. Por favor, tente novamente.');
+        exportPdfButton.innerHTML = originalText;
+        exportPdfButton.disabled = false;
+      });
   });
   
   // Copiar relatório
