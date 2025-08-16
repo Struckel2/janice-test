@@ -753,23 +753,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const section = document.getElementById(sectionId);
       if (section) {
         section.style.display = 'none';
-        
-        // Também esconder conteúdo interno para análise, mas preservar botões de navegação
-        if (sectionId === 'analysis-container') {
-          // Seletores mais específicos para não afetar botões de navegação
-          const contentElements = section.querySelectorAll(
-            '.analysis-header:not(.tab-header), ' + 
-            '.analysis-preview:not(.tab-preview), ' + 
-            'h2:not(.tab-title), ' + 
-            'p:not(.tab-description), ' + 
-            'ul:not(.tab-list), ' + 
-            'li:not(.tab-item)'
-          );
-          
-          contentElements.forEach(el => {
-            el.style.display = 'none';
-          });
-        }
       }
     });
     
@@ -777,23 +760,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const targetSection = document.getElementById(targetSectionId);
     if (targetSection) {
       targetSection.style.display = 'block';
-      
-      // Se for a seção de análise, mostrar também o conteúdo interno, mas preservar botões de navegação
-      if (targetSectionId === 'analysis-container') {
-        // Seletores mais específicos para não afetar botões de navegação
-        const contentElements = targetSection.querySelectorAll(
-          '.analysis-header:not(.tab-header), ' + 
-          '.analysis-preview:not(.tab-preview), ' + 
-          'h2:not(.tab-title), ' + 
-          'p:not(.tab-description), ' + 
-          'ul:not(.tab-list), ' + 
-          'li:not(.tab-item)'
-        );
-        
-        contentElements.forEach(el => {
-          el.style.display = 'block';
-        });
-      }
     }
   }
   
@@ -1399,66 +1365,49 @@ ${currentAnalysisData.analysis}`;
   // Visualizar uma análise específica
   async function viewAnalysis(analysisId) {
     try {
-      console.log(`🔍 [ANALISE-VIEW] Carregando análise: ${analysisId}`);
-      
       const response = await fetch(`/api/analises/${analysisId}`);
       if (!response.ok) {
         throw new Error('Erro ao carregar análise');
       }
       
       const analysis = await response.json();
-      console.log(`✅ [ANALISE-VIEW] Análise carregada:`, {
-        id: analysis._id,
-        cnpj: analysis.cnpj,
-        dataCriacao: analysis.dataCriacao,
-        hasPdf: !!analysis.pdfUrl
-      });
       
       // Preencher dados da análise
       companyNameEl.textContent = analysis.cliente ? analysis.cliente.nome : 'Empresa';
       resultCnpjEl.textContent = formatCnpj(analysis.cnpj);
       resultDateEl.textContent = new Date(analysis.dataCriacao).toLocaleString('pt-BR');
       
-      // Renderizar conteúdo da análise em HTML formatado
-      const formattedContent = formatMarkdownForAnalysis(analysis.conteudo);
-      
-      // Criar container para o conteúdo formatado
-      const analysisContentContainer = document.createElement('div');
-      analysisContentContainer.className = 'analysis-content-container';
-      analysisContentContainer.innerHTML = formattedContent;
-      
-      // Limpar conteúdo anterior e adicionar o novo conteúdo formatado
-      pdfViewer.innerHTML = '';
-      pdfViewer.appendChild(analysisContentContainer);
-      
-      // Adicionar botões de ação abaixo do conteúdo
-      const actionButtons = document.createElement('div');
-      actionButtons.className = 'analysis-action-buttons';
-      
-      // Configurar botão de PDF se disponível
+      // Configurar PDF
       if (analysis.pdfUrl) {
-        console.log(`🔍 [ANALISE-VIEW] PDF URL encontrada: ${analysis.pdfUrl}`);
-        
-        // Usar a rota proxy para visualização do PDF
-        const pdfProxyUrl = `/api/analises/pdf/${analysis._id}`;
-        console.log(`🔍 [ANALISE-VIEW] URL proxy para PDF: ${pdfProxyUrl}`);
-        
-        actionButtons.innerHTML = `
-          <button class="open-pdf-btn" onclick="window.open('${pdfProxyUrl}', '_blank')">
-            <i class="fas fa-file-pdf"></i> Abrir Relatório PDF
-          </button>
+        pdfViewer.innerHTML = `
+          <div class="pdf-ready">
+            <div class="pdf-icon">
+              <i class="fas fa-file-pdf"></i>
+            </div>
+            <h3>Relatório PDF Pronto</h3>
+            <p>Seu relatório estratégico foi gerado com sucesso e está pronto para visualização.</p>
+            <button class="open-pdf-btn" onclick="window.open('/api/analises/pdf/${analysis._id}', '_blank')">
+              <i class="fas fa-external-link-alt"></i> Abrir Relatório PDF
+            </button>
+            <div class="pdf-info">
+              <small><i class="fas fa-info-circle"></i> O PDF será aberto em uma nova aba do navegador</small>
+            </div>
+          </div>
         `;
         
         exportPdfButton.disabled = false;
         exportPdfButton.innerHTML = '<i class="fas fa-file-pdf"></i> Abrir Relatório PDF';
-        exportPdfButton.onclick = () => window.open(pdfProxyUrl, '_blank');
-        
         currentAnalysisData = {
-          pdfUrl: pdfProxyUrl,
+          pdfUrl: `/api/analises/pdf/${analysis._id}`,
           analysis: analysis.conteudo
         };
       } else {
-        console.log(`⚠️ [ANALISE-VIEW] PDF não disponível para esta análise`);
+        pdfViewer.innerHTML = `
+          <div class="pdf-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>PDF não disponível. Você ainda pode copiar o relatório usando o botão abaixo.</p>
+          </div>
+        `;
         
         exportPdfButton.disabled = true;
         exportPdfButton.innerHTML = '<i class="fas fa-file-pdf"></i> PDF Indisponível';
@@ -1467,19 +1416,14 @@ ${currentAnalysisData.analysis}`;
         };
       }
       
-      // Adicionar botões de ação ao container
-      pdfViewer.appendChild(actionButtons);
-      
       // Mostrar apenas a seção de resultados (estado exclusivo)
       showOnlySection('result-container');
       
       // Scroll automático para a seção de resultados
       scrollToElement('result-container');
       
-      console.log(`✅ [ANALISE-VIEW] Visualização da análise concluída`);
-      
     } catch (error) {
-      console.error('❌ [ANALISE-VIEW] Erro ao visualizar análise:', error);
+      console.error('Erro ao visualizar análise:', error);
       alert('Não foi possível carregar a análise. Tente novamente.');
     }
   }
@@ -3480,19 +3424,6 @@ ${currentAnalysisData.analysis}`;
     return formatted;
   }
   
-  // Formatar markdown específico para análises de mercado
-  function formatMarkdownForAnalysis(text) {
-    if (!text) return '';
-    
-    // Usar a mesma lógica de formatação dos planos de ação
-    let formatted = formatMarkdownForActionPlan(text);
-    
-    // Adicionar classe específica para estilização
-    formatted = `<div class="analysis-content">${formatted}</div>`;
-    
-    return formatted;
-  }
-  
   // Deletar plano de ação
   async function deleteActionPlan(planId) {
     if (!confirm('Tem certeza que deseja excluir este plano de ação? Esta ação não pode ser desfeita.')) {
@@ -5146,8 +5077,7 @@ ${currentActionPlanData.conteudo}`;
       'mockup-produto': 'Produto'
     };
     
-    // Return a default label "Imagem" if tipoArte is undefined or not recognized
-    return (tipoArte && labels[tipoArte]) ? labels[tipoArte] : 'Imagem';
+    return labels[tipoArte] || tipoArte;
   }
   
   // Visualizar mockup

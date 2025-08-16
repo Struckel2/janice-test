@@ -96,11 +96,11 @@ const uploadImage = async (fileBuffer, options = {}) => {
 const uploadPDF = async (fileBuffer, options = {}) => {
   // Verificar se o Cloudinary está configurado
   if (!cloudinaryConfigured) {
-    console.error('❌ [CLOUDINARY-PDF] Tentativa de upload de PDF para Cloudinary, mas configuração está incompleta');
+    console.error('Tentativa de upload de PDF para Cloudinary, mas configuração está incompleta');
     
     // Em produção, retornar um objeto com URL dummy para não quebrar a aplicação
     if (process.env.NODE_ENV === 'production') {
-      console.warn('⚠️ [CLOUDINARY-PDF] Retornando URL placeholder em vez de fazer upload de PDF (modo produção)');
+      console.warn('Retornando URL placeholder em vez de fazer upload de PDF (modo produção)');
       return {
         secure_url: '/placeholder-pdf.pdf',
         public_id: 'placeholder-pdf',
@@ -118,54 +118,25 @@ const uploadPDF = async (fileBuffer, options = {}) => {
     ...options
   };
 
-  console.log(`🔍 [CLOUDINARY-PDF] Iniciando upload de PDF para Cloudinary...`);
-  console.log(`📊 [CLOUDINARY-PDF] Opções de upload:`, {
-    folder: uploadOptions.folder,
-    public_id: uploadOptions.public_id,
-    resource_type: uploadOptions.resource_type,
-    format: uploadOptions.format || 'pdf'
-  });
-  console.log(`📊 [CLOUDINARY-PDF] Tamanho do buffer: ${fileBuffer.length} bytes`);
-
   try {
+    console.log('Iniciando upload de PDF para Cloudinary...');
+    
     // Converter o buffer para base64 para upload
     return new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         uploadOptions,
         (error, result) => {
           if (error) {
-            console.error('❌ [CLOUDINARY-PDF] Erro durante upload de PDF para Cloudinary:', error);
-            console.error('❌ [CLOUDINARY-PDF] Detalhes do erro:', {
-              message: error.message,
-              code: error.http_code || error.code,
-              type: error.name
-            });
+            console.error('Erro durante upload de PDF para Cloudinary:', error);
             return reject(error);
           }
-          
-          console.log('✅ [CLOUDINARY-PDF] Upload de PDF para Cloudinary bem-sucedido');
-          console.log('📊 [CLOUDINARY-PDF] URL gerada:', result.secure_url);
-          console.log('📊 [CLOUDINARY-PDF] Public ID:', result.public_id);
-          
-          // Verificar se a URL gerada é acessível
-          fetch(result.secure_url, { method: 'HEAD' })
-            .then(response => {
-              console.log(`📊 [CLOUDINARY-PDF] Verificação de acesso à URL: ${response.status} ${response.statusText}`);
-              if (!response.ok) {
-                console.warn(`⚠️ [CLOUDINARY-PDF] A URL gerada pode não ser acessível: ${response.status}`);
-              }
-            })
-            .catch(err => {
-              console.warn(`⚠️ [CLOUDINARY-PDF] Erro ao verificar acesso à URL: ${err.message}`);
-            });
-          
+          console.log('Upload de PDF para Cloudinary bem-sucedido');
           resolve(result);
         }
       ).end(fileBuffer);
     });
   } catch (error) {
-    console.error('❌ [CLOUDINARY-PDF] Erro ao fazer upload de PDF para Cloudinary:', error);
-    console.error('❌ [CLOUDINARY-PDF] Stack trace:', error.stack);
+    console.error('Erro ao fazer upload de PDF para Cloudinary:', error);
     throw error;
   }
 };
@@ -246,76 +217,20 @@ const deletePDF = async (publicId) => {
 
 /**
  * Extrai o public_id de uma URL do Cloudinary
- * @param {string} url - URL completa da imagem ou arquivo
+ * @param {string} url - URL completa da imagem
  * @returns {string|null} - public_id ou null se não for uma URL do Cloudinary
  */
 const getPublicIdFromUrl = (url) => {
   if (!url || typeof url !== 'string') return null;
   
-  console.log(`🔍 [CLOUDINARY] Extraindo public_id da URL: ${url}`);
-  
   // Tentar extrair o public_id de uma URL do Cloudinary
-  // Formato típico para imagens: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/pasta/nome_arquivo.jpg
-  // Formato típico para PDFs: https://res.cloudinary.com/cloud_name/raw/upload/v1234567890/pasta/nome_arquivo.pdf
+  // Formato típico: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/pasta/nome_arquivo.jpg
   try {
-    // Verificar se a URL é do Cloudinary
-    if (!url.includes('cloudinary.com')) {
-      console.log(`❌ [CLOUDINARY] URL não é do Cloudinary: ${url}`);
-      return null;
-    }
-    
-    // Remover parâmetros de query se existirem
-    const urlWithoutParams = url.split('?')[0];
-    
-    // Estratégia 1: Regex para URLs com número de versão (formato padrão)
-    const versionRegex = /\/v\d+\/(.+?)(?:\.\w+)?$/;
-    const versionMatch = urlWithoutParams.match(versionRegex);
-    
-    if (versionMatch && versionMatch[1]) {
-      console.log(`✅ [CLOUDINARY] Public ID extraído (formato com versão): ${versionMatch[1]}`);
-      return versionMatch[1];
-    }
-    
-    // Estratégia 2: Regex para URLs sem número de versão
-    const uploadRegex = /\/upload\/(.+?)(?:\.\w+)?$/;
-    const uploadMatch = urlWithoutParams.match(uploadRegex);
-    
-    if (uploadMatch && uploadMatch[1]) {
-      console.log(`✅ [CLOUDINARY] Public ID extraído (formato sem versão): ${uploadMatch[1]}`);
-      return uploadMatch[1];
-    }
-    
-    // Estratégia 3: Regex para URLs de tipo raw (PDFs e outros arquivos)
-    const rawRegex = /\/raw\/(?:upload\/)?(?:v\d+\/)?(.+?)(?:\.\w+)?$/;
-    const rawMatch = urlWithoutParams.match(rawRegex);
-    
-    if (rawMatch && rawMatch[1]) {
-      console.log(`✅ [CLOUDINARY] Public ID extraído (formato raw): ${rawMatch[1]}`);
-      return rawMatch[1];
-    }
-    
-    // Estratégia 4: Extrair a parte após a última barra e antes da extensão
-    const pathParts = urlWithoutParams.split('/');
-    const lastPart = pathParts[pathParts.length - 1];
-    const fileNameWithoutExt = lastPart.split('.')[0];
-    
-    if (fileNameWithoutExt) {
-      // Verificar se o último segmento parece ser um nome de arquivo válido
-      if (fileNameWithoutExt.length > 0 && !fileNameWithoutExt.includes('?')) {
-        // Reconstruir o public_id incluindo a pasta
-        const folderPath = pathParts[pathParts.length - 2] || '';
-        const publicId = folderPath && folderPath !== 'upload' && folderPath !== 'raw' ? 
-                         `${folderPath}/${fileNameWithoutExt}` : fileNameWithoutExt;
-        
-        console.log(`✅ [CLOUDINARY] Public ID extraído (último recurso): ${publicId}`);
-        return publicId;
-      }
-    }
-    
-    console.log(`❌ [CLOUDINARY] Não foi possível extrair public_id da URL: ${url}`);
-    return null;
+    const regex = /\/v\d+\/(.+)\.\w+$/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
   } catch (error) {
-    console.error('❌ [CLOUDINARY] Erro ao extrair public_id:', error);
+    console.error('Erro ao extrair public_id:', error);
     return null;
   }
 };
