@@ -3856,13 +3856,42 @@ ${currentActionPlanData.conteudo}`;
       exportActionPlanPdfBtn.addEventListener('click', () => {
         if (!currentActionPlanData) return;
         
-        // Verificar se o PDF está disponível
-        if (currentActionPlanData.pdfUrl) {
-          // Abrir PDF em nova aba usando a rota proxy
-          window.open(`/api/planos-acao/pdf/${currentActionPlanData._id}`, '_blank');
-        } else {
-          alert('PDF não disponível para este plano de ação. Por favor, tente novamente ou use o botão "Copiar Plano".');
+        // Gerar PDF no cliente usando html2pdf.js
+        const element = document.querySelector('.action-plan-content');
+        if (!element) {
+          alert('Erro ao gerar PDF: conteúdo não encontrado.');
+          return;
         }
+        
+        // Mostrar feedback visual
+        const originalText = exportActionPlanPdfBtn.innerHTML;
+        exportActionPlanPdfBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando PDF...';
+        exportActionPlanPdfBtn.disabled = true;
+        
+        // Configurações do PDF
+        const options = {
+          margin: [15, 15, 15, 15],
+          filename: `${currentActionPlanData.titulo || 'Plano-de-Acao'}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        
+        // Gerar e baixar o PDF
+        html2pdf().from(element).set(options).save()
+          .then(() => {
+            // Restaurar botão após download
+            setTimeout(() => {
+              exportActionPlanPdfBtn.innerHTML = originalText;
+              exportActionPlanPdfBtn.disabled = false;
+            }, 1500);
+          })
+          .catch(error => {
+            console.error('Erro ao gerar PDF:', error);
+            alert('Ocorreu um erro ao gerar o PDF. Por favor, tente novamente.');
+            exportActionPlanPdfBtn.innerHTML = originalText;
+            exportActionPlanPdfBtn.disabled = false;
+          });
       });
     }
   }
