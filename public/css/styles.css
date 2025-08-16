@@ -2706,6 +2706,57 @@ footer {
   }
 }
 
+/* Estilos para o conteúdo da análise */
+.analysis-content-container {
+  margin-bottom: 25px;
+  max-height: 600px;
+  overflow-y: auto;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+}
+
+.analysis-content-container .markdown-content {
+  line-height: 1.8;
+}
+
+.analysis-content-container h1,
+.analysis-content-container h2,
+.analysis-content-container h3,
+.analysis-content-container h4 {
+  color: var(--primary-color);
+  margin-top: 25px;
+  margin-bottom: 15px;
+}
+
+.analysis-content-container h1 {
+  font-size: 1.8rem;
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 10px;
+}
+
+.analysis-content-container h2 {
+  font-size: 1.4rem;
+}
+
+.analysis-content-container h3 {
+  font-size: 1.2rem;
+}
+
+.analysis-content-container ul {
+  margin: 15px 0;
+  padding-left: 20px;
+}
+
+.analysis-content-container li {
+  margin-bottom: 8px;
+}
+
+.analysis-content-container p {
+  margin-bottom: 15px;
+}
+
 /* ===== ESTILOS PARA MOCKUPS COM IA ===== */
 
 /* Histórico de mockups */

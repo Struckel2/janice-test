@@ -1377,6 +1377,20 @@ ${currentAnalysisData.analysis}`;
       resultCnpjEl.textContent = formatCnpj(analysis.cnpj);
       resultDateEl.textContent = new Date(analysis.dataCriacao).toLocaleString('pt-BR');
       
+      // Exibir conteúdo da análise diretamente na página
+      const analysisContentContainer = document.createElement('div');
+      analysisContentContainer.className = 'analysis-content-container';
+      analysisContentContainer.innerHTML = `<div class="markdown-content">${formatMarkdownForAnalysis(analysis.conteudo)}</div>`;
+      
+      // Limpar conteúdo anterior se existir
+      const existingContent = document.querySelector('.analysis-content-container');
+      if (existingContent) {
+        existingContent.remove();
+      }
+      
+      // Inserir o conteúdo da análise antes do visualizador de PDF
+      pdfViewer.parentNode.insertBefore(analysisContentContainer, pdfViewer);
+      
       // Configurar PDF
       if (analysis.pdfUrl) {
         pdfViewer.innerHTML = `
@@ -1426,6 +1440,71 @@ ${currentAnalysisData.analysis}`;
       console.error('Erro ao visualizar análise:', error);
       alert('Não foi possível carregar a análise. Tente novamente.');
     }
+  }
+  
+  // Formatar markdown específico para análises
+  function formatMarkdownForAnalysis(text) {
+    if (!text) return '';
+    
+    let formatted = text;
+    
+    // Converter títulos
+    formatted = formatted.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+    formatted = formatted.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    formatted = formatted.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    formatted = formatted.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+    
+    // Converter negrito e itálico
+    formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    formatted = formatted.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    
+    // Converter listas
+    formatted = formatted.replace(/^- (.+)$/gm, '<li>$1</li>');
+    formatted = formatted.replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>');
+    
+    // Agrupar listas
+    formatted = formatted.replace(/((<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>');
+    
+    // Converter tabelas simples
+    const tableRegex = /\|(.+)\|\n\|[-\s|]+\|\n((\|.+\|\n?)+)/g;
+    formatted = formatted.replace(tableRegex, (match, header, separator, rows) => {
+      const headerCells = header.split('|').map(cell => cell.trim()).filter(cell => cell);
+      const rowsArray = rows.trim().split('\n').map(row => 
+        row.split('|').map(cell => cell.trim()).filter(cell => cell)
+      );
+      
+      let table = '<table><thead><tr>';
+      headerCells.forEach(cell => {
+        table += `<th>${cell}</th>`;
+      });
+      table += '</tr></thead><tbody>';
+      
+      rowsArray.forEach(row => {
+        table += '<tr>';
+        row.forEach(cell => {
+          table += `<td>${cell}</td>`;
+        });
+        table += '</tr>';
+      });
+      
+      table += '</tbody></table>';
+      return table;
+    });
+    
+    // Converter parágrafos
+    formatted = formatted.replace(/\n\n/g, '</p><p>');
+    formatted = `<p>${formatted}</p>`;
+    
+    // Limpar tags vazias
+    formatted = formatted.replace(/<p><\/p>/g, '');
+    formatted = formatted.replace(/<p>(<h[1-6]>)/g, '$1');
+    formatted = formatted.replace(/(<\/h[1-6]>)<\/p>/g, '$1');
+    formatted = formatted.replace(/<p>(<ul>)/g, '$1');
+    formatted = formatted.replace(/(<\/ul>)<\/p>/g, '$1');
+    formatted = formatted.replace(/<p>(<table>)/g, '$1');
+    formatted = formatted.replace(/(<\/table>)<\/p>/g, '$1');
+    
+    return formatted;
   }
   
   // Mostrar formulário de nova análise
