@@ -3789,7 +3789,14 @@ textarea.required-field {
 .gallery-item-image {
   width: 100%;
   height: 150px;
-  object-fit: cover;
+  display: block;
+  position: relative;
+}
+
+.gallery-item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   display: block;
 }
 
