@@ -683,7 +683,7 @@ router.get('/galeria/:clienteId', async (req, res) => {
             if (mockup.metadados && mockup.metadados.imagensSalvas) {
                 mockup.metadados.imagensSalvas.forEach(imagem => {
                     // Filtrar por tipo se especificado
-                    if (tipo && tipo !== 'all' && mockup.tipo !== tipo) {
+                    if (tipo && tipo !== 'all' && mockup.configuracao.tipoArte !== tipo) {
                         return;
                     }
 
@@ -696,7 +696,7 @@ router.get('/galeria/:clienteId', async (req, res) => {
                         dataSalvamento: imagem.dataSalvamento,
                         // Dados do mockup
                         titulo: mockup.titulo,
-                        tipo: mockup.tipo,
+                        tipo: mockup.configuracao.tipoArte,
                         prompt: mockup.prompt,
                         criadoEm: mockup.criadoEm,
                         // Dados do cliente
