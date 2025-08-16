@@ -1422,57 +1422,85 @@ ${currentAnalysisData.analysis}`;
       }
       
       // Inserir o conteúdo da análise no container de resultado
-      // Verificar se o pdfViewer existe antes de tentar acessar seu parentNode
+      // Implementação mais robusta com verificações de nulos
+      let inserted = false;
+      
+      // Opção 1: Tentar inserir no resultContentContainer
       const resultContentContainer = document.querySelector('.result-content');
       if (resultContentContainer) {
         resultContentContainer.prepend(analysisContentContainer);
-      } else if (pdfViewer && pdfViewer.parentNode) {
-        // Fallback para o método anterior se resultContentContainer não existir
+        inserted = true;
+      } 
+      
+      // Opção 2: Tentar inserir usando pdfViewer como referência
+      if (!inserted && pdfViewer && pdfViewer.parentNode) {
         pdfViewer.parentNode.insertBefore(analysisContentContainer, pdfViewer);
-      } else {
-        // Último fallback: adicionar ao container de resultado
+        inserted = true;
+      }
+      
+      // Opção 3: Tentar inserir diretamente no resultContainer
+      if (!inserted) {
         const resultContainer = document.getElementById('result-container');
         if (resultContainer) {
           resultContainer.prepend(analysisContentContainer);
-        } else {
-          console.error('Não foi possível encontrar um container para inserir o conteúdo da análise');
+          inserted = true;
         }
       }
       
-      // Configurar PDF
+      // Se nenhuma das opções funcionou, registrar erro
+      if (!inserted) {
+        console.error('Não foi possível encontrar um container para inserir o conteúdo da análise');
+        throw new Error('Não foi possível exibir a análise. Container não encontrado.');
+      }
+      
+      // Configurar PDF com verificação de nulos
       if (analysis.pdfUrl) {
-        pdfViewer.innerHTML = `
-          <div class="pdf-ready">
-            <div class="pdf-icon">
-              <i class="fas fa-file-pdf"></i>
+        // Verificar se pdfViewer existe antes de tentar definir seu innerHTML
+        if (pdfViewer) {
+          pdfViewer.innerHTML = `
+            <div class="pdf-ready">
+              <div class="pdf-icon">
+                <i class="fas fa-file-pdf"></i>
+              </div>
+              <h3>Relatório PDF Pronto</h3>
+              <p>Seu relatório estratégico foi gerado com sucesso e está pronto para visualização.</p>
+              <button class="open-pdf-btn" onclick="window.open('/api/analises/pdf/${analysis._id}', '_blank')">
+                <i class="fas fa-external-link-alt"></i> Abrir Relatório PDF
+              </button>
+              <div class="pdf-info">
+                <small><i class="fas fa-info-circle"></i> O PDF será aberto em uma nova aba do navegador</small>
+              </div>
             </div>
-            <h3>Relatório PDF Pronto</h3>
-            <p>Seu relatório estratégico foi gerado com sucesso e está pronto para visualização.</p>
-            <button class="open-pdf-btn" onclick="window.open('/api/analises/pdf/${analysis._id}', '_blank')">
-              <i class="fas fa-external-link-alt"></i> Abrir Relatório PDF
-            </button>
-            <div class="pdf-info">
-              <small><i class="fas fa-info-circle"></i> O PDF será aberto em uma nova aba do navegador</small>
-            </div>
-          </div>
-        `;
+          `;
+        }
         
-        exportPdfButton.disabled = false;
-        exportPdfButton.innerHTML = '<i class="fas fa-file-pdf"></i> Abrir Relatório PDF';
+        // Verificar se exportPdfButton existe antes de modificá-lo
+        if (exportPdfButton) {
+          exportPdfButton.disabled = false;
+          exportPdfButton.innerHTML = '<i class="fas fa-file-pdf"></i> Abrir Relatório PDF';
+        }
+        
         currentAnalysisData = {
           pdfUrl: `/api/analises/pdf/${analysis._id}`,
           analysis: analysis.conteudo
         };
       } else {
-        pdfViewer.innerHTML = `
-          <div class="pdf-error">
-            <i class="fas fa-exclamation-triangle"></i>
-            <p>PDF não disponível. Você ainda pode copiar o relatório usando o botão abaixo.</p>
-          </div>
-        `;
+        // Verificar se pdfViewer existe antes de tentar definir seu innerHTML
+        if (pdfViewer) {
+          pdfViewer.innerHTML = `
+            <div class="pdf-error">
+              <i class="fas fa-exclamation-triangle"></i>
+              <p>PDF não disponível. Você ainda pode copiar o relatório usando o botão abaixo.</p>
+            </div>
+          `;
+        }
         
-        exportPdfButton.disabled = true;
-        exportPdfButton.innerHTML = '<i class="fas fa-file-pdf"></i> PDF Indisponível';
+        // Verificar se exportPdfButton existe antes de modificá-lo
+        if (exportPdfButton) {
+          exportPdfButton.disabled = true;
+          exportPdfButton.innerHTML = '<i class="fas fa-file-pdf"></i> PDF Indisponível';
+        }
+        
         currentAnalysisData = {
           analysis: analysis.conteudo
         };
