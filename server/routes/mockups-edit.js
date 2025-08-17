@@ -27,15 +27,57 @@ router.get('/image/:id', authMiddleware.isAuthenticated, async (req, res) => {
             // Formato da galeria: mockupId_seed
             const [realMockupId, seed] = mockupId.split('_');
             
+            console.log(`🔍 [MOCKUP-EDIT] Buscando imagem com ID: ${mockupId}`);
+            console.log(`🔍 [MOCKUP-EDIT] Mockup ID real: ${realMockupId}, Seed: ${seed}`);
+            
             // Verificar se existem imagens salvas
             if (mockup.metadados && mockup.metadados.imagensSalvas && mockup.metadados.imagensSalvas.length > 0) {
-                // Encontrar a imagem específica pelo seed
-                const imagem = mockup.metadados.imagensSalvas.find(img => img.seed.toString() === seed);
+                console.log(`🔍 [MOCKUP-EDIT] Encontradas ${mockup.metadados.imagensSalvas.length} imagens salvas`);
+                
+                // Encontrar a imagem específica pelo seed - usando comparação mais flexível
+                // O seed pode ser um número ou uma string como "1:1"
+                const imagem = mockup.metadados.imagensSalvas.find(img => {
+                    const imgSeedStr = img.seed.toString();
+                    
+                    // Comparação direta
+                    if (imgSeedStr === seed) return true;
+                    
+                    // Comparação numérica se possível
+                    if (!isNaN(seed) && !isNaN(imgSeedStr) && parseInt(imgSeedStr) === parseInt(seed)) return true;
+                    
+                    // Comparação especial para seeds com formato de proporção (ex: "1:1")
+                    if (seed.includes(':') && imgSeedStr.includes(':')) {
+                        return seed.trim() === imgSeedStr.trim();
+                    }
+                    
+                    // Comparação alternativa: verificar se o seed está contido no imgSeedStr
+                    return imgSeedStr.includes(seed) || seed.includes(imgSeedStr);
+                });
                 
                 if (imagem) {
+                    console.log(`✅ [MOCKUP-EDIT] Imagem encontrada: ${imagem.url}`);
                     return res.json({
                         url: imagem.url,
                         nome: `${mockup.titulo} - Variação ${seed}`
+                    });
+                } else {
+                    console.log(`❌ [MOCKUP-EDIT] Nenhuma imagem encontrada com seed: ${seed}`);
+                    console.log(`🔍 [MOCKUP-EDIT] Seeds disponíveis:`, mockup.metadados.imagensSalvas.map(img => img.seed));
+                }
+            } else {
+                console.log(`❌ [MOCKUP-EDIT] Mockup não possui imagens salvas`);
+            }
+            
+            // Se não encontrou a imagem específica, tentar buscar pelo índice
+            if (mockup.metadados && mockup.metadados.imagensSalvas && mockup.metadados.imagensSalvas.length > 0) {
+                // Tentar interpretar o seed como um índice (1-based)
+                const index = parseInt(seed) - 1;
+                if (!isNaN(index) && index >= 0 && index < mockup.metadados.imagensSalvas.length) {
+                    const imagem = mockup.metadados.imagensSalvas[index];
+                    console.log(`✅ [MOCKUP-EDIT] Imagem encontrada pelo índice ${index}: ${imagem.url}`);
+                    return res.json({
+                        url: imagem.url,
+                        nome: `${mockup.titulo} - Variação ${index + 1}`
                     });
                 }
             }
