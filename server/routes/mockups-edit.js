@@ -22,10 +22,45 @@ router.get('/image/:id', authMiddleware.isAuthenticated, async (req, res) => {
             return res.status(403).json({ error: 'Você não tem permissão para acessar este mockup' });
         }
         
+        // Verificar se o ID contém um underscore (formato mockupId_seed para imagens da galeria)
+        if (mockupId.includes('_')) {
+            // Formato da galeria: mockupId_seed
+            const [realMockupId, seed] = mockupId.split('_');
+            
+            // Verificar se existem imagens salvas
+            if (mockup.metadados && mockup.metadados.imagensSalvas && mockup.metadados.imagensSalvas.length > 0) {
+                // Encontrar a imagem específica pelo seed
+                const imagem = mockup.metadados.imagensSalvas.find(img => img.seed.toString() === seed);
+                
+                if (imagem) {
+                    return res.json({
+                        url: imagem.url,
+                        nome: `${mockup.titulo} - Variação ${seed}`
+                    });
+                }
+            }
+            
+            // Se não encontrou a imagem específica, retornar erro
+            return res.status(404).json({ error: 'Imagem específica não encontrada' });
+        }
+        
+        // Caso padrão: usar a imagem principal do mockup
+        let imageUrl = mockup.imagemUrl;
+        
+        // Se não tiver imagem principal mas tiver imagens salvas, usar a primeira
+        if (!imageUrl && mockup.metadados && mockup.metadados.imagensSalvas && mockup.metadados.imagensSalvas.length > 0) {
+            imageUrl = mockup.metadados.imagensSalvas[0].url;
+        }
+        
+        // Verificar se encontrou alguma URL de imagem
+        if (!imageUrl) {
+            return res.status(404).json({ error: 'Imagem não encontrada para este mockup' });
+        }
+        
         // Retornar URL da imagem
         res.json({
-            url: mockup.url,
-            nome: mockup.nome
+            url: imageUrl,
+            nome: mockup.titulo || 'Imagem sem título'
         });
         
     } catch (error) {
