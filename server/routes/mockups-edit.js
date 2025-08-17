@@ -4,7 +4,21 @@ const cloudinary = require('../config/cloudinary');
 const authMiddleware = require('../middleware/auth');
 const Mockup = require('../models/Mockup');
 const path = require('path');
-// Usando fetch nativo em vez de node-fetch
+
+// Verificar se fetch está disponível globalmente
+if (typeof fetch === 'undefined') {
+    console.error('❌ [MOCKUP-EDIT] Fetch não está disponível globalmente. Isso é um erro crítico.');
+    // Tentar importar node-fetch como fallback
+    try {
+        const nodeFetch = require('node-fetch');
+        global.fetch = nodeFetch;
+        console.log('✅ [MOCKUP-EDIT] Usando node-fetch como fallback');
+    } catch (error) {
+        console.error('❌ [MOCKUP-EDIT] Não foi possível importar node-fetch:', error);
+    }
+} else {
+    console.log('✅ [MOCKUP-EDIT] Fetch está disponível globalmente');
+}
 
 // Rota para obter imagem para edição
 router.get('/image/:id', authMiddleware.isAuthenticated, async (req, res) => {
@@ -228,14 +242,25 @@ router.post('/init-session/:id', authMiddleware.isAuthenticated, async (req, res
         const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
         
         try {
-            // Baixar a imagem original usando fetch nativo
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Tentando baixar imagem original: ${imageUrl}`);
+            
+            // Verificar se fetch está disponível
+            if (typeof fetch === 'undefined') {
+                throw new Error('Fetch não está disponível globalmente');
+            }
+            
+            // Baixar a imagem original usando fetch
             const imageResponse = await fetch(imageUrl);
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Resposta recebida: ${imageResponse.status} ${imageResponse.statusText}`);
+            
             if (!imageResponse.ok) {
                 throw new Error(`Erro ao baixar imagem original: ${imageResponse.status}`);
             }
             
             // Converter resposta para ArrayBuffer e depois para Buffer
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Convertendo resposta para ArrayBuffer`);
             const arrayBuffer = await imageResponse.arrayBuffer();
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Convertendo ArrayBuffer para Buffer`);
             const imageBuffer = Buffer.from(arrayBuffer);
             
             // Fazer upload para pasta temporária no Cloudinary
@@ -414,14 +439,25 @@ router.post('/save-final/:sessionId', authMiddleware.isAuthenticated, async (req
         }
         
         try {
-            // Baixar a imagem temporária usando fetch nativo
+            console.log(`🔍 [MOCKUP-EDIT-SAVE] Tentando baixar imagem temporária: ${imageUrl}`);
+            
+            // Verificar se fetch está disponível
+            if (typeof fetch === 'undefined') {
+                throw new Error('Fetch não está disponível globalmente');
+            }
+            
+            // Baixar a imagem temporária usando fetch
             const imageResponse = await fetch(imageUrl);
+            console.log(`🔍 [MOCKUP-EDIT-SAVE] Resposta recebida: ${imageResponse.status} ${imageResponse.statusText}`);
+            
             if (!imageResponse.ok) {
                 throw new Error(`Erro ao baixar imagem temporária: ${imageResponse.status}`);
             }
             
             // Converter resposta para ArrayBuffer e depois para Buffer
+            console.log(`🔍 [MOCKUP-EDIT-SAVE] Convertendo resposta para ArrayBuffer`);
             const arrayBuffer = await imageResponse.arrayBuffer();
+            console.log(`🔍 [MOCKUP-EDIT-SAVE] Convertendo ArrayBuffer para Buffer`);
             const imageBuffer = Buffer.from(arrayBuffer);
             
             // Upload para pasta permanente no Cloudinary
