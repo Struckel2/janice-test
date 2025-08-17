@@ -231,6 +231,9 @@ router.post('/init-session/:id', authMiddleware.isAuthenticated, async (req, res
         
         try {
             console.log(`🔍 [MOCKUP-EDIT-SESSION] Tentando baixar imagem original: ${imageUrl}`);
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Ambiente Node.js: ${process.version}`);
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Fetch disponível: ${typeof fetch !== 'undefined'}`);
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Fetch é nativo: ${fetch.toString().includes('[native code]')}`);
             
             // Verificar se fetch está disponível
             if (typeof fetch === 'undefined') {
@@ -240,16 +243,43 @@ router.post('/init-session/:id', authMiddleware.isAuthenticated, async (req, res
             // Baixar a imagem original usando fetch
             const imageResponse = await fetch(imageUrl);
             console.log(`🔍 [MOCKUP-EDIT-SESSION] Resposta recebida: ${imageResponse.status} ${imageResponse.statusText}`);
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Métodos disponíveis na resposta:`, 
+                        Object.getOwnPropertyNames(Object.getPrototypeOf(imageResponse)));
             
             if (!imageResponse.ok) {
                 throw new Error(`Erro ao baixar imagem original: ${imageResponse.status}`);
             }
             
-            // Converter resposta para ArrayBuffer e depois para Buffer
-            console.log(`🔍 [MOCKUP-EDIT-SESSION] Convertendo resposta para ArrayBuffer`);
-            const arrayBuffer = await imageResponse.arrayBuffer();
-            console.log(`🔍 [MOCKUP-EDIT-SESSION] Convertendo ArrayBuffer para Buffer`);
-            const imageBuffer = Buffer.from(arrayBuffer);
+            // Método mais robusto para obter os dados binários
+            let imageBuffer;
+            try {
+                // Tentar usar arrayBuffer() primeiro (API moderna)
+                console.log(`🔍 [MOCKUP-EDIT-SESSION] Tentando usar arrayBuffer()`);
+                const arrayBuffer = await imageResponse.arrayBuffer();
+                imageBuffer = Buffer.from(arrayBuffer);
+                console.log(`✅ [MOCKUP-EDIT-SESSION] arrayBuffer() funcionou com sucesso`);
+            } catch (bufferError) {
+                console.error(`❌ [MOCKUP-EDIT-SESSION] Erro ao usar arrayBuffer():`, bufferError);
+                
+                try {
+                    // Fallback para buffer() (node-fetch)
+                    console.log(`🔍 [MOCKUP-EDIT-SESSION] Tentando usar buffer()`);
+                    if (typeof imageResponse.buffer === 'function') {
+                        imageBuffer = await imageResponse.buffer();
+                        console.log(`✅ [MOCKUP-EDIT-SESSION] buffer() funcionou com sucesso`);
+                    } else {
+                        // Último recurso: obter como texto e converter para buffer
+                        console.log(`🔍 [MOCKUP-EDIT-SESSION] Tentando usar blob() e arrayBuffer()`);
+                        const blob = await imageResponse.blob();
+                        const arrayBuffer = await blob.arrayBuffer();
+                        imageBuffer = Buffer.from(arrayBuffer);
+                        console.log(`✅ [MOCKUP-EDIT-SESSION] blob() e arrayBuffer() funcionaram com sucesso`);
+                    }
+                } catch (fallbackError) {
+                    console.error(`❌ [MOCKUP-EDIT-SESSION] Erro no fallback:`, fallbackError);
+                    throw new Error(`Não foi possível processar a resposta da imagem: ${fallbackError.message}`);
+                }
+            }
             
             // Fazer upload para pasta temporária no Cloudinary
             const uploadResult = await new Promise((resolve, reject) => {
@@ -442,11 +472,36 @@ router.post('/save-final/:sessionId', authMiddleware.isAuthenticated, async (req
                 throw new Error(`Erro ao baixar imagem temporária: ${imageResponse.status}`);
             }
             
-            // Converter resposta para ArrayBuffer e depois para Buffer
-            console.log(`🔍 [MOCKUP-EDIT-SAVE] Convertendo resposta para ArrayBuffer`);
-            const arrayBuffer = await imageResponse.arrayBuffer();
-            console.log(`🔍 [MOCKUP-EDIT-SAVE] Convertendo ArrayBuffer para Buffer`);
-            const imageBuffer = Buffer.from(arrayBuffer);
+            // Método mais robusto para obter os dados binários
+            let imageBuffer;
+            try {
+                // Tentar usar arrayBuffer() primeiro (API moderna)
+                console.log(`🔍 [MOCKUP-EDIT-SAVE] Tentando usar arrayBuffer()`);
+                const arrayBuffer = await imageResponse.arrayBuffer();
+                imageBuffer = Buffer.from(arrayBuffer);
+                console.log(`✅ [MOCKUP-EDIT-SAVE] arrayBuffer() funcionou com sucesso`);
+            } catch (bufferError) {
+                console.error(`❌ [MOCKUP-EDIT-SAVE] Erro ao usar arrayBuffer():`, bufferError);
+                
+                try {
+                    // Fallback para buffer() (node-fetch)
+                    console.log(`🔍 [MOCKUP-EDIT-SAVE] Tentando usar buffer()`);
+                    if (typeof imageResponse.buffer === 'function') {
+                        imageBuffer = await imageResponse.buffer();
+                        console.log(`✅ [MOCKUP-EDIT-SAVE] buffer() funcionou com sucesso`);
+                    } else {
+                        // Último recurso: obter como texto e converter para buffer
+                        console.log(`🔍 [MOCKUP-EDIT-SAVE] Tentando usar blob() e arrayBuffer()`);
+                        const blob = await imageResponse.blob();
+                        const arrayBuffer = await blob.arrayBuffer();
+                        imageBuffer = Buffer.from(arrayBuffer);
+                        console.log(`✅ [MOCKUP-EDIT-SAVE] blob() e arrayBuffer() funcionaram com sucesso`);
+                    }
+                } catch (fallbackError) {
+                    console.error(`❌ [MOCKUP-EDIT-SAVE] Erro no fallback:`, fallbackError);
+                    throw new Error(`Não foi possível processar a resposta da imagem: ${fallbackError.message}`);
+                }
+            }
             
             // Upload para pasta permanente no Cloudinary
             const uploadResult = await new Promise((resolve, reject) => {
