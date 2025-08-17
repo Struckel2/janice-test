@@ -4,7 +4,7 @@ const cloudinary = require('../config/cloudinary');
 const authMiddleware = require('../middleware/auth');
 const Mockup = require('../models/Mockup');
 const path = require('path');
-const fetch = require('node-fetch');
+// Usando fetch nativo em vez de node-fetch
 
 // Rota para obter imagem para edição
 router.get('/image/:id', authMiddleware.isAuthenticated, async (req, res) => {
@@ -228,13 +228,15 @@ router.post('/init-session/:id', authMiddleware.isAuthenticated, async (req, res
         const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
         
         try {
-            // Baixar a imagem original
+            // Baixar a imagem original usando fetch nativo
             const imageResponse = await fetch(imageUrl);
             if (!imageResponse.ok) {
                 throw new Error(`Erro ao baixar imagem original: ${imageResponse.status}`);
             }
             
-            const imageBuffer = await imageResponse.buffer();
+            // Converter resposta para ArrayBuffer e depois para Buffer
+            const arrayBuffer = await imageResponse.arrayBuffer();
+            const imageBuffer = Buffer.from(arrayBuffer);
             
             // Fazer upload para pasta temporária no Cloudinary
             const uploadResult = await new Promise((resolve, reject) => {
@@ -412,13 +414,15 @@ router.post('/save-final/:sessionId', authMiddleware.isAuthenticated, async (req
         }
         
         try {
-            // Baixar a imagem temporária
+            // Baixar a imagem temporária usando fetch nativo
             const imageResponse = await fetch(imageUrl);
             if (!imageResponse.ok) {
                 throw new Error(`Erro ao baixar imagem temporária: ${imageResponse.status}`);
             }
             
-            const imageBuffer = await imageResponse.buffer();
+            // Converter resposta para ArrayBuffer e depois para Buffer
+            const arrayBuffer = await imageResponse.arrayBuffer();
+            const imageBuffer = Buffer.from(arrayBuffer);
             
             // Upload para pasta permanente no Cloudinary
             const uploadResult = await new Promise((resolve, reject) => {
