@@ -33,44 +33,79 @@ router.get('/image/:id', authMiddleware.isAuthenticated, async (req, res) => {
             return res.status(400).json({ error: 'ID da imagem não fornecido' });
         }
         
-        // Buscar imagem na galeria ou no banco de dados
-        // Aqui você pode adaptar para buscar de onde suas imagens estão armazenadas
-        // Por exemplo, do Cloudinary, do sistema de arquivos local, etc.
+        // Extrair mockupId e seed do imageId (formato: mockupId_seed)
+        const [mockupId, seed] = imageId.split('_');
         
-        // Exemplo com Cloudinary (assumindo que o ID é o public_id do Cloudinary)
-        try {
-            // Tentar buscar do Cloudinary
-            const result = await cloudinary.api.resource(imageId);
+        if (!mockupId || !seed) {
+            console.error('Formato de ID inválido:', imageId);
             
-            return res.json({
-                id: imageId,
-                url: result.secure_url,
-                width: result.width,
-                height: result.height,
-                format: result.format
-            });
-        } catch (cloudinaryError) {
-            console.error('Erro ao buscar imagem do Cloudinary:', cloudinaryError);
-            
-            // Se não encontrar no Cloudinary, tentar buscar localmente
-            // Verificar se existe na pasta de uploads
-            const localPath = path.join(__dirname, '../../public/uploads', `${imageId}.webp`);
-            
-            if (await existsAsync(localPath)) {
-                // Se existir localmente, retornar URL local
+            // Tentar o método antigo como fallback
+            try {
+                // Tentar buscar do Cloudinary diretamente
+                const result = await cloudinary.api.resource(imageId);
+                
                 return res.json({
                     id: imageId,
-                    url: `/uploads/${imageId}.webp`,
-                    // Não temos informações de dimensões para arquivos locais sem processamento adicional
-                    width: 800, // valor padrão
-                    height: 600, // valor padrão
-                    format: 'webp'
+                    url: result.secure_url,
+                    width: result.width,
+                    height: result.height,
+                    format: result.format
                 });
+            } catch (cloudinaryError) {
+                console.error('Erro ao buscar imagem do Cloudinary:', cloudinaryError);
+                
+                // Se não encontrar no Cloudinary, tentar buscar localmente
+                const localPath = path.join(__dirname, '../../public/uploads', `${imageId}.webp`);
+                
+                if (await existsAsync(localPath)) {
+                    // Se existir localmente, retornar URL local
+                    return res.json({
+                        id: imageId,
+                        url: `/uploads/${imageId}.webp`,
+                        width: 800, // valor padrão
+                        height: 600, // valor padrão
+                        format: 'webp'
+                    });
+                }
+                
+                return res.status(400).json({ error: 'Formato de ID inválido e imagem não encontrada' });
             }
-            
-            // Se não encontrar em nenhum lugar, retornar erro
+        }
+        
+        // Buscar o mockup no banco de dados
+        const Mockup = require('../models/Mockup');
+        const mockup = await Mockup.findById(mockupId);
+        
+        if (!mockup) {
+            console.error('Mockup não encontrado:', mockupId);
+            return res.status(404).json({ error: 'Mockup não encontrado' });
+        }
+        
+        // Verificar se existem imagens salvas
+        if (!mockup.metadados || !mockup.metadados.imagensSalvas || mockup.metadados.imagensSalvas.length === 0) {
+            console.error('Nenhuma imagem encontrada para o mockup:', mockupId);
+            return res.status(404).json({ error: 'Nenhuma imagem encontrada para este mockup' });
+        }
+        
+        // Encontrar a imagem específica com o seed correspondente
+        const imagem = mockup.metadados.imagensSalvas.find(img => img.seed.toString() === seed);
+        
+        if (!imagem) {
+            console.error(`Imagem com seed ${seed} não encontrada no mockup ${mockupId}`);
             return res.status(404).json({ error: 'Imagem não encontrada' });
         }
+        
+        console.log(`Imagem encontrada para ${imageId}:`, imagem);
+        
+        // Retornar os dados da imagem
+        return res.json({
+            id: imageId,
+            url: imagem.url,
+            width: imagem.width || 800,
+            height: imagem.height || 600,
+            format: 'webp'
+        });
+        
     } catch (error) {
         console.error('Erro ao buscar informações da imagem:', error);
         res.status(500).json({ error: 'Erro ao buscar informações da imagem' });
