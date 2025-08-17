@@ -143,6 +143,11 @@ router.get('/image/:id', authMiddleware.isAuthenticated, async (req, res) => {
 // Rota para inicializar sessão de edição
 router.post('/init-session/:id', authMiddleware.isAuthenticated, async (req, res) => {
     try {
+        console.log(`🔍 [MOCKUP-EDIT-SESSION] ===== INICIANDO SESSÃO DE EDIÇÃO =====`);
+        console.log(`🔍 [MOCKUP-EDIT-SESSION] Parâmetros da requisição:`, req.params);
+        console.log(`🔍 [MOCKUP-EDIT-SESSION] Headers da requisição:`, req.headers);
+        console.log(`🔍 [MOCKUP-EDIT-SESSION] Usuário:`, req.user ? req.user._id : 'Não autenticado');
+        
         const mockupId = req.params.id;
         let realMockupId = mockupId;
         let seed = null;
@@ -159,12 +164,21 @@ router.post('/init-session/:id', authMiddleware.isAuthenticated, async (req, res
         }
         
         // Buscar mockup no banco de dados usando o ID real (sem o seed)
+        console.log(`🔍 [MOCKUP-EDIT-SESSION] Buscando mockup no banco de dados com ID: ${realMockupId}`);
         const mockup = await Mockup.findById(realMockupId);
         
         if (!mockup) {
             console.log(`❌ [MOCKUP-EDIT-SESSION] Mockup não encontrado com ID: ${realMockupId}`);
             return res.status(404).json({ error: 'Mockup não encontrado' });
         }
+        
+        console.log(`✅ [MOCKUP-EDIT-SESSION] Mockup encontrado:`, {
+            id: mockup._id,
+            titulo: mockup.titulo,
+            status: mockup.status,
+            imagemUrl: mockup.imagemUrl ? 'Presente' : 'Ausente',
+            metadados: mockup.metadados ? 'Presente' : 'Ausente'
+        });
         
         // Verificar se o usuário tem permissão para acessar este mockup
         if (mockup.criadoPor && mockup.criadoPor.toString() !== req.user._id.toString() && !req.user.isAdmin) {
@@ -173,6 +187,8 @@ router.post('/init-session/:id', authMiddleware.isAuthenticated, async (req, res
         
         // Determinar a URL da imagem original
         let imageUrl;
+        
+        console.log(`🔍 [MOCKUP-EDIT-SESSION] Determinando URL da imagem original...`);
         
         if (seed) {
             // Buscar imagem específica pelo seed
@@ -223,104 +239,198 @@ router.post('/init-session/:id', authMiddleware.isAuthenticated, async (req, res
         }
         
         if (!imageUrl) {
+            console.log(`❌ [MOCKUP-EDIT-SESSION] Nenhuma URL de imagem encontrada para o mockup`);
             return res.status(404).json({ error: 'Imagem não encontrada para este mockup' });
         }
         
+        console.log(`✅ [MOCKUP-EDIT-SESSION] URL da imagem original determinada: ${imageUrl}`);
+        
         // Gerar um ID de sessão único
         const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+        console.log(`🔍 [MOCKUP-EDIT-SESSION] ID de sessão gerado: ${sessionId}`);
         
         try {
-            console.log(`🔍 [MOCKUP-EDIT-SESSION] Tentando baixar imagem original: ${imageUrl}`);
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] ===== INICIANDO DOWNLOAD DA IMAGEM =====`);
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] URL da imagem: ${imageUrl}`);
             console.log(`🔍 [MOCKUP-EDIT-SESSION] Ambiente Node.js: ${process.version}`);
             console.log(`🔍 [MOCKUP-EDIT-SESSION] Fetch disponível: ${typeof fetch !== 'undefined'}`);
             console.log(`🔍 [MOCKUP-EDIT-SESSION] Fetch é nativo: ${fetch.toString().includes('[native code]')}`);
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Cloudinary configurado:`, {
+                cloudName: process.env.CLOUDINARY_CLOUD_NAME ? 'Configurado' : 'Não configurado',
+                apiKey: process.env.CLOUDINARY_API_KEY ? 'Configurado' : 'Não configurado',
+                apiSecret: process.env.CLOUDINARY_API_SECRET ? 'Configurado' : 'Não configurado'
+            });
             
             // Verificar se fetch está disponível
             if (typeof fetch === 'undefined') {
+                console.error(`❌ [MOCKUP-EDIT-SESSION] Fetch não está disponível globalmente`);
                 throw new Error('Fetch não está disponível globalmente');
             }
             
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Iniciando fetch para URL: ${imageUrl}`);
+            
             // Baixar a imagem original usando fetch
             const imageResponse = await fetch(imageUrl);
-            console.log(`🔍 [MOCKUP-EDIT-SESSION] Resposta recebida: ${imageResponse.status} ${imageResponse.statusText}`);
+            
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] ===== RESPOSTA DO FETCH RECEBIDA =====`);
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Status: ${imageResponse.status} ${imageResponse.statusText}`);
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Headers:`, Object.fromEntries([...imageResponse.headers.entries()]));
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Content-Type:`, imageResponse.headers.get('content-type'));
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Content-Length:`, imageResponse.headers.get('content-length'));
             console.log(`🔍 [MOCKUP-EDIT-SESSION] Métodos disponíveis na resposta:`, 
                         Object.getOwnPropertyNames(Object.getPrototypeOf(imageResponse)));
             
             if (!imageResponse.ok) {
+                console.error(`❌ [MOCKUP-EDIT-SESSION] Resposta não OK: ${imageResponse.status} ${imageResponse.statusText}`);
                 throw new Error(`Erro ao baixar imagem original: ${imageResponse.status}`);
             }
+            
+            console.log(`✅ [MOCKUP-EDIT-SESSION] Resposta OK recebida`);
             
             // Método mais robusto para obter os dados binários
             let imageBuffer;
             try {
                 // Tentar usar arrayBuffer() primeiro (API moderna)
-                console.log(`🔍 [MOCKUP-EDIT-SESSION] Tentando usar arrayBuffer()`);
+                console.log(`🔍 [MOCKUP-EDIT-SESSION] ===== TENTANDO MÉTODO 1: arrayBuffer() =====`);
+                console.log(`🔍 [MOCKUP-EDIT-SESSION] arrayBuffer disponível:`, typeof imageResponse.arrayBuffer === 'function');
+                
                 const arrayBuffer = await imageResponse.arrayBuffer();
+                console.log(`🔍 [MOCKUP-EDIT-SESSION] arrayBuffer obtido com sucesso, tamanho:`, arrayBuffer.byteLength);
+                
                 imageBuffer = Buffer.from(arrayBuffer);
+                console.log(`✅ [MOCKUP-EDIT-SESSION] Buffer criado com sucesso, tamanho:`, imageBuffer.length);
                 console.log(`✅ [MOCKUP-EDIT-SESSION] arrayBuffer() funcionou com sucesso`);
             } catch (bufferError) {
                 console.error(`❌ [MOCKUP-EDIT-SESSION] Erro ao usar arrayBuffer():`, bufferError);
+                console.error(`❌ [MOCKUP-EDIT-SESSION] Stack trace:`, bufferError.stack);
                 
                 try {
                     // Fallback para buffer() (node-fetch)
-                    console.log(`🔍 [MOCKUP-EDIT-SESSION] Tentando usar buffer()`);
+                    console.log(`🔍 [MOCKUP-EDIT-SESSION] ===== TENTANDO MÉTODO 2: buffer() =====`);
+                    console.log(`🔍 [MOCKUP-EDIT-SESSION] buffer disponível:`, typeof imageResponse.buffer === 'function');
+                    
                     if (typeof imageResponse.buffer === 'function') {
                         imageBuffer = await imageResponse.buffer();
-                        console.log(`✅ [MOCKUP-EDIT-SESSION] buffer() funcionou com sucesso`);
+                        console.log(`✅ [MOCKUP-EDIT-SESSION] buffer() funcionou com sucesso, tamanho:`, imageBuffer.length);
                     } else {
                         // Último recurso: obter como texto e converter para buffer
-                        console.log(`🔍 [MOCKUP-EDIT-SESSION] Tentando usar blob() e arrayBuffer()`);
+                        console.log(`🔍 [MOCKUP-EDIT-SESSION] ===== TENTANDO MÉTODO 3: blob() e arrayBuffer() =====`);
+                        console.log(`🔍 [MOCKUP-EDIT-SESSION] blob disponível:`, typeof imageResponse.blob === 'function');
+                        
                         const blob = await imageResponse.blob();
+                        console.log(`🔍 [MOCKUP-EDIT-SESSION] Blob obtido com sucesso, tamanho:`, blob.size);
+                        
                         const arrayBuffer = await blob.arrayBuffer();
+                        console.log(`🔍 [MOCKUP-EDIT-SESSION] ArrayBuffer obtido do blob, tamanho:`, arrayBuffer.byteLength);
+                        
                         imageBuffer = Buffer.from(arrayBuffer);
+                        console.log(`✅ [MOCKUP-EDIT-SESSION] Buffer criado com sucesso, tamanho:`, imageBuffer.length);
                         console.log(`✅ [MOCKUP-EDIT-SESSION] blob() e arrayBuffer() funcionaram com sucesso`);
                     }
                 } catch (fallbackError) {
                     console.error(`❌ [MOCKUP-EDIT-SESSION] Erro no fallback:`, fallbackError);
+                    console.error(`❌ [MOCKUP-EDIT-SESSION] Stack trace:`, fallbackError.stack);
                     throw new Error(`Não foi possível processar a resposta da imagem: ${fallbackError.message}`);
                 }
             }
             
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] ===== PREPARANDO UPLOAD PARA CLOUDINARY =====`);
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Buffer obtido com sucesso, tamanho:`, imageBuffer.length);
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Primeiros bytes do buffer:`, imageBuffer.slice(0, 20).toString('hex'));
+            
+            // Verificar se o buffer parece ser uma imagem válida
+            const isValidImage = imageBuffer.length > 100 && 
+                                (imageBuffer[0] === 0xFF && imageBuffer[1] === 0xD8 || // JPEG
+                                 imageBuffer[0] === 0x89 && imageBuffer[1] === 0x50 || // PNG
+                                 imageBuffer[0] === 0x47 && imageBuffer[1] === 0x49);  // GIF
+                                 
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Buffer parece ser uma imagem válida:`, isValidImage);
+            
+            // Opções de upload para Cloudinary
+            const uploadOptions = {
+                public_id: sessionId,
+                folder: 'temp_edits',
+                format: 'png',
+                resource_type: 'image',
+                // Expirar em 24 horas
+                expires_at: Math.floor(Date.now() / 1000) + 86400
+            };
+            
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Opções de upload:`, uploadOptions);
+            
             // Fazer upload para pasta temporária no Cloudinary
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Iniciando upload para Cloudinary...`);
             const uploadResult = await new Promise((resolve, reject) => {
-                cloudinary.uploader.upload_stream({
-                    public_id: sessionId,
-                    folder: 'temp_edits',
-                    format: 'png',
-                    resource_type: 'image',
-                    // Expirar em 24 horas
-                    expires_at: Math.floor(Date.now() / 1000) + 86400
-                }, (error, result) => {
+                cloudinary.uploader.upload_stream(uploadOptions, (error, result) => {
                     if (error) {
+                        console.error(`❌ [MOCKUP-EDIT-SESSION] Erro no upload para Cloudinary:`, error);
                         reject(error);
                     } else {
+                        console.log(`✅ [MOCKUP-EDIT-SESSION] Upload para Cloudinary bem-sucedido`);
                         resolve(result);
                     }
                 }).end(imageBuffer);
             });
             
+            console.log(`✅ [MOCKUP-EDIT-SESSION] ===== UPLOAD CONCLUÍDO COM SUCESSO =====`);
             console.log(`✅ [MOCKUP-EDIT-SESSION] Sessão inicializada: ${sessionId}`);
             console.log(`✅ [MOCKUP-EDIT-SESSION] Imagem temporária: ${uploadResult.secure_url}`);
+            console.log(`✅ [MOCKUP-EDIT-SESSION] Detalhes do upload:`, {
+                publicId: uploadResult.public_id,
+                formato: uploadResult.format,
+                tamanho: uploadResult.bytes,
+                largura: uploadResult.width,
+                altura: uploadResult.height
+            });
             
-            // Retornar informações da sessão
-            res.json({
+            // Preparar resposta para o cliente
+            const responseData = {
                 success: true,
                 sessionId: sessionId,
                 imageUrl: uploadResult.secure_url,
                 originalImageUrl: imageUrl,
                 mockupId: realMockupId,
                 seed: seed
-            });
+            };
+            
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] ===== ENVIANDO RESPOSTA AO CLIENTE =====`);
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Dados da resposta:`, responseData);
+            
+            // Retornar informações da sessão
+            res.json(responseData);
             
         } catch (fetchError) {
-            console.error('Erro ao processar imagem original:', fetchError);
-            res.status(500).json({ error: `Erro ao inicializar sessão: ${fetchError.message}` });
+            console.error('❌ [MOCKUP-EDIT-SESSION] Erro ao processar imagem original:', fetchError);
+            console.error('❌ [MOCKUP-EDIT-SESSION] Stack trace:', fetchError.stack);
+            
+            // Tentar obter mais informações sobre o erro
+            let errorDetails = fetchError.message;
+            if (fetchError.cause) {
+                console.error('❌ [MOCKUP-EDIT-SESSION] Causa do erro:', fetchError.cause);
+                errorDetails += ` (Causa: ${fetchError.cause})`;
+            }
+            
+            res.status(500).json({ 
+                error: `Erro ao inicializar sessão: ${errorDetails}`,
+                stack: process.env.NODE_ENV === 'development' ? fetchError.stack : undefined
+            });
         }
         
     } catch (error) {
-        console.error('Erro ao inicializar sessão de edição:', error);
-        console.error('Stack trace:', error.stack);
-        res.status(500).json({ error: `Erro ao inicializar sessão: ${error.message}` });
+        console.error('❌ [MOCKUP-EDIT-SESSION] Erro ao inicializar sessão de edição:', error);
+        console.error('❌ [MOCKUP-EDIT-SESSION] Stack trace:', error.stack);
+        
+        // Tentar obter mais informações sobre o erro
+        let errorDetails = error.message;
+        if (error.cause) {
+            console.error('❌ [MOCKUP-EDIT-SESSION] Causa do erro:', error.cause);
+            errorDetails += ` (Causa: ${error.cause})`;
+        }
+        
+        res.status(500).json({ 
+            error: `Erro ao inicializar sessão: ${errorDetails}`,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 });
 
