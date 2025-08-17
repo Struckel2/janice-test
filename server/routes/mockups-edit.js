@@ -5,20 +5,8 @@ const authMiddleware = require('../middleware/auth');
 const Mockup = require('../models/Mockup');
 const path = require('path');
 
-// Verificar se fetch está disponível globalmente
-if (typeof fetch === 'undefined') {
-    console.error('❌ [MOCKUP-EDIT] Fetch não está disponível globalmente. Isso é um erro crítico.');
-    // Tentar importar node-fetch como fallback
-    try {
-        const nodeFetch = require('node-fetch');
-        global.fetch = nodeFetch;
-        console.log('✅ [MOCKUP-EDIT] Usando node-fetch como fallback');
-    } catch (error) {
-        console.error('❌ [MOCKUP-EDIT] Não foi possível importar node-fetch:', error);
-    }
-} else {
-    console.log('✅ [MOCKUP-EDIT] Fetch está disponível globalmente');
-}
+// O fetch já deve estar disponível globalmente através do polyfill em server/config/fetch-polyfill.js
+console.log('🔍 [MOCKUP-EDIT] Iniciando módulo com fetch:', typeof fetch !== 'undefined' ? 'Disponível' : 'Não disponível');
 
 // Rota para obter imagem para edição
 router.get('/image/:id', authMiddleware.isAuthenticated, async (req, res) => {
