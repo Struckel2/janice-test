@@ -4,6 +4,8 @@
 let canvas;
 let originalImage;
 let imageId;
+let sessionId;
+let currentImageUrl;
 let undoStack = [];
 let redoStack = [];
 let currentFilter = 'none';
@@ -102,23 +104,34 @@ async function processAIEdit() {
         return;
     }
     
+    // Verificar se temos uma sessão ativa
+    if (!sessionId || !currentImageUrl) {
+        alert('Erro: Sessão de edição não inicializada corretamente.');
+        return;
+    }
+    
+    // Primeiro, atualizar a imagem temporária para garantir que estamos usando a versão mais recente
+    try {
+        await updateTempImage();
+    } catch (updateError) {
+        console.error('Erro ao atualizar imagem temporária antes da edição com IA:', updateError);
+        // Continuar mesmo com erro, usando a última versão salva
+    }
+    
     // Mostrar indicador de processamento
     document.getElementById('ai-processing').style.display = 'block';
     document.getElementById('ai-result').style.display = 'none';
     
     try {
-        // Obter a imagem atual do canvas
-        const imageData = canvas.toDataURL('image/png');
-        
-        // Enviar para o servidor
-        const response = await fetch(`/api/mockups-edit/ai-edit/${imageId}`, {
+        // Enviar para o servidor usando a URL da imagem temporária
+        const response = await fetch(`/api/mockups-edit/ai-edit/${sessionId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 prompt: prompt,
-                imageData: imageData
+                imageUrl: currentImageUrl
             })
         });
         
@@ -146,11 +159,18 @@ async function processAIEdit() {
 }
 
 // Função para aceitar resultado da IA
-function acceptAIResult() {
+async function acceptAIResult() {
     if (!window.editedImageUrl) return;
     
+    // Mostrar overlay de carregamento
+    document.getElementById('loading-overlay').style.display = 'flex';
+    document.getElementById('loading-overlay').innerHTML = `
+        <div class="spinner"></div>
+        <p>Aplicando edição...</p>
+    `;
+    
     // Carregar a imagem editada no canvas
-    fabric.Image.fromURL(window.editedImageUrl, (img) => {
+    fabric.Image.fromURL(window.editedImageUrl, async (img) => {
         // Redimensionar a imagem para caber no canvas mantendo a proporção
         const scale = Math.min(
             canvas.width / img.width,
@@ -178,6 +198,18 @@ function acceptAIResult() {
         // Limpar resultado
         document.getElementById('ai-result').style.display = 'none';
         document.getElementById('ai-prompt').value = '';
+        
+        // Atualizar a imagem temporária no servidor
+        try {
+            await updateTempImage();
+            console.log('Imagem temporária atualizada após edição com IA');
+        } catch (error) {
+            console.error('Erro ao atualizar imagem temporária após edição com IA:', error);
+            // Continuar mesmo com erro
+        }
+        
+        // Esconder overlay de carregamento
+        document.getElementById('loading-overlay').style.display = 'none';
     });
 }
 
@@ -188,18 +220,36 @@ function rejectAIResult() {
     window.editedImageUrl = null;
 }
 
-// Função para carregar a imagem
-async function loadImage(imageId) {
+// Função para inicializar sessão de edição
+async function initEditSession(imageId) {
     try {
-        const response = await fetch(`/api/mockups-edit/image/${imageId}`);
+        // Mostrar overlay de carregamento
+        document.getElementById('loading-overlay').style.display = 'flex';
+        document.getElementById('loading-overlay').innerHTML = `
+            <div class="spinner"></div>
+            <p>Inicializando sessão de edição...</p>
+        `;
+        
+        // Inicializar sessão de edição no servidor
+        const response = await fetch(`/api/mockups-edit/init-session/${imageId}`, {
+            method: 'POST'
+        });
+        
         if (!response.ok) {
-            throw new Error(`Erro ao carregar imagem: ${response.status}`);
+            throw new Error(`Erro ao inicializar sessão: ${response.status}`);
         }
         
-        const imageData = await response.json();
+        const sessionData = await response.json();
+        
+        // Armazenar dados da sessão
+        sessionId = sessionData.sessionId;
+        currentImageUrl = sessionData.imageUrl;
+        
+        console.log('Sessão de edição inicializada:', sessionId);
+        console.log('URL da imagem temporária:', currentImageUrl);
         
         // Carregar a imagem no canvas
-        fabric.Image.fromURL(imageData.url, (img) => {
+        fabric.Image.fromURL(currentImageUrl, (img) => {
             // Redimensionar a imagem para caber no canvas mantendo a proporção
             const scale = Math.min(
                 canvas.width / img.width,
@@ -234,9 +284,55 @@ async function loadImage(imageId) {
             showImageProperties();
         });
     } catch (error) {
-        console.error('Erro ao carregar imagem:', error);
-        showError(`Erro ao carregar imagem: ${error.message}`);
+        console.error('Erro ao inicializar sessão de edição:', error);
+        showError(`Erro ao inicializar sessão: ${error.message}`);
     }
+}
+
+// Função para atualizar imagem temporária
+async function updateTempImage() {
+    try {
+        // Verificar se temos uma sessão ativa
+        if (!sessionId) {
+            console.error('Nenhuma sessão de edição ativa');
+            return;
+        }
+        
+        // Obter dados da imagem atual
+        const imageData = canvas.toDataURL('image/png');
+        
+        // Enviar para o servidor
+        const response = await fetch(`/api/mockups-edit/update-temp/${sessionId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                imageData: imageData
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Erro ao atualizar imagem temporária: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        // Atualizar URL da imagem atual
+        currentImageUrl = result.imageUrl;
+        
+        console.log('Imagem temporária atualizada:', currentImageUrl);
+        
+    } catch (error) {
+        console.error('Erro ao atualizar imagem temporária:', error);
+        // Não mostrar erro para o usuário, apenas registrar no console
+    }
+}
+
+// Função legada para compatibilidade
+async function loadImage(imageId) {
+    // Usar a nova função de inicialização de sessão
+    await initEditSession(imageId);
 }
 
 // Função para mostrar erro
@@ -492,8 +588,17 @@ function setupCanvasEvents() {
     });
     
     // Eventos de desenho
-    canvas.on('path:created', () => {
+    canvas.on('path:created', async () => {
         addToUndoStack();
+        
+        // Atualizar a imagem temporária no servidor
+        try {
+            await updateTempImage();
+            console.log('Imagem temporária atualizada após desenhar');
+        } catch (error) {
+            console.error('Erro ao atualizar imagem temporária após desenhar:', error);
+            // Continuar mesmo com erro
+        }
     });
     
     canvas.on('mouse:down', () => {
@@ -637,7 +742,7 @@ function updateImageControls(imageObject) {
 }
 
 // Função para atualizar propriedades de texto
-function updateTextProperties() {
+async function updateTextProperties() {
     const activeObject = canvas.getActiveObject();
     if (!activeObject || activeObject.type !== 'textbox') return;
     
@@ -656,10 +761,19 @@ function updateTextProperties() {
     document.getElementById('text-size-value').textContent = `${fontSize}px`;
     
     canvas.renderAll();
+    
+    // Atualizar a imagem temporária no servidor
+    try {
+        await updateTempImage();
+        console.log('Imagem temporária atualizada após modificar texto');
+    } catch (error) {
+        console.error('Erro ao atualizar imagem temporária após modificar texto:', error);
+        // Continuar mesmo com erro
+    }
 }
 
 // Função para alternar estilo de texto
-function toggleTextStyle(e) {
+async function toggleTextStyle(e) {
     const activeObject = canvas.getActiveObject();
     if (!activeObject || activeObject.type !== 'textbox') return;
     
@@ -681,10 +795,19 @@ function toggleTextStyle(e) {
     }
     
     canvas.renderAll();
+    
+    // Atualizar a imagem temporária no servidor
+    try {
+        await updateTempImage();
+        console.log('Imagem temporária atualizada após alterar estilo de texto');
+    } catch (error) {
+        console.error('Erro ao atualizar imagem temporária após alterar estilo de texto:', error);
+        // Continuar mesmo com erro
+    }
 }
 
 // Função para definir alinhamento de texto
-function setTextAlign(e) {
+async function setTextAlign(e) {
     const activeObject = canvas.getActiveObject();
     if (!activeObject || activeObject.type !== 'textbox') return;
     
@@ -702,10 +825,19 @@ function setTextAlign(e) {
     // Definir alinhamento
     activeObject.set('textAlign', alignType);
     canvas.renderAll();
+    
+    // Atualizar a imagem temporária no servidor
+    try {
+        await updateTempImage();
+        console.log('Imagem temporária atualizada após alterar alinhamento de texto');
+    } catch (error) {
+        console.error('Erro ao atualizar imagem temporária após alterar alinhamento de texto:', error);
+        // Continuar mesmo com erro
+    }
 }
 
 // Função para atualizar propriedades de forma
-function updateShapeProperties() {
+async function updateShapeProperties() {
     const activeObject = canvas.getActiveObject();
     if (!activeObject) return;
     
@@ -725,10 +857,19 @@ function updateShapeProperties() {
     document.getElementById('shape-opacity-value').textContent = `${Math.round(opacity * 100)}%`;
     
     canvas.renderAll();
+    
+    // Atualizar a imagem temporária no servidor
+    try {
+        await updateTempImage();
+        console.log('Imagem temporária atualizada após modificar propriedades de forma');
+    } catch (error) {
+        console.error('Erro ao atualizar imagem temporária após modificar propriedades de forma:', error);
+        // Continuar mesmo com erro
+    }
 }
 
 // Função para atualizar propriedades de pincel
-function updateBrushProperties() {
+async function updateBrushProperties() {
     const brushColor = document.getElementById('brush-color').value;
     const brushWidth = parseInt(document.getElementById('brush-width').value, 10);
     
@@ -736,10 +877,13 @@ function updateBrushProperties() {
     canvas.freeDrawingBrush.width = brushWidth;
     
     document.getElementById('brush-width-value').textContent = `${brushWidth}px`;
+    
+    // Não precisamos atualizar a imagem temporária aqui, pois as propriedades do pincel
+    // só afetam os traços futuros, não o estado atual do canvas
 }
 
 // Função para atualizar propriedades de imagem
-function updateImageProperties() {
+async function updateImageProperties() {
     const activeObject = canvas.getActiveObject();
     if (!activeObject || activeObject.type !== 'image') return;
     
@@ -752,10 +896,19 @@ function updateImageProperties() {
     document.getElementById('image-opacity-value').textContent = `${Math.round(opacity * 100)}%`;
     
     canvas.renderAll();
+    
+    // Atualizar a imagem temporária no servidor
+    try {
+        await updateTempImage();
+        console.log('Imagem temporária atualizada após alterar propriedades da imagem');
+    } catch (error) {
+        console.error('Erro ao atualizar imagem temporária após alterar propriedades da imagem:', error);
+        // Continuar mesmo com erro
+    }
 }
 
 // Função para espelhar imagem
-function flipImage(e) {
+async function flipImage(e) {
     const activeObject = canvas.getActiveObject();
     if (!activeObject) return;
     
@@ -769,6 +922,15 @@ function flipImage(e) {
     
     canvas.renderAll();
     addToUndoStack();
+    
+    // Atualizar a imagem temporária no servidor
+    try {
+        await updateTempImage();
+        console.log('Imagem temporária atualizada após espelhar imagem');
+    } catch (error) {
+        console.error('Erro ao atualizar imagem temporária após espelhar imagem:', error);
+        // Continuar mesmo com erro
+    }
 }
 
 // Função para atualizar valor de ajuste
@@ -780,10 +942,13 @@ function updateAdjustmentValue(e) {
     adjustmentValues[type] = value;
     
     document.getElementById(`${type}-value-display`).textContent = value;
+    
+    // Não atualizamos a imagem temporária aqui, pois isso é feito apenas quando o usuário
+    // clica no botão "Aplicar Ajustes" para confirmar as mudanças
 }
 
 // Função para aplicar ajustes
-function applyAdjustments() {
+async function applyAdjustments() {
     // Verificar se há uma imagem no canvas
     const objects = canvas.getObjects();
     const imageObject = objects.find(obj => obj.type === 'image');
@@ -805,6 +970,15 @@ function applyAdjustments() {
     
     // Adicionar ao histórico
     addToUndoStack();
+    
+    // Atualizar a imagem temporária no servidor
+    try {
+        await updateTempImage();
+        console.log('Imagem temporária atualizada após aplicar ajustes');
+    } catch (error) {
+        console.error('Erro ao atualizar imagem temporária após aplicar ajustes:', error);
+        // Continuar mesmo com erro
+    }
 }
 
 // Função para aplicar ajustes à imagem
@@ -905,7 +1079,7 @@ function exitCropMode() {
 }
 
 // Função para aplicar recorte
-function applyCrop() {
+async function applyCrop() {
     if (!cropMode || !cropRect) return;
     
     // Obter coordenadas do retângulo de recorte
@@ -931,12 +1105,12 @@ function applyCrop() {
     
     // Carregar a imagem recortada
     const img = new Image();
-    img.onload = function() {
+    img.onload = async function() {
         // Limpar o canvas
         canvas.clear();
         
         // Criar nova imagem com o recorte
-        fabric.Image.fromURL(img.src, function(oImg) {
+        fabric.Image.fromURL(img.src, async function(oImg) {
             // Centralizar a imagem no canvas
             oImg.set({
                 left: canvas.width / 2,
@@ -955,13 +1129,22 @@ function applyCrop() {
             
             // Adicionar ao histórico
             addToUndoStack();
+            
+            // Atualizar a imagem temporária no servidor
+            try {
+                await updateTempImage();
+                console.log('Imagem temporária atualizada após recorte');
+            } catch (error) {
+                console.error('Erro ao atualizar imagem temporária após recorte:', error);
+                // Continuar mesmo com erro
+            }
         });
     };
     img.src = dataUrl;
 }
 
 // Função para atualizar ângulo de rotação
-function updateRotationAngle() {
+async function updateRotationAngle() {
     const angle = parseInt(document.getElementById('rotation-angle').value, 10);
     document.getElementById('rotation-angle-value').textContent = `${angle}°`;
     
@@ -970,11 +1153,20 @@ function updateRotationAngle() {
     if (activeObject) {
         activeObject.set('angle', angle);
         canvas.renderAll();
+        
+        // Atualizar a imagem temporária no servidor
+        try {
+            await updateTempImage();
+            console.log('Imagem temporária atualizada após alterar ângulo de rotação');
+        } catch (error) {
+            console.error('Erro ao atualizar imagem temporária após alterar ângulo de rotação:', error);
+            // Continuar mesmo com erro
+        }
     }
 }
 
 // Função para rotacionar à esquerda
-function rotateLeft() {
+async function rotateLeft() {
     const activeObject = canvas.getActiveObject();
     if (!activeObject) return;
     
@@ -985,10 +1177,19 @@ function rotateLeft() {
     document.getElementById('rotation-angle').value = newAngle;
     document.getElementById('rotation-angle-value').textContent = `${newAngle}°`;
     canvas.renderAll();
+    
+    // Atualizar a imagem temporária no servidor
+    try {
+        await updateTempImage();
+        console.log('Imagem temporária atualizada após rotacionar à esquerda');
+    } catch (error) {
+        console.error('Erro ao atualizar imagem temporária após rotacionar à esquerda:', error);
+        // Continuar mesmo com erro
+    }
 }
 
 // Função para rotacionar à direita
-function rotateRight() {
+async function rotateRight() {
     const activeObject = canvas.getActiveObject();
     if (!activeObject) return;
     
@@ -999,19 +1200,37 @@ function rotateRight() {
     document.getElementById('rotation-angle').value = newAngle;
     document.getElementById('rotation-angle-value').textContent = `${newAngle}°`;
     canvas.renderAll();
+    
+    // Atualizar a imagem temporária no servidor
+    try {
+        await updateTempImage();
+        console.log('Imagem temporária atualizada após rotacionar à direita');
+    } catch (error) {
+        console.error('Erro ao atualizar imagem temporária após rotacionar à direita:', error);
+        // Continuar mesmo com erro
+    }
 }
 
 // Função para aplicar rotação
-function applyRotation() {
+async function applyRotation() {
     const activeObject = canvas.getActiveObject();
     if (!activeObject) return;
     
     // A rotação já foi aplicada em tempo real, então só precisamos adicionar ao histórico
     addToUndoStack();
+    
+    // Atualizar a imagem temporária no servidor
+    try {
+        await updateTempImage();
+        console.log('Imagem temporária atualizada após aplicar rotação');
+    } catch (error) {
+        console.error('Erro ao atualizar imagem temporária após aplicar rotação:', error);
+        // Continuar mesmo com erro
+    }
 }
 
 // Função para adicionar texto
-function addText() {
+async function addText() {
     const text = new fabric.Textbox('Clique para editar', {
         left: canvas.width / 2,
         top: canvas.height / 2,
@@ -1030,10 +1249,19 @@ function addText() {
     
     // Adicionar ao histórico
     addToUndoStack();
+    
+    // Atualizar a imagem temporária no servidor
+    try {
+        await updateTempImage();
+        console.log('Imagem temporária atualizada após adicionar texto');
+    } catch (error) {
+        console.error('Erro ao atualizar imagem temporária após adicionar texto:', error);
+        // Continuar mesmo com erro
+    }
 }
 
 // Função para adicionar forma
-function addShape(shapeType) {
+async function addShape(shapeType) {
     let shape;
     
     switch (shapeType) {
@@ -1122,11 +1350,20 @@ function addShape(shapeType) {
         
         // Adicionar ao histórico
         addToUndoStack();
+        
+        // Atualizar a imagem temporária no servidor
+        try {
+            await updateTempImage();
+            console.log('Imagem temporária atualizada após adicionar forma');
+        } catch (error) {
+            console.error('Erro ao atualizar imagem temporária após adicionar forma:', error);
+            // Continuar mesmo com erro
+        }
     }
 }
 
 // Função para aplicar filtro
-function applyFilter(filterId) {
+async function applyFilter(filterId) {
     // Verificar se há uma imagem no canvas
     const objects = canvas.getObjects();
     const imageObject = objects.find(obj => obj.type === 'image');
@@ -1189,6 +1426,15 @@ function applyFilter(filterId) {
     
     // Adicionar ao histórico
     addToUndoStack();
+    
+    // Atualizar a imagem temporária no servidor
+    try {
+        await updateTempImage();
+        console.log('Imagem temporária atualizada após aplicar filtro');
+    } catch (error) {
+        console.error('Erro ao atualizar imagem temporária após aplicar filtro:', error);
+        // Continuar mesmo com erro
+    }
 }
 
 // Função para atualizar prévia de salvamento
@@ -1217,6 +1463,12 @@ function updateSavePreview() {
 // Função para salvar imagem
 async function saveImage() {
     try {
+        // Verificar se temos uma sessão ativa
+        if (!sessionId || !currentImageUrl) {
+            alert('Erro: Sessão de edição não inicializada corretamente.');
+            return;
+        }
+        
         // Mostrar overlay de carregamento
         document.getElementById('loading-overlay').style.display = 'flex';
         document.getElementById('loading-overlay').innerHTML = `
@@ -1224,23 +1476,31 @@ async function saveImage() {
             <p>Salvando imagem...</p>
         `;
         
-        // Obter dados da imagem
-        const format = document.getElementById('save-format').value || 'webp';
-        const quality = parseInt(document.getElementById('save-quality').value, 10) / 100 || 0.9;
-        const dataUrl = canvas.toDataURL({
-            format: format,
-            quality: quality
-        });
+        // Primeiro, atualizar a imagem temporária para garantir que estamos usando a versão mais recente
+        try {
+            await updateTempImage();
+        } catch (updateError) {
+            console.error('Erro ao atualizar imagem temporária antes de salvar:', updateError);
+            // Continuar mesmo com erro, usando a última versão salva
+        }
         
-        // Enviar para o servidor
-        const response = await fetch(`/api/mockups-edit/save/${imageId}`, {
+        // Extrair o seed do ID da imagem, se houver
+        let seed = null;
+        if (imageId.includes('_')) {
+            const parts = imageId.split('_');
+            seed = parts.slice(1).join('_');
+        }
+        
+        // Enviar para o servidor usando a rota de salvar final
+        const response = await fetch(`/api/mockups-edit/save-final/${sessionId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                imageData: dataUrl,
-                format: format
+                mockupId: imageId.split('_')[0], // Pegar apenas o ID do mockup, sem o seed
+                seed: seed,
+                imageUrl: currentImageUrl
             })
         });
         
@@ -1320,7 +1580,7 @@ function downloadImage() {
 }
 
 // Função para resetar imagem
-function resetImage() {
+async function resetImage() {
     if (!originalImage) return;
     
     // Confirmar reset
@@ -1332,7 +1592,7 @@ function resetImage() {
     canvas.clear();
     
     // Clonar imagem original
-    originalImage.clone(function(cloned) {
+    originalImage.clone(async function(cloned) {
         canvas.add(cloned);
         canvas.setActiveObject(cloned);
         canvas.renderAll();
@@ -1369,6 +1629,15 @@ function resetImage() {
         undoStack = [];
         redoStack = [];
         addToUndoStack();
+        
+        // Atualizar a imagem temporária no servidor
+        try {
+            await updateTempImage();
+            console.log('Imagem temporária atualizada após resetar imagem');
+        } catch (error) {
+            console.error('Erro ao atualizar imagem temporária após resetar imagem:', error);
+            // Continuar mesmo com erro
+        }
     });
 }
 
@@ -1405,7 +1674,7 @@ function addToUndoStack() {
 }
 
 // Função para desfazer
-function undo() {
+async function undo() {
     if (undoStack.length <= 1) return;
     
     // Remover estado atual
@@ -1416,11 +1685,20 @@ function undo() {
     
     // Restaurar estado anterior
     const previousState = undoStack[undoStack.length - 1];
-    canvas.loadFromJSON(previousState, function() {
+    canvas.loadFromJSON(previousState, async function() {
         canvas.renderAll();
         
         // Atualizar propriedades
         updatePropertiesPanel();
+        
+        // Atualizar a imagem temporária no servidor
+        try {
+            await updateTempImage();
+            console.log('Imagem temporária atualizada após desfazer');
+        } catch (error) {
+            console.error('Erro ao atualizar imagem temporária após desfazer:', error);
+            // Continuar mesmo com erro
+        }
     });
     
     // Atualizar estado dos botões
@@ -1428,7 +1706,7 @@ function undo() {
 }
 
 // Função para refazer
-function redo() {
+async function redo() {
     if (redoStack.length === 0) return;
     
     // Obter estado a ser restaurado
@@ -1438,11 +1716,20 @@ function redo() {
     undoStack.push(nextState);
     
     // Restaurar estado
-    canvas.loadFromJSON(nextState, function() {
+    canvas.loadFromJSON(nextState, async function() {
         canvas.renderAll();
         
         // Atualizar propriedades
         updatePropertiesPanel();
+        
+        // Atualizar a imagem temporária no servidor
+        try {
+            await updateTempImage();
+            console.log('Imagem temporária atualizada após refazer');
+        } catch (error) {
+            console.error('Erro ao atualizar imagem temporária após refazer:', error);
+            // Continuar mesmo com erro
+        }
     });
     
     // Atualizar estado dos botões
