@@ -4,6 +4,7 @@ const cloudinary = require('../config/cloudinary');
 const authMiddleware = require('../middleware/auth');
 const Mockup = require('../models/Mockup');
 const path = require('path');
+const fetch = require('node-fetch');
 
 // Rota para obter imagem para edição
 router.get('/image/:id', authMiddleware.isAuthenticated, async (req, res) => {
@@ -137,101 +138,387 @@ router.get('/image/:id', authMiddleware.isAuthenticated, async (req, res) => {
     }
 });
 
-// Rota para edição com IA
-router.post('/ai-edit/:id', authMiddleware.isAuthenticated, async (req, res) => {
+// Rota para inicializar sessão de edição
+router.post('/init-session/:id', authMiddleware.isAuthenticated, async (req, res) => {
     try {
-        const { prompt, imageData } = req.body;
+        const mockupId = req.params.id;
+        let realMockupId = mockupId;
+        let seed = null;
         
-        if (!prompt || !imageData) {
-            return res.status(400).json({ error: 'Prompt e dados da imagem são obrigatórios' });
+        // Verificar se o ID contém um underscore e extrair as partes
+        if (mockupId.includes('_')) {
+            const parts = mockupId.split('_');
+            realMockupId = parts[0];
+            seed = parts.slice(1).join('_'); // Juntar novamente caso haja múltiplos underscores
+            
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] ID original: ${mockupId}`);
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] ID real para busca: ${realMockupId}`);
+            console.log(`🔍 [MOCKUP-EDIT-SESSION] Seed extraído: ${seed}`);
+        }
+        
+        // Buscar mockup no banco de dados usando o ID real (sem o seed)
+        const mockup = await Mockup.findById(realMockupId);
+        
+        if (!mockup) {
+            console.log(`❌ [MOCKUP-EDIT-SESSION] Mockup não encontrado com ID: ${realMockupId}`);
+            return res.status(404).json({ error: 'Mockup não encontrado' });
+        }
+        
+        // Verificar se o usuário tem permissão para acessar este mockup
+        if (mockup.criadoPor && mockup.criadoPor.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+            return res.status(403).json({ error: 'Você não tem permissão para acessar este mockup' });
+        }
+        
+        // Determinar a URL da imagem original
+        let imageUrl;
+        
+        if (seed) {
+            // Buscar imagem específica pelo seed
+            if (mockup.metadados && mockup.metadados.imagensSalvas && mockup.metadados.imagensSalvas.length > 0) {
+                const imagem = mockup.metadados.imagensSalvas.find(img => {
+                    if (!img.seed) return false;
+                    const imgSeedStr = img.seed.toString();
+                    
+                    // Comparação direta
+                    if (imgSeedStr === seed) return true;
+                    
+                    // Comparação numérica se possível
+                    if (!isNaN(seed) && !isNaN(imgSeedStr) && parseInt(imgSeedStr) === parseInt(seed)) return true;
+                    
+                    // Comparação especial para seeds com formato de proporção (ex: "1:1")
+                    if (seed.includes(':') && imgSeedStr.includes(':')) {
+                        return seed.trim() === imgSeedStr.trim();
+                    }
+                    
+                    // Comparação alternativa: verificar se o seed está contido no imgSeedStr
+                    return imgSeedStr.includes(seed) || seed.includes(imgSeedStr);
+                });
+                
+                if (imagem) {
+                    imageUrl = imagem.url;
+                    console.log(`✅ [MOCKUP-EDIT-SESSION] Imagem encontrada: ${imageUrl}`);
+                } else {
+                    // Tentar buscar pelo índice
+                    const index = parseInt(seed) - 1;
+                    if (!isNaN(index) && index >= 0 && index < mockup.metadados.imagensSalvas.length) {
+                        imageUrl = mockup.metadados.imagensSalvas[index].url;
+                        console.log(`✅ [MOCKUP-EDIT-SESSION] Imagem encontrada pelo índice ${index}: ${imageUrl}`);
+                    } else {
+                        return res.status(404).json({ error: 'Imagem específica não encontrada' });
+                    }
+                }
+            } else {
+                return res.status(404).json({ error: 'Mockup não possui imagens salvas' });
+            }
+        } else {
+            // Usar imagem principal
+            imageUrl = mockup.imagemUrl;
+            
+            // Se não tiver imagem principal, usar a primeira imagem salva
+            if (!imageUrl && mockup.metadados && mockup.metadados.imagensSalvas && mockup.metadados.imagensSalvas.length > 0) {
+                imageUrl = mockup.metadados.imagensSalvas[0].url;
+            }
+        }
+        
+        if (!imageUrl) {
+            return res.status(404).json({ error: 'Imagem não encontrada para este mockup' });
+        }
+        
+        // Gerar um ID de sessão único
+        const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+        
+        try {
+            // Baixar a imagem original
+            const imageResponse = await fetch(imageUrl);
+            if (!imageResponse.ok) {
+                throw new Error(`Erro ao baixar imagem original: ${imageResponse.status}`);
+            }
+            
+            const imageBuffer = await imageResponse.buffer();
+            
+            // Fazer upload para pasta temporária no Cloudinary
+            const uploadResult = await new Promise((resolve, reject) => {
+                cloudinary.uploader.upload_stream({
+                    public_id: sessionId,
+                    folder: 'temp_edits',
+                    format: 'png',
+                    resource_type: 'image',
+                    // Expirar em 24 horas
+                    expires_at: Math.floor(Date.now() / 1000) + 86400
+                }, (error, result) => {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        resolve(result);
+                    }
+                }).end(imageBuffer);
+            });
+            
+            console.log(`✅ [MOCKUP-EDIT-SESSION] Sessão inicializada: ${sessionId}`);
+            console.log(`✅ [MOCKUP-EDIT-SESSION] Imagem temporária: ${uploadResult.secure_url}`);
+            
+            // Retornar informações da sessão
+            res.json({
+                success: true,
+                sessionId: sessionId,
+                imageUrl: uploadResult.secure_url,
+                originalImageUrl: imageUrl,
+                mockupId: realMockupId,
+                seed: seed
+            });
+            
+        } catch (fetchError) {
+            console.error('Erro ao processar imagem original:', fetchError);
+            res.status(500).json({ error: `Erro ao inicializar sessão: ${fetchError.message}` });
+        }
+        
+    } catch (error) {
+        console.error('Erro ao inicializar sessão de edição:', error);
+        console.error('Stack trace:', error.stack);
+        res.status(500).json({ error: `Erro ao inicializar sessão: ${error.message}` });
+    }
+});
+
+// Rota para atualizar imagem temporária
+router.post('/update-temp/:sessionId', authMiddleware.isAuthenticated, async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const { imageData } = req.body;
+        
+        if (!imageData) {
+            return res.status(400).json({ error: 'Dados da imagem são obrigatórios' });
         }
         
         // Remover o prefixo "data:image/..." da string base64
         const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
         const buffer = Buffer.from(base64Data, 'base64');
         
-        // Gerar nome de arquivo único
-        const tempFilename = `temp_edit_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+        // Upload para Cloudinary (substituindo a imagem temporária existente)
+        const uploadResult = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream({
+                public_id: sessionId,
+                folder: 'temp_edits',
+                format: 'png',
+                resource_type: 'image',
+                // Expirar em 24 horas
+                expires_at: Math.floor(Date.now() / 1000) + 86400
+            }, (error, result) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(result);
+                }
+            }).end(buffer);
+        });
         
-        // Upload para Cloudinary para obter URL
-        cloudinary.uploader.upload_stream({
-            public_id: tempFilename,
-            folder: 'temp_edits',
-            format: 'png',
-            resource_type: 'image',
-            // Expirar em 1 hora (segurança adicional)
-            expires_at: Math.floor(Date.now() / 1000) + 3600
-        }, async (error, result) => {
-            if (error) {
-                console.error('Erro ao fazer upload para Cloudinary:', error);
-                return res.status(500).json({ error: 'Erro ao processar imagem' });
-            }
+        console.log(`✅ [MOCKUP-EDIT-UPDATE] Imagem temporária atualizada: ${uploadResult.secure_url}`);
+        
+        // Retornar URL da imagem atualizada
+        res.json({
+            success: true,
+            imageUrl: uploadResult.secure_url
+        });
+        
+    } catch (error) {
+        console.error('Erro ao atualizar imagem temporária:', error);
+        console.error('Stack trace:', error.stack);
+        res.status(500).json({ error: `Erro ao atualizar imagem: ${error.message}` });
+    }
+});
+
+// Rota para edição com IA
+router.post('/ai-edit/:sessionId', authMiddleware.isAuthenticated, async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const { prompt, imageUrl } = req.body;
+        
+        if (!prompt || !imageUrl) {
+            return res.status(400).json({ error: 'Prompt e URL da imagem são obrigatórios' });
+        }
+        
+        // Verificar se a URL é de uma imagem temporária válida
+        if (!imageUrl.includes('temp_edits') || !imageUrl.includes('cloudinary')) {
+            return res.status(400).json({ error: 'URL de imagem inválida' });
+        }
+        
+        try {
+            // Inicializar cliente Replicate
+            const Replicate = require('replicate');
+            const replicate = new Replicate({
+                auth: process.env.REPLICATE_API_TOKEN,
+            });
             
-            try {
-                // Inicializar cliente Replicate
-                const Replicate = require('replicate');
-                const replicate = new Replicate({
-                    auth: process.env.REPLICATE_API_TOKEN,
-                });
-                
-                // Modelo Flux 1.1 Pro
-                const model = "black-forest-labs/flux-1.1-pro";
-                
-                // Parâmetros para o modelo
-                const input = {
-                    prompt: prompt,
-                    image: result.secure_url,
-                    output_format: 'webp',
-                    output_quality: 90,
-                    safety_tolerance: 2
-                };
-                
-                console.log('Enviando para Replicate:', {
-                    model,
-                    input: {
-                        ...input,
-                        image: result.secure_url + ' (URL Cloudinary)'
-                    }
-                });
-                
-                // Executar o modelo
-                const output = await replicate.run(model, { input });
-                
-                // Retornar URL da imagem editada
-                res.json({
-                    success: true,
-                    editedImageUrl: output
-                });
-                
-                // Remover imagem temporária do Cloudinary imediatamente
-                try {
-                    await cloudinary.uploader.destroy(result.public_id);
-                    console.log('Imagem temporária removida do Cloudinary:', result.public_id);
-                } catch (cleanupError) {
-                    console.error('Erro ao remover imagem temporária:', cleanupError);
+            // Modelo Flux 1.1 Pro
+            const model = "black-forest-labs/flux-1.1-pro";
+            
+            // Parâmetros para o modelo
+            const input = {
+                prompt: prompt,
+                image: imageUrl,
+                output_format: 'webp',
+                output_quality: 90,
+                safety_tolerance: 2
+            };
+            
+            console.log('Enviando para Replicate:', {
+                model,
+                input: {
+                    ...input,
+                    image: imageUrl + ' (URL Cloudinary)'
                 }
-                
-            } catch (replicateError) {
-                console.error('Erro ao processar com Replicate:', replicateError);
-                
-                // Limpar arquivo temporário mesmo em caso de erro
-                try {
-                    await cloudinary.uploader.destroy(result.public_id);
-                } catch (cleanupError) {
-                    console.error('Erro ao remover imagem temporária após falha:', cleanupError);
-                }
-                
-                res.status(500).json({ error: `Erro na edição com IA: ${replicateError.message}` });
-            }
-        }).end(buffer);
+            });
+            
+            // Executar o modelo
+            const output = await replicate.run(model, { input });
+            
+            // Retornar URL da imagem editada
+            res.json({
+                success: true,
+                editedImageUrl: output
+            });
+            
+        } catch (replicateError) {
+            console.error('Erro ao processar com Replicate:', replicateError);
+            res.status(500).json({ error: `Erro na edição com IA: ${replicateError.message}` });
+        }
         
     } catch (error) {
         console.error('Erro ao processar edição com IA:', error);
+        console.error('Stack trace:', error.stack);
         res.status(500).json({ error: `Erro ao processar edição: ${error.message}` });
     }
 });
 
-// Rota para salvar imagem editada
+// Rota para salvar imagem final
+router.post('/save-final/:sessionId', authMiddleware.isAuthenticated, async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const { mockupId, seed, imageUrl } = req.body;
+        
+        if (!mockupId || !imageUrl) {
+            return res.status(400).json({ error: 'ID do mockup e URL da imagem são obrigatórios' });
+        }
+        
+        // Buscar mockup no banco de dados
+        const mockup = await Mockup.findById(mockupId);
+        
+        if (!mockup) {
+            return res.status(404).json({ error: 'Mockup não encontrado' });
+        }
+        
+        // Verificar se o usuário tem permissão para editar este mockup
+        if (mockup.criadoPor && mockup.criadoPor.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+            return res.status(403).json({ error: 'Você não tem permissão para editar este mockup' });
+        }
+        
+        try {
+            // Baixar a imagem temporária
+            const imageResponse = await fetch(imageUrl);
+            if (!imageResponse.ok) {
+                throw new Error(`Erro ao baixar imagem temporária: ${imageResponse.status}`);
+            }
+            
+            const imageBuffer = await imageResponse.buffer();
+            
+            // Upload para pasta permanente no Cloudinary
+            const uploadResult = await new Promise((resolve, reject) => {
+                cloudinary.uploader.upload_stream({
+                    public_id: `mockup_${mockupId}_${seed || 'edited'}`,
+                    folder: 'mockups',
+                    format: 'webp',
+                    resource_type: 'image'
+                }, (error, result) => {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        resolve(result);
+                    }
+                }).end(imageBuffer);
+            });
+            
+            // Atualizar o mockup no banco de dados
+            if (seed) {
+                // Atualizar uma variação específica
+                if (mockup.metadados && mockup.metadados.imagensSalvas) {
+                    const imagemIndex = mockup.metadados.imagensSalvas.findIndex(img => 
+                        img.seed && img.seed.toString() === seed
+                    );
+                    
+                    if (imagemIndex >= 0) {
+                        // Atualizar imagem existente
+                        mockup.metadados.imagensSalvas[imagemIndex].url = uploadResult.secure_url;
+                        mockup.metadados.imagensSalvas[imagemIndex].publicId = uploadResult.public_id;
+                        mockup.metadados.imagensSalvas[imagemIndex].editado = true;
+                        mockup.metadados.imagensSalvas[imagemIndex].dataEdicao = new Date();
+                    } else {
+                        // Adicionar nova imagem
+                        if (!mockup.metadados.imagensSalvas) {
+                            mockup.metadados.imagensSalvas = [];
+                        }
+                        
+                        mockup.metadados.imagensSalvas.push({
+                            seed: seed,
+                            url: uploadResult.secure_url,
+                            publicId: uploadResult.public_id,
+                            dataSalvamento: new Date(),
+                            editado: true,
+                            dataEdicao: new Date()
+                        });
+                    }
+                } else {
+                    // Inicializar metadados se não existirem
+                    if (!mockup.metadados) {
+                        mockup.metadados = {};
+                    }
+                    
+                    mockup.metadados.imagensSalvas = [{
+                        seed: seed,
+                        url: uploadResult.secure_url,
+                        publicId: uploadResult.public_id,
+                        dataSalvamento: new Date(),
+                        editado: true,
+                        dataEdicao: new Date()
+                    }];
+                }
+            } else {
+                // Atualizar imagem principal
+                mockup.imagemUrl = uploadResult.secure_url;
+                mockup.publicId = uploadResult.public_id;
+                mockup.editado = true;
+                mockup.dataEdicao = new Date();
+            }
+            
+            await mockup.save();
+            
+            // Tentar remover a imagem temporária do Cloudinary
+            try {
+                await cloudinary.uploader.destroy(`temp_edits/${sessionId}`);
+                console.log(`Imagem temporária removida: temp_edits/${sessionId}`);
+            } catch (cleanupError) {
+                console.error('Erro ao remover imagem temporária:', cleanupError);
+                // Continuar mesmo se falhar na limpeza
+            }
+            
+            // Retornar sucesso
+            res.json({
+                success: true,
+                url: uploadResult.secure_url,
+                message: 'Imagem salva com sucesso'
+            });
+            
+        } catch (processError) {
+            console.error('Erro ao processar imagem final:', processError);
+            res.status(500).json({ error: `Erro ao salvar imagem: ${processError.message}` });
+        }
+        
+    } catch (error) {
+        console.error('Erro ao salvar imagem final:', error);
+        console.error('Stack trace:', error.stack);
+        res.status(500).json({ error: `Erro ao salvar imagem: ${error.message}` });
+    }
+});
+
+// Rota para salvar imagem editada (mantida para compatibilidade)
 router.post('/save/:id', authMiddleware.isAuthenticated, async (req, res) => {
     try {
         const mockupId = req.params.id;
