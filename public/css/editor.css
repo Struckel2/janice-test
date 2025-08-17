@@ -14,10 +14,13 @@
     --success-color: #4caf50;
     --warning-color: #ff9800;
     --error-color: #e91e63;
+    --ai-color: #0056b3;
+    --ai-light: #f0f8ff;
+    --ai-border: #b8daff;
     --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     --border-radius: 8px;
     --transition: all 0.3s ease;
-    --tools-panel-width: 220px;
+    --tools-panel-width: 250px;
     --properties-panel-width: 280px;
 }
 
@@ -82,7 +85,103 @@ body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 15px;
+}
+
+/* Seções colapsáveis */
+.collapsible-section {
+    margin-bottom: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.collapsible-header {
+    padding: 10px 15px;
+    background-color: #f5f5f5;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.collapsible-header:hover {
+    background-color: #efefef;
+}
+
+.collapsible-content {
+    padding: 15px;
+    display: none;
+    border-top: 1px solid var(--border-color);
+}
+
+.collapsible-section.expanded .collapsible-content {
+    display: block;
+}
+
+.collapsible-header .toggle-icon::before {
+    content: '\f078'; /* FontAwesome down arrow */
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+}
+
+.collapsible-section.expanded .collapsible-header .toggle-icon::before {
+    content: '\f077'; /* FontAwesome up arrow */
+}
+
+/* Painel de edição com IA */
+.ai-edit-panel {
+    background-color: var(--ai-light);
+    border: 1px solid var(--ai-border);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.ai-edit-panel .panel-title {
+    color: var(--ai-color);
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+
+.ai-result-preview {
+    margin: 15px 0;
+    text-align: center;
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 10px;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ai-result-preview img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 4px;
+}
+
+#ai-processing {
+    text-align: center;
+    padding: 20px;
+}
+
+#ai-processing .spinner {
+    margin: 0 auto 15px;
+}
+
+#ai-processing p {
+    margin-bottom: 10px;
+    color: var(--text-color);
+}
+
+#ai-processing .progress-message {
+    color: var(--light-text);
+    font-size: 0.9rem;
 }
 
 .tool-group {
@@ -553,7 +652,7 @@ body {
 /* Responsividade */
 @media (max-width: 1200px) {
     :root {
-        --tools-panel-width: 180px;
+        --tools-panel-width: 220px;
         --properties-panel-width: 250px;
     }
 }

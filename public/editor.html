@@ -32,74 +32,139 @@
 
         <div class="editor-main">
             <div class="tools-panel">
-                <div class="tool-group">
-                    <h3>Ferramentas</h3>
-                    <button id="select-tool" class="tool-button active" title="Selecionar">
-                        <i class="fas fa-mouse-pointer"></i>
-                    </button>
-                    <button id="crop-tool" class="tool-button" title="Recortar">
-                        <i class="fas fa-crop-alt"></i>
-                    </button>
-                    <button id="rotate-tool" class="tool-button" title="Rotacionar">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                    <button id="text-tool" class="tool-button" title="Adicionar Texto">
-                        <i class="fas fa-font"></i>
-                    </button>
-                    <button id="draw-tool" class="tool-button" title="Desenhar">
-                        <i class="fas fa-paint-brush"></i>
-                    </button>
-                    <button id="shape-tool" class="tool-button" title="Formas">
-                        <i class="fas fa-shapes"></i>
-                    </button>
+                <!-- Seção de IA - Nova seção principal -->
+                <div class="ai-edit-panel">
+                    <h3 class="panel-title">Editar com IA</h3>
+                    <div class="panel-content">
+                        <div class="form-group">
+                            <label for="ai-prompt">Descreva a mudança desejada:</label>
+                            <textarea id="ai-prompt" rows="3" placeholder="Ex: Mude o fundo para azul, adicione um logo no canto superior direito..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <button id="apply-ai-edit" class="action-button primary">
+                                <i class="fas fa-magic"></i> Aplicar Edição com IA
+                            </button>
+                        </div>
+                        <div id="ai-processing" style="display: none;">
+                            <div class="spinner"></div>
+                            <p>Processando sua solicitação...</p>
+                            <p class="progress-message">Isso pode levar alguns segundos.</p>
+                        </div>
+                        <div id="ai-result" style="display: none;">
+                            <h4>Resultado:</h4>
+                            <div class="ai-result-preview"></div>
+                            <div class="form-group">
+                                <button id="accept-ai-result" class="action-button primary">
+                                    <i class="fas fa-check"></i> Aceitar
+                                </button>
+                                <button id="reject-ai-result" class="action-button">
+                                    <i class="fas fa-times"></i> Rejeitar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="tool-group">
-                    <h3>Ajustes</h3>
-                    <button id="brightness-tool" class="tool-button" title="Brilho">
-                        <i class="fas fa-sun"></i>
-                    </button>
-                    <button id="contrast-tool" class="tool-button" title="Contraste">
-                        <i class="fas fa-adjust"></i>
-                    </button>
-                    <button id="saturation-tool" class="tool-button" title="Saturação">
-                        <i class="fas fa-palette"></i>
-                    </button>
-                    <button id="blur-tool" class="tool-button" title="Desfoque">
-                        <i class="fas fa-tint"></i>
-                    </button>
+                <!-- Ferramentas - Agora como seção colapsável -->
+                <div class="collapsible-section">
+                    <div class="collapsible-header">
+                        <h3>Ferramentas</h3>
+                        <span class="toggle-icon"></span>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="tool-group">
+                            <button id="select-tool" class="tool-button active" title="Selecionar">
+                                <i class="fas fa-mouse-pointer"></i>
+                            </button>
+                            <button id="crop-tool" class="tool-button" title="Recortar">
+                                <i class="fas fa-crop-alt"></i>
+                            </button>
+                            <button id="rotate-tool" class="tool-button" title="Rotacionar">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button id="text-tool" class="tool-button" title="Adicionar Texto">
+                                <i class="fas fa-font"></i>
+                            </button>
+                            <button id="draw-tool" class="tool-button" title="Desenhar">
+                                <i class="fas fa-paint-brush"></i>
+                            </button>
+                            <button id="shape-tool" class="tool-button" title="Formas">
+                                <i class="fas fa-shapes"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="tool-group">
-                    <h3>Filtros</h3>
-                    <button id="filter-none" class="filter-button active" title="Normal">
-                        Normal
-                    </button>
-                    <button id="filter-grayscale" class="filter-button" title="Preto e Branco">
-                        P&B
-                    </button>
-                    <button id="filter-sepia" class="filter-button" title="Sépia">
-                        Sépia
-                    </button>
-                    <button id="filter-vintage" class="filter-button" title="Vintage">
-                        Vintage
-                    </button>
-                    <button id="filter-vibrant" class="filter-button" title="Vibrante">
-                        Vibrante
-                    </button>
+                <!-- Ajustes - Como seção colapsável -->
+                <div class="collapsible-section">
+                    <div class="collapsible-header">
+                        <h3>Ajustes</h3>
+                        <span class="toggle-icon"></span>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="tool-group">
+                            <button id="brightness-tool" class="tool-button" title="Brilho">
+                                <i class="fas fa-sun"></i>
+                            </button>
+                            <button id="contrast-tool" class="tool-button" title="Contraste">
+                                <i class="fas fa-adjust"></i>
+                            </button>
+                            <button id="saturation-tool" class="tool-button" title="Saturação">
+                                <i class="fas fa-palette"></i>
+                            </button>
+                            <button id="blur-tool" class="tool-button" title="Desfoque">
+                                <i class="fas fa-tint"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="tool-group">
-                    <h3>Ações</h3>
-                    <button id="undo-btn" class="action-button" title="Desfazer" disabled>
-                        <i class="fas fa-undo"></i> Desfazer
-                    </button>
-                    <button id="redo-btn" class="action-button" title="Refazer" disabled>
-                        <i class="fas fa-redo"></i> Refazer
-                    </button>
-                    <button id="reset-btn" class="action-button" title="Resetar">
-                        <i class="fas fa-trash"></i> Resetar
-                    </button>
+                <!-- Filtros - Como seção colapsável -->
+                <div class="collapsible-section">
+                    <div class="collapsible-header">
+                        <h3>Filtros</h3>
+                        <span class="toggle-icon"></span>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="tool-group">
+                            <button id="filter-none" class="filter-button active" title="Normal">
+                                Normal
+                            </button>
+                            <button id="filter-grayscale" class="filter-button" title="Preto e Branco">
+                                P&B
+                            </button>
+                            <button id="filter-sepia" class="filter-button" title="Sépia">
+                                Sépia
+                            </button>
+                            <button id="filter-vintage" class="filter-button" title="Vintage">
+                                Vintage
+                            </button>
+                            <button id="filter-vibrant" class="filter-button" title="Vibrante">
+                                Vibrante
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ações - Como seção colapsável -->
+                <div class="collapsible-section">
+                    <div class="collapsible-header">
+                        <h3>Ações</h3>
+                        <span class="toggle-icon"></span>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="tool-group">
+                            <button id="undo-btn" class="action-button" title="Desfazer" disabled>
+                                <i class="fas fa-undo"></i> Desfazer
+                            </button>
+                            <button id="redo-btn" class="action-button" title="Refazer" disabled>
+                                <i class="fas fa-redo"></i> Refazer
+                            </button>
+                            <button id="reset-btn" class="action-button" title="Resetar">
+                                <i class="fas fa-trash"></i> Resetar
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 

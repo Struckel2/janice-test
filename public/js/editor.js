@@ -39,6 +39,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Carregar a imagem
     loadImage(imageId);
 
+    // Configurar seções colapsáveis
+    setupCollapsibleSections();
+    
+    // Configurar eventos de edição com IA
+    setupAIEditEvents();
+    
     // Configurar eventos de ferramentas
     setupToolEvents();
     
@@ -54,6 +60,133 @@ document.addEventListener('DOMContentLoaded', () => {
     // Configurar eventos de botões de ação
     setupActionEvents();
 });
+
+// Função para configurar seções colapsáveis
+function setupCollapsibleSections() {
+    // Expandir a primeira seção (Ferramentas) por padrão
+    document.querySelector('.collapsible-section').classList.add('expanded');
+    
+    // Adicionar eventos de clique para expandir/colapsar
+    document.querySelectorAll('.collapsible-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const section = header.parentElement;
+            section.classList.toggle('expanded');
+        });
+    });
+}
+
+// Função para configurar eventos de edição com IA
+function setupAIEditEvents() {
+    const applyAIEditBtn = document.getElementById('apply-ai-edit');
+    const acceptAIResultBtn = document.getElementById('accept-ai-result');
+    const rejectAIResultBtn = document.getElementById('reject-ai-result');
+    
+    if (applyAIEditBtn) {
+        applyAIEditBtn.addEventListener('click', processAIEdit);
+    }
+    
+    if (acceptAIResultBtn) {
+        acceptAIResultBtn.addEventListener('click', acceptAIResult);
+    }
+    
+    if (rejectAIResultBtn) {
+        rejectAIResultBtn.addEventListener('click', rejectAIResult);
+    }
+}
+
+// Função para processar edição com IA
+async function processAIEdit() {
+    const prompt = document.getElementById('ai-prompt').value.trim();
+    if (!prompt) {
+        alert('Por favor, descreva a mudança que deseja fazer na imagem.');
+        return;
+    }
+    
+    // Mostrar indicador de processamento
+    document.getElementById('ai-processing').style.display = 'block';
+    document.getElementById('ai-result').style.display = 'none';
+    
+    try {
+        // Obter a imagem atual do canvas
+        const imageData = canvas.toDataURL('image/png');
+        
+        // Enviar para o servidor
+        const response = await fetch(`/api/mockups-edit/ai-edit/${imageId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                prompt: prompt,
+                imageData: imageData
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Erro ao processar edição: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        // Mostrar resultado
+        document.getElementById('ai-processing').style.display = 'none';
+        document.getElementById('ai-result').style.display = 'block';
+        
+        const previewContainer = document.querySelector('.ai-result-preview');
+        previewContainer.innerHTML = `<img src="${result.editedImageUrl}" alt="Imagem editada">`;
+        
+        // Armazenar URL da imagem editada para uso posterior
+        window.editedImageUrl = result.editedImageUrl;
+        
+    } catch (error) {
+        console.error('Erro ao processar edição com IA:', error);
+        document.getElementById('ai-processing').style.display = 'none';
+        alert(`Erro ao processar edição com IA: ${error.message}`);
+    }
+}
+
+// Função para aceitar resultado da IA
+function acceptAIResult() {
+    if (!window.editedImageUrl) return;
+    
+    // Carregar a imagem editada no canvas
+    fabric.Image.fromURL(window.editedImageUrl, (img) => {
+        // Redimensionar a imagem para caber no canvas mantendo a proporção
+        const scale = Math.min(
+            canvas.width / img.width,
+            canvas.height / img.height
+        ) * 0.9;
+        
+        img.scale(scale);
+        img.set({
+            left: canvas.width / 2,
+            top: canvas.height / 2,
+            originX: 'center',
+            originY: 'center',
+            selectable: true
+        });
+        
+        // Limpar o canvas e adicionar a imagem
+        canvas.clear();
+        canvas.add(img);
+        canvas.setActiveObject(img);
+        canvas.renderAll();
+        
+        // Adicionar ao histórico de desfazer
+        addToUndoStack();
+        
+        // Limpar resultado
+        document.getElementById('ai-result').style.display = 'none';
+        document.getElementById('ai-prompt').value = '';
+    });
+}
+
+// Função para rejeitar resultado da IA
+function rejectAIResult() {
+    // Limpar resultado
+    document.getElementById('ai-result').style.display = 'none';
+    window.editedImageUrl = null;
+}
 
 // Função para carregar a imagem
 async function loadImage(imageId) {

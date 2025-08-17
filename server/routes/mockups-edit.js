@@ -1,228 +1,202 @@
 const express = require('express');
 const router = express.Router();
-const path = require('path');
-const fs = require('fs');
-const { promisify } = require('util');
-const writeFileAsync = promisify(fs.writeFile);
-const mkdirAsync = promisify(fs.mkdir);
-const existsAsync = promisify(fs.exists);
 const cloudinary = require('../config/cloudinary');
-
-// Middleware para verificar autenticação
 const authMiddleware = require('../middleware/auth');
+const Mockup = require('../models/Mockup');
+const path = require('path');
 
-/**
- * Rota para renderizar a página do editor de imagens
- * GET /api/mockups-edit/editor/:id
- */
-router.get('/editor/:id', authMiddleware.isAuthenticated, (req, res) => {
-    // Renderizar a página do editor
-    res.sendFile(path.join(__dirname, '../../public/editor.html'));
-});
-
-/**
- * Rota para obter informações da imagem
- * GET /api/mockups-edit/image/:id
- */
+// Rota para obter imagem para edição
 router.get('/image/:id', authMiddleware.isAuthenticated, async (req, res) => {
     try {
-        const imageId = req.params.id;
+        const mockupId = req.params.id;
         
-        // Verificar se o ID da imagem foi fornecido
-        if (!imageId) {
-            return res.status(400).json({ error: 'ID da imagem não fornecido' });
-        }
-        
-        // Extrair mockupId e seed do imageId (formato: mockupId_seed)
-        const [mockupId, seed] = imageId.split('_');
-        
-        if (!mockupId || !seed) {
-            console.error('Formato de ID inválido:', imageId);
-            
-            // Tentar o método antigo como fallback
-            try {
-                // Tentar buscar do Cloudinary diretamente
-                const result = await cloudinary.api.resource(imageId);
-                
-                return res.json({
-                    id: imageId,
-                    url: result.secure_url,
-                    width: result.width,
-                    height: result.height,
-                    format: result.format
-                });
-            } catch (cloudinaryError) {
-                console.error('Erro ao buscar imagem do Cloudinary:', cloudinaryError);
-                
-                // Se não encontrar no Cloudinary, tentar buscar localmente
-                const localPath = path.join(__dirname, '../../public/uploads', `${imageId}.webp`);
-                
-                if (await existsAsync(localPath)) {
-                    // Se existir localmente, retornar URL local
-                    return res.json({
-                        id: imageId,
-                        url: `/uploads/${imageId}.webp`,
-                        width: 800, // valor padrão
-                        height: 600, // valor padrão
-                        format: 'webp'
-                    });
-                }
-                
-                return res.status(400).json({ error: 'Formato de ID inválido e imagem não encontrada' });
-            }
-        }
-        
-        // Buscar o mockup no banco de dados
-        const Mockup = require('../models/Mockup');
+        // Buscar mockup no banco de dados
         const mockup = await Mockup.findById(mockupId);
         
         if (!mockup) {
-            console.error('Mockup não encontrado:', mockupId);
             return res.status(404).json({ error: 'Mockup não encontrado' });
         }
         
-        // Verificar se existem imagens salvas
-        if (!mockup.metadados || !mockup.metadados.imagensSalvas || mockup.metadados.imagensSalvas.length === 0) {
-            console.error('Nenhuma imagem encontrada para o mockup:', mockupId);
-            return res.status(404).json({ error: 'Nenhuma imagem encontrada para este mockup' });
+        // Verificar se o usuário tem permissão para acessar este mockup
+        if (mockup.criadoPor.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+            return res.status(403).json({ error: 'Você não tem permissão para acessar este mockup' });
         }
         
-        // Encontrar a imagem específica com o seed correspondente
-        const imagem = mockup.metadados.imagensSalvas.find(img => img.seed.toString() === seed);
-        
-        if (!imagem) {
-            console.error(`Imagem com seed ${seed} não encontrada no mockup ${mockupId}`);
-            return res.status(404).json({ error: 'Imagem não encontrada' });
-        }
-        
-        console.log(`Imagem encontrada para ${imageId}:`, imagem);
-        
-        // Retornar os dados da imagem
-        return res.json({
-            id: imageId,
-            url: imagem.url,
-            width: imagem.width || 800,
-            height: imagem.height || 600,
-            format: 'webp'
+        // Retornar URL da imagem
+        res.json({
+            url: mockup.url,
+            nome: mockup.nome
         });
         
     } catch (error) {
-        console.error('Erro ao buscar informações da imagem:', error);
-        res.status(500).json({ error: 'Erro ao buscar informações da imagem' });
+        console.error('Erro ao obter imagem para edição:', error);
+        res.status(500).json({ error: `Erro ao obter imagem: ${error.message}` });
     }
 });
 
-/**
- * Rota para salvar imagem editada
- * POST /api/mockups-edit/save/:id
- */
-router.post('/save/:id', authMiddleware.isAuthenticated, async (req, res) => {
+// Rota para edição com IA
+router.post('/ai-edit/:id', authMiddleware.isAuthenticated, async (req, res) => {
     try {
-        const imageId = req.params.id;
-        const { imageData, format, filename } = req.body;
+        const { prompt, imageData } = req.body;
         
-        // Verificar se os dados necessários foram fornecidos
-        if (!imageId || !imageData) {
-            return res.status(400).json({ error: 'Dados incompletos' });
+        if (!prompt || !imageData) {
+            return res.status(400).json({ error: 'Prompt e dados da imagem são obrigatórios' });
         }
-        
-        // Verificar se o formato é válido
-        const validFormats = ['webp', 'jpeg', 'png'];
-        const imageFormat = format && validFormats.includes(format) ? format : 'webp';
         
         // Remover o prefixo "data:image/..." da string base64
         const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
         const buffer = Buffer.from(base64Data, 'base64');
         
-        // Gerar nome de arquivo único se não for fornecido
-        const safeFilename = filename 
-            ? filename.replace(/[^a-z0-9]/gi, '_').toLowerCase() 
-            : `imagem_editada_${Date.now()}`;
+        // Gerar nome de arquivo único
+        const tempFilename = `temp_edit_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
         
-        // Opção 1: Salvar localmente
-        try {
-            // Garantir que o diretório de uploads existe
-            const uploadsDir = path.join(__dirname, '../../public/uploads');
-            if (!await existsAsync(uploadsDir)) {
-                await mkdirAsync(uploadsDir, { recursive: true });
+        // Upload para Cloudinary para obter URL
+        cloudinary.uploader.upload_stream({
+            public_id: tempFilename,
+            folder: 'temp_edits',
+            format: 'png',
+            resource_type: 'image',
+            // Expirar em 1 hora (segurança adicional)
+            expires_at: Math.floor(Date.now() / 1000) + 3600
+        }, async (error, result) => {
+            if (error) {
+                console.error('Erro ao fazer upload para Cloudinary:', error);
+                return res.status(500).json({ error: 'Erro ao processar imagem' });
             }
             
-            // Caminho completo do arquivo
-            const filePath = path.join(uploadsDir, `${safeFilename}.${imageFormat}`);
-            
-            // Salvar arquivo
-            await writeFileAsync(filePath, buffer);
-            
-            // URL relativa para acesso via navegador
-            const fileUrl = `/uploads/${safeFilename}.${imageFormat}`;
-            
-            // Opção 2: Fazer upload para o Cloudinary (se configurado)
-            let cloudinaryResult = null;
-            
-            if (cloudinary.uploader) {
+            try {
+                // Inicializar cliente Replicate
+                const Replicate = require('replicate');
+                const replicate = new Replicate({
+                    auth: process.env.REPLICATE_API_TOKEN,
+                });
+                
+                // Modelo Flux 1.1 Pro
+                const model = "black-forest-labs/flux-1.1-pro";
+                
+                // Parâmetros para o modelo
+                const input = {
+                    prompt: prompt,
+                    image: result.secure_url,
+                    output_format: 'webp',
+                    output_quality: 90,
+                    safety_tolerance: 2
+                };
+                
+                console.log('Enviando para Replicate:', {
+                    model,
+                    input: {
+                        ...input,
+                        image: result.secure_url + ' (URL Cloudinary)'
+                    }
+                });
+                
+                // Executar o modelo
+                const output = await replicate.run(model, { input });
+                
+                // Retornar URL da imagem editada
+                res.json({
+                    success: true,
+                    editedImageUrl: output
+                });
+                
+                // Remover imagem temporária do Cloudinary imediatamente
                 try {
-                    // Upload para o Cloudinary
-                    cloudinaryResult = await new Promise((resolve, reject) => {
-                        cloudinary.uploader.upload_stream(
-                            {
-                                public_id: safeFilename,
-                                folder: 'edited',
-                                format: imageFormat,
-                                resource_type: 'image'
-                            },
-                            (error, result) => {
-                                if (error) reject(error);
-                                else resolve(result);
-                            }
-                        ).end(buffer);
-                    });
-                } catch (cloudinaryError) {
-                    console.error('Erro ao fazer upload para o Cloudinary:', cloudinaryError);
-                    // Continuar com o arquivo local se o upload para o Cloudinary falhar
+                    await cloudinary.uploader.destroy(result.public_id);
+                    console.log('Imagem temporária removida do Cloudinary:', result.public_id);
+                } catch (cleanupError) {
+                    console.error('Erro ao remover imagem temporária:', cleanupError);
                 }
+                
+            } catch (replicateError) {
+                console.error('Erro ao processar com Replicate:', replicateError);
+                
+                // Limpar arquivo temporário mesmo em caso de erro
+                try {
+                    await cloudinary.uploader.destroy(result.public_id);
+                } catch (cleanupError) {
+                    console.error('Erro ao remover imagem temporária após falha:', cleanupError);
+                }
+                
+                res.status(500).json({ error: `Erro na edição com IA: ${replicateError.message}` });
             }
-            
-            // Retornar informações da imagem salva
-            return res.json({
-                success: true,
-                message: 'Imagem salva com sucesso',
-                local: {
-                    path: filePath,
-                    url: fileUrl
-                },
-                cloudinary: cloudinaryResult ? {
-                    public_id: cloudinaryResult.public_id,
-                    url: cloudinaryResult.secure_url
-                } : null
-            });
-            
-        } catch (saveError) {
-            console.error('Erro ao salvar imagem localmente:', saveError);
-            return res.status(500).json({ error: 'Erro ao salvar imagem' });
-        }
+        }).end(buffer);
         
     } catch (error) {
-        console.error('Erro ao processar imagem editada:', error);
-        res.status(500).json({ error: 'Erro ao processar imagem editada' });
+        console.error('Erro ao processar edição com IA:', error);
+        res.status(500).json({ error: `Erro ao processar edição: ${error.message}` });
     }
 });
 
-/**
- * Rota para adicionar botão de edição na galeria
- * GET /api/mockups-edit/add-edit-button/:galleryItemId
- * Esta rota é apenas um exemplo e pode ser adaptada conforme necessário
- */
-router.get('/add-edit-button/:galleryItemId', authMiddleware.isAuthenticated, (req, res) => {
-    const galleryItemId = req.params.galleryItemId;
-    
-    // Aqui você pode implementar a lógica para adicionar o botão de edição
-    // a um item específico da galeria, se necessário
-    
-    res.json({
-        success: true,
-        message: 'Botão de edição adicionado',
-        galleryItemId
-    });
+// Rota para salvar imagem editada
+router.post('/save/:id', authMiddleware.isAuthenticated, async (req, res) => {
+    try {
+        const mockupId = req.params.id;
+        const { imageData, format } = req.body;
+        
+        if (!imageData) {
+            return res.status(400).json({ error: 'Dados da imagem são obrigatórios' });
+        }
+        
+        // Buscar mockup no banco de dados
+        const mockup = await Mockup.findById(mockupId);
+        
+        if (!mockup) {
+            return res.status(404).json({ error: 'Mockup não encontrado' });
+        }
+        
+        // Verificar se o usuário tem permissão para editar este mockup
+        if (mockup.criadoPor.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+            return res.status(403).json({ error: 'Você não tem permissão para editar este mockup' });
+        }
+        
+        // Remover o prefixo "data:image/..." da string base64
+        const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        
+        // Upload para Cloudinary
+        cloudinary.uploader.upload_stream({
+            public_id: `mockup_${mockupId}_edited`,
+            folder: 'mockups',
+            format: format || 'webp',
+            resource_type: 'image'
+        }, async (error, result) => {
+            if (error) {
+                console.error('Erro ao fazer upload para Cloudinary:', error);
+                return res.status(500).json({ error: 'Erro ao salvar imagem' });
+            }
+            
+            try {
+                // Atualizar mockup no banco de dados
+                mockup.url = result.secure_url;
+                mockup.publicId = result.public_id;
+                mockup.editado = true;
+                mockup.dataEdicao = new Date();
+                
+                await mockup.save();
+                
+                // Retornar sucesso
+                res.json({
+                    success: true,
+                    url: result.secure_url
+                });
+                
+            } catch (dbError) {
+                console.error('Erro ao atualizar mockup no banco de dados:', dbError);
+                res.status(500).json({ error: `Erro ao salvar imagem: ${dbError.message}` });
+            }
+        }).end(buffer);
+        
+    } catch (error) {
+        console.error('Erro ao salvar imagem editada:', error);
+        res.status(500).json({ error: `Erro ao salvar imagem: ${error.message}` });
+    }
+});
+
+// Rota para servir a página do editor
+router.get('/editor/:id', authMiddleware.isAuthenticated, (req, res) => {
+    // Servir a página HTML do editor
+    res.sendFile(path.join(__dirname, '../../public/editor.html'));
 });
 
 module.exports = router;
