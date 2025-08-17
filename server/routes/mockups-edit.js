@@ -1,128 +1,193 @@
 const express = require('express');
 const router = express.Router();
-const { isAuthenticated } = require('../middleware/auth');
-const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { cloudinary } = require('../config/cloudinary');
-const Mockup = require('../models/Mockup');
+const { promisify } = require('util');
+const writeFileAsync = promisify(fs.writeFile);
+const mkdirAsync = promisify(fs.mkdir);
+const existsAsync = promisify(fs.exists);
+const cloudinary = require('../config/cloudinary');
 
-// Configuração do multer para upload de arquivos
-const storage = multer.diskStorage({
-    destination: function(req, file, cb) {
-        const uploadDir = path.join(__dirname, '../../public/uploads/temp');
-        // Criar diretório se não existir
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
+// Middleware para verificar autenticação
+const authMiddleware = require('../middleware/auth');
+
+/**
+ * Rota para renderizar a página do editor de imagens
+ * GET /api/mockups-edit/editor/:id
+ */
+router.get('/editor/:id', authMiddleware.isAuthenticated, (req, res) => {
+    // Renderizar a página do editor
+    res.sendFile(path.join(__dirname, '../../public/editor.html'));
+});
+
+/**
+ * Rota para obter informações da imagem
+ * GET /api/mockups-edit/image/:id
+ */
+router.get('/image/:id', authMiddleware.isAuthenticated, async (req, res) => {
+    try {
+        const imageId = req.params.id;
+        
+        // Verificar se o ID da imagem foi fornecido
+        if (!imageId) {
+            return res.status(400).json({ error: 'ID da imagem não fornecido' });
         }
-        cb(null, uploadDir);
-    },
-    filename: function(req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'edited-' + uniqueSuffix + path.extname(file.originalname));
+        
+        // Buscar imagem na galeria ou no banco de dados
+        // Aqui você pode adaptar para buscar de onde suas imagens estão armazenadas
+        // Por exemplo, do Cloudinary, do sistema de arquivos local, etc.
+        
+        // Exemplo com Cloudinary (assumindo que o ID é o public_id do Cloudinary)
+        try {
+            // Tentar buscar do Cloudinary
+            const result = await cloudinary.api.resource(imageId);
+            
+            return res.json({
+                id: imageId,
+                url: result.secure_url,
+                width: result.width,
+                height: result.height,
+                format: result.format
+            });
+        } catch (cloudinaryError) {
+            console.error('Erro ao buscar imagem do Cloudinary:', cloudinaryError);
+            
+            // Se não encontrar no Cloudinary, tentar buscar localmente
+            // Verificar se existe na pasta de uploads
+            const localPath = path.join(__dirname, '../../public/uploads', `${imageId}.webp`);
+            
+            if (await existsAsync(localPath)) {
+                // Se existir localmente, retornar URL local
+                return res.json({
+                    id: imageId,
+                    url: `/uploads/${imageId}.webp`,
+                    // Não temos informações de dimensões para arquivos locais sem processamento adicional
+                    width: 800, // valor padrão
+                    height: 600, // valor padrão
+                    format: 'webp'
+                });
+            }
+            
+            // Se não encontrar em nenhum lugar, retornar erro
+            return res.status(404).json({ error: 'Imagem não encontrada' });
+        }
+    } catch (error) {
+        console.error('Erro ao buscar informações da imagem:', error);
+        res.status(500).json({ error: 'Erro ao buscar informações da imagem' });
     }
 });
 
-const upload = multer({ 
-    storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 } // Limite de 10MB
-});
-
-// Rota para salvar imagem editada
-router.post('/save-edited', isAuthenticated, upload.single('image'), async (req, res) => {
+/**
+ * Rota para salvar imagem editada
+ * POST /api/mockups-edit/save/:id
+ */
+router.post('/save/:id', authMiddleware.isAuthenticated, async (req, res) => {
     try {
-        const { imageId, clientId } = req.body;
+        const imageId = req.params.id;
+        const { imageData, format, filename } = req.body;
         
-        if (!imageId || !clientId || !req.file) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Parâmetros inválidos. Imagem, ID da imagem e ID do cliente são obrigatórios.' 
-            });
+        // Verificar se os dados necessários foram fornecidos
+        if (!imageId || !imageData) {
+            return res.status(400).json({ error: 'Dados incompletos' });
         }
         
-        // Caminho do arquivo temporário
-        const filePath = req.file.path;
+        // Verificar se o formato é válido
+        const validFormats = ['webp', 'jpeg', 'png'];
+        const imageFormat = format && validFormats.includes(format) ? format : 'webp';
         
-        // Upload para o Cloudinary
-        const result = await cloudinary.uploader.upload(filePath, {
-            folder: `clientes/${clientId}/mockups/edited`,
-            resource_type: 'image'
-        });
+        // Remover o prefixo "data:image/..." da string base64
+        const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
         
-        // Remover arquivo temporário
-        fs.unlinkSync(filePath);
+        // Gerar nome de arquivo único se não for fornecido
+        const safeFilename = filename 
+            ? filename.replace(/[^a-z0-9]/gi, '_').toLowerCase() 
+            : `imagem_editada_${Date.now()}`;
         
-        // Buscar mockup original
-        const mockup = await Mockup.findById(imageId);
-        if (!mockup) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Mockup não encontrado' 
+        // Opção 1: Salvar localmente
+        try {
+            // Garantir que o diretório de uploads existe
+            const uploadsDir = path.join(__dirname, '../../public/uploads');
+            if (!await existsAsync(uploadsDir)) {
+                await mkdirAsync(uploadsDir, { recursive: true });
+            }
+            
+            // Caminho completo do arquivo
+            const filePath = path.join(uploadsDir, `${safeFilename}.${imageFormat}`);
+            
+            // Salvar arquivo
+            await writeFileAsync(filePath, buffer);
+            
+            // URL relativa para acesso via navegador
+            const fileUrl = `/uploads/${safeFilename}.${imageFormat}`;
+            
+            // Opção 2: Fazer upload para o Cloudinary (se configurado)
+            let cloudinaryResult = null;
+            
+            if (cloudinary.uploader) {
+                try {
+                    // Upload para o Cloudinary
+                    cloudinaryResult = await new Promise((resolve, reject) => {
+                        cloudinary.uploader.upload_stream(
+                            {
+                                public_id: safeFilename,
+                                folder: 'edited',
+                                format: imageFormat,
+                                resource_type: 'image'
+                            },
+                            (error, result) => {
+                                if (error) reject(error);
+                                else resolve(result);
+                            }
+                        ).end(buffer);
+                    });
+                } catch (cloudinaryError) {
+                    console.error('Erro ao fazer upload para o Cloudinary:', cloudinaryError);
+                    // Continuar com o arquivo local se o upload para o Cloudinary falhar
+                }
+            }
+            
+            // Retornar informações da imagem salva
+            return res.json({
+                success: true,
+                message: 'Imagem salva com sucesso',
+                local: {
+                    path: filePath,
+                    url: fileUrl
+                },
+                cloudinary: cloudinaryResult ? {
+                    public_id: cloudinaryResult.public_id,
+                    url: cloudinaryResult.secure_url
+                } : null
             });
+            
+        } catch (saveError) {
+            console.error('Erro ao salvar imagem localmente:', saveError);
+            return res.status(500).json({ error: 'Erro ao salvar imagem' });
         }
-        
-        // Criar novo mockup com a imagem editada
-        const editedMockup = new Mockup({
-            cliente: clientId,
-            titulo: `${mockup.titulo} (Editado)`,
-            prompt: mockup.prompt,
-            configuracao: mockup.configuracao,
-            status: 'concluido',
-            imagemUrl: result.secure_url,
-            metadados: {
-                ...mockup.metadados,
-                editado: true,
-                originalId: mockup._id,
-                cloudinaryId: result.public_id
-            }
-        });
-        
-        await editedMockup.save();
-        
-        res.status(200).json({
-            success: true,
-            message: 'Imagem editada salva com sucesso',
-            data: {
-                mockupId: editedMockup._id,
-                url: result.secure_url
-            }
-        });
         
     } catch (error) {
-        console.error('Erro ao salvar imagem editada:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Erro ao salvar imagem editada',
-            error: error.message
-        });
+        console.error('Erro ao processar imagem editada:', error);
+        res.status(500).json({ error: 'Erro ao processar imagem editada' });
     }
 });
 
-// Rota para abrir o editor com uma imagem específica
-router.get('/editor/:imageId', isAuthenticated, async (req, res) => {
-    try {
-        const { imageId } = req.params;
-        
-        // Buscar mockup
-        const mockup = await Mockup.findById(imageId);
-        if (!mockup) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Mockup não encontrado' 
-            });
-        }
-        
-        // Redirecionar para o editor com os parâmetros necessários
-        res.redirect(`/editor.html?id=${imageId}&imageUrl=${encodeURIComponent(mockup.imagemUrl)}&clientId=${mockup.cliente}`);
-        
-    } catch (error) {
-        console.error('Erro ao abrir editor:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Erro ao abrir editor',
-            error: error.message
-        });
-    }
+/**
+ * Rota para adicionar botão de edição na galeria
+ * GET /api/mockups-edit/add-edit-button/:galleryItemId
+ * Esta rota é apenas um exemplo e pode ser adaptada conforme necessário
+ */
+router.get('/add-edit-button/:galleryItemId', authMiddleware.isAuthenticated, (req, res) => {
+    const galleryItemId = req.params.galleryItemId;
+    
+    // Aqui você pode implementar a lógica para adicionar o botão de edição
+    // a um item específico da galeria, se necessário
+    
+    res.json({
+        success: true,
+        message: 'Botão de edição adicionado',
+        galleryItemId
+    });
 });
 
 module.exports = router;

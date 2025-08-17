@@ -4,524 +4,390 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editor de Imagens - Janice</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* Estilos específicos para o editor */
-        .editor-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
-        
-        .editor-header {
-            background: var(--primary-color);
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .editor-header h1 {
-            font-size: 1.5rem;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .editor-header .action-buttons {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .editor-main {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
-        
-        .editor-canvas-container {
-            flex: 1;
-            background: #f0f0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: auto;
-            position: relative;
-        }
-        
-        .editor-canvas-wrapper {
-            position: relative;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-            background: white;
-        }
-        
-        #editor-canvas {
-            display: block;
-        }
-        
-        .editor-tools {
-            width: 280px;
-            background: white;
-            border-left: 1px solid var(--border-color);
-            overflow-y: auto;
-            padding: 20px;
-        }
-        
-        .tool-section {
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 20px;
-        }
-        
-        .tool-section:last-child {
-            border-bottom: none;
-        }
-        
-        .tool-section h3 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            color: var(--primary-color);
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .tool-section h3 i {
-            font-size: 1rem;
-        }
-        
-        .tool-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        
-        .tool-button {
-            background: #f5f5f5;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            padding: 8px 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.9rem;
-            transition: var(--transition);
-        }
-        
-        .tool-button:hover {
-            background: #e9e9e9;
-            border-color: #ccc;
-        }
-        
-        .tool-button.active {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-dark);
-        }
-        
-        .tool-button i {
-            font-size: 1rem;
-        }
-        
-        .tool-options {
-            margin-top: 10px;
-            display: none;
-        }
-        
-        .tool-options.active {
-            display: block;
-        }
-        
-        .option-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        
-        .option-row label {
-            flex: 1;
-            font-size: 0.9rem;
-        }
-        
-        .option-row input[type="range"] {
-            flex: 2;
-        }
-        
-        .option-row input[type="color"] {
-            width: 40px;
-            height: 30px;
-            border: none;
-            padding: 0;
-            background: none;
-        }
-        
-        .option-value {
-            width: 40px;
-            text-align: right;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        
-        .filter-preset {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 80px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        
-        .filter-preset:hover {
-            transform: translateY(-2px);
-        }
-        
-        .filter-preview {
-            width: 70px;
-            height: 70px;
-            border-radius: var(--border-radius);
-            overflow: hidden;
-            margin-bottom: 5px;
-            border: 2px solid transparent;
-        }
-        
-        .filter-preset.active .filter-preview {
-            border-color: var(--primary-color);
-        }
-        
-        .filter-preview img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .filter-name {
-            font-size: 0.8rem;
-            text-align: center;
-        }
-        
-        .presets-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-        }
-        
-        .editor-footer {
-            background: #f5f5f5;
-            border-top: 1px solid var(--border-color);
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .zoom-controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .zoom-button {
-            background: white;
-            border: 1px solid var(--border-color);
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        
-        .zoom-button:hover {
-            background: #f0f0f0;
-        }
-        
-        .zoom-level {
-            font-size: 0.9rem;
-            font-weight: 500;
-            min-width: 60px;
-            text-align: center;
-        }
-        
-        .save-controls {
-            display: flex;
-            gap: 10px;
-        }
-        
-        /* Responsividade */
-        @media (max-width: 768px) {
-            .editor-main {
-                flex-direction: column;
-            }
-            
-            .editor-tools {
-                width: 100%;
-                height: 200px;
-                border-left: none;
-                border-top: 1px solid var(--border-color);
-            }
-            
-            .tool-buttons {
-                justify-content: center;
-            }
-        }
-        
-        /* Loader */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            flex-direction: column;
-        }
-        
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid rgba(106, 90, 205, 0.2);
-            border-radius: 50%;
-            border-top-color: var(--primary-color);
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-        
-        .loading-text {
-            font-size: 1.1rem;
-            color: var(--primary-color);
-        }
-    </style>
+    <link rel="stylesheet" href="/css/editor.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Fabric.js para manipulação de canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
+    <!-- FileSaver.js para download de arquivos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body>
     <div class="editor-container">
-        <div class="editor-header">
-            <h1><i class="fas fa-edit"></i> Editor de Imagens</h1>
-            <div class="action-buttons">
-                <button id="cancel-edit" class="action-button secondary">
-                    <i class="fas fa-times"></i> Cancelar
+        <header class="editor-header">
+            <div class="logo-section">
+                <h1>Editor de Imagens</h1>
+            </div>
+            <div class="actions-section">
+                <button id="save-btn" class="action-button primary">
+                    <i class="fas fa-save"></i> Salvar
                 </button>
-                <button id="save-image" class="action-button">
-                    <i class="fas fa-save"></i> Salvar Alterações
+                <button id="download-btn" class="action-button secondary">
+                    <i class="fas fa-download"></i> Download
+                </button>
+                <button id="back-btn" class="action-button">
+                    <i class="fas fa-arrow-left"></i> Voltar
                 </button>
             </div>
-        </div>
-        
+        </header>
+
         <div class="editor-main">
-            <div class="editor-canvas-container">
-                <div class="editor-canvas-wrapper">
-                    <canvas id="editor-canvas"></canvas>
+            <div class="tools-panel">
+                <div class="tool-group">
+                    <h3>Ferramentas</h3>
+                    <button id="select-tool" class="tool-button active" title="Selecionar">
+                        <i class="fas fa-mouse-pointer"></i>
+                    </button>
+                    <button id="crop-tool" class="tool-button" title="Recortar">
+                        <i class="fas fa-crop-alt"></i>
+                    </button>
+                    <button id="rotate-tool" class="tool-button" title="Rotacionar">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button id="text-tool" class="tool-button" title="Adicionar Texto">
+                        <i class="fas fa-font"></i>
+                    </button>
+                    <button id="draw-tool" class="tool-button" title="Desenhar">
+                        <i class="fas fa-paint-brush"></i>
+                    </button>
+                    <button id="shape-tool" class="tool-button" title="Formas">
+                        <i class="fas fa-shapes"></i>
+                    </button>
+                </div>
+
+                <div class="tool-group">
+                    <h3>Ajustes</h3>
+                    <button id="brightness-tool" class="tool-button" title="Brilho">
+                        <i class="fas fa-sun"></i>
+                    </button>
+                    <button id="contrast-tool" class="tool-button" title="Contraste">
+                        <i class="fas fa-adjust"></i>
+                    </button>
+                    <button id="saturation-tool" class="tool-button" title="Saturação">
+                        <i class="fas fa-palette"></i>
+                    </button>
+                    <button id="blur-tool" class="tool-button" title="Desfoque">
+                        <i class="fas fa-tint"></i>
+                    </button>
+                </div>
+
+                <div class="tool-group">
+                    <h3>Filtros</h3>
+                    <button id="filter-none" class="filter-button active" title="Normal">
+                        Normal
+                    </button>
+                    <button id="filter-grayscale" class="filter-button" title="Preto e Branco">
+                        P&B
+                    </button>
+                    <button id="filter-sepia" class="filter-button" title="Sépia">
+                        Sépia
+                    </button>
+                    <button id="filter-vintage" class="filter-button" title="Vintage">
+                        Vintage
+                    </button>
+                    <button id="filter-vibrant" class="filter-button" title="Vibrante">
+                        Vibrante
+                    </button>
+                </div>
+
+                <div class="tool-group">
+                    <h3>Ações</h3>
+                    <button id="undo-btn" class="action-button" title="Desfazer" disabled>
+                        <i class="fas fa-undo"></i> Desfazer
+                    </button>
+                    <button id="redo-btn" class="action-button" title="Refazer" disabled>
+                        <i class="fas fa-redo"></i> Refazer
+                    </button>
+                    <button id="reset-btn" class="action-button" title="Resetar">
+                        <i class="fas fa-trash"></i> Resetar
+                    </button>
                 </div>
             </div>
-            
-            <div class="editor-tools">
-                <div class="tool-section">
-                    <h3><i class="fas fa-crop-alt"></i> Ajustes Básicos</h3>
-                    <div class="tool-options active">
-                        <div class="option-row">
-                            <label for="brightness">Brilho</label>
-                            <input type="range" id="brightness" min="-100" max="100" value="0">
-                            <span class="option-value" id="brightness-value">0</span>
-                        </div>
-                        <div class="option-row">
-                            <label for="contrast">Contraste</label>
-                            <input type="range" id="contrast" min="-100" max="100" value="0">
-                            <span class="option-value" id="contrast-value">0</span>
-                        </div>
-                        <div class="option-row">
-                            <label for="saturation">Saturação</label>
-                            <input type="range" id="saturation" min="-100" max="100" value="0">
-                            <span class="option-value" id="saturation-value">0</span>
-                        </div>
-                    </div>
+
+            <div class="canvas-container">
+                <div id="loading-overlay">
+                    <div class="spinner"></div>
+                    <p>Carregando imagem...</p>
                 </div>
-                
-                <div class="tool-section">
-                    <h3><i class="fas fa-sliders-h"></i> Filtros</h3>
-                    <div class="presets-container">
-                        <div class="filter-preset active" data-filter="normal">
-                            <div class="filter-preview">
-                                <img src="" alt="Normal" id="filter-preview-normal">
-                            </div>
-                            <span class="filter-name">Normal</span>
-                        </div>
-                        <div class="filter-preset" data-filter="vintage">
-                            <div class="filter-preview">
-                                <img src="" alt="Vintage" id="filter-preview-vintage">
-                            </div>
-                            <span class="filter-name">Vintage</span>
-                        </div>
-                        <div class="filter-preset" data-filter="sepia">
-                            <div class="filter-preview">
-                                <img src="" alt="Sépia" id="filter-preview-sepia">
-                            </div>
-                            <span class="filter-name">Sépia</span>
-                        </div>
-                        <div class="filter-preset" data-filter="grayscale">
-                            <div class="filter-preview">
-                                <img src="" alt="P&B" id="filter-preview-grayscale">
-                            </div>
-                            <span class="filter-name">P&B</span>
-                        </div>
-                        <div class="filter-preset" data-filter="vibrant">
-                            <div class="filter-preview">
-                                <img src="" alt="Vibrante" id="filter-preview-vibrant">
-                            </div>
-                            <span class="filter-name">Vibrante</span>
-                        </div>
-                        <div class="filter-preset" data-filter="cool">
-                            <div class="filter-preview">
-                                <img src="" alt="Frio" id="filter-preview-cool">
-                            </div>
-                            <span class="filter-name">Frio</span>
-                        </div>
-                        <div class="filter-preset" data-filter="warm">
-                            <div class="filter-preview">
-                                <img src="" alt="Quente" id="filter-preview-warm">
-                            </div>
-                            <span class="filter-name">Quente</span>
-                        </div>
-                        <div class="filter-preset" data-filter="clarity">
-                            <div class="filter-preview">
-                                <img src="" alt="Claridade" id="filter-preview-clarity">
-                            </div>
-                            <span class="filter-name">Claridade</span>
-                        </div>
+                <canvas id="editor-canvas"></canvas>
+            </div>
+
+            <div class="properties-panel">
+                <div class="panel-content">
+                    <h3>Propriedades</h3>
+                    <div id="no-selection-message">
+                        <p>Selecione um elemento para editar suas propriedades</p>
                     </div>
-                </div>
-                
-                <div class="tool-section">
-                    <h3><i class="fas fa-crop"></i> Recorte e Rotação</h3>
-                    <div class="tool-buttons">
-                        <button class="tool-button" id="crop-btn">
-                            <i class="fas fa-crop"></i> Recortar
-                        </button>
-                        <button class="tool-button" id="rotate-left-btn">
-                            <i class="fas fa-undo"></i> Girar Esq.
-                        </button>
-                        <button class="tool-button" id="rotate-right-btn">
-                            <i class="fas fa-redo"></i> Girar Dir.
-                        </button>
-                        <button class="tool-button" id="flip-h-btn">
-                            <i class="fas fa-arrows-alt-h"></i> Inverter H
-                        </button>
-                        <button class="tool-button" id="flip-v-btn">
-                            <i class="fas fa-arrows-alt-v"></i> Inverter V
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="tool-section">
-                    <h3><i class="fas fa-magic"></i> Efeitos</h3>
-                    <div class="tool-buttons">
-                        <button class="tool-button" id="sharpen-btn">
-                            <i class="fas fa-asterisk"></i> Nitidez
-                        </button>
-                        <button class="tool-button" id="blur-btn">
-                            <i class="fas fa-tint"></i> Desfoque
-                        </button>
-                        <button class="tool-button" id="noise-btn">
-                            <i class="fas fa-snowflake"></i> Ruído
-                        </button>
-                        <button class="tool-button" id="vignette-btn">
-                            <i class="far fa-circle"></i> Vinheta
-                        </button>
-                    </div>
-                    <div class="tool-options" id="effect-options">
-                        <div class="option-row">
-                            <label for="effect-intensity">Intensidade</label>
-                            <input type="range" id="effect-intensity" min="0" max="100" value="50">
-                            <span class="option-value" id="effect-intensity-value">50</span>
+
+                    <!-- Propriedades de texto (visível apenas quando texto selecionado) -->
+                    <div id="text-properties" class="property-group" style="display: none;">
+                        <h4>Texto</h4>
+                        <div class="form-group">
+                            <label for="text-content">Conteúdo:</label>
+                            <textarea id="text-content" rows="3"></textarea>
                         </div>
-                    </div>
-                </div>
-                
-                <div class="tool-section">
-                    <h3><i class="fas fa-text-height"></i> Texto</h3>
-                    <div class="tool-buttons">
-                        <button class="tool-button" id="add-text-btn">
-                            <i class="fas fa-font"></i> Adicionar Texto
-                        </button>
-                    </div>
-                    <div class="tool-options" id="text-options">
-                        <div class="option-row">
-                            <label for="text-input">Texto:</label>
-                            <input type="text" id="text-input" placeholder="Digite seu texto">
+                        <div class="form-group">
+                            <label for="text-font">Fonte:</label>
+                            <select id="text-font">
+                                <option value="Arial">Arial</option>
+                                <option value="Helvetica">Helvetica</option>
+                                <option value="Times New Roman">Times New Roman</option>
+                                <option value="Courier New">Courier New</option>
+                                <option value="Georgia">Georgia</option>
+                                <option value="Verdana">Verdana</option>
+                                <option value="Impact">Impact</option>
+                            </select>
                         </div>
-                        <div class="option-row">
+                        <div class="form-group">
+                            <label for="text-size">Tamanho:</label>
+                            <input type="range" id="text-size" min="10" max="100" value="30">
+                            <span id="text-size-value">30px</span>
+                        </div>
+                        <div class="form-group">
                             <label for="text-color">Cor:</label>
                             <input type="color" id="text-color" value="#000000">
                         </div>
-                        <div class="option-row">
-                            <label for="text-size">Tamanho:</label>
-                            <input type="range" id="text-size" min="10" max="100" value="30">
-                            <span class="option-value" id="text-size-value">30</span>
+                        <div class="form-group">
+                            <label>Estilo:</label>
+                            <div class="button-group">
+                                <button id="text-bold" class="style-button" title="Negrito">
+                                    <i class="fas fa-bold"></i>
+                                </button>
+                                <button id="text-italic" class="style-button" title="Itálico">
+                                    <i class="fas fa-italic"></i>
+                                </button>
+                                <button id="text-underline" class="style-button" title="Sublinhado">
+                                    <i class="fas fa-underline"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Alinhamento:</label>
+                            <div class="button-group">
+                                <button id="text-align-left" class="style-button active" title="Alinhar à Esquerda">
+                                    <i class="fas fa-align-left"></i>
+                                </button>
+                                <button id="text-align-center" class="style-button" title="Centralizar">
+                                    <i class="fas fa-align-center"></i>
+                                </button>
+                                <button id="text-align-right" class="style-button" title="Alinhar à Direita">
+                                    <i class="fas fa-align-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Propriedades de forma (visível apenas quando forma selecionada) -->
+                    <div id="shape-properties" class="property-group" style="display: none;">
+                        <h4>Forma</h4>
+                        <div class="form-group">
+                            <label for="shape-color">Cor de Preenchimento:</label>
+                            <input type="color" id="shape-color" value="#3498db">
+                        </div>
+                        <div class="form-group">
+                            <label for="shape-border-color">Cor da Borda:</label>
+                            <input type="color" id="shape-border-color" value="#2980b9">
+                        </div>
+                        <div class="form-group">
+                            <label for="shape-border-width">Espessura da Borda:</label>
+                            <input type="range" id="shape-border-width" min="0" max="20" value="1">
+                            <span id="shape-border-width-value">1px</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="shape-opacity">Opacidade:</label>
+                            <input type="range" id="shape-opacity" min="0" max="100" value="100">
+                            <span id="shape-opacity-value">100%</span>
+                        </div>
+                    </div>
+
+                    <!-- Propriedades de desenho (visível apenas quando ferramenta de desenho ativa) -->
+                    <div id="draw-properties" class="property-group" style="display: none;">
+                        <h4>Desenho</h4>
+                        <div class="form-group">
+                            <label for="brush-color">Cor:</label>
+                            <input type="color" id="brush-color" value="#000000">
+                        </div>
+                        <div class="form-group">
+                            <label for="brush-width">Espessura:</label>
+                            <input type="range" id="brush-width" min="1" max="50" value="5">
+                            <span id="brush-width-value">5px</span>
+                        </div>
+                    </div>
+
+                    <!-- Propriedades de imagem (visível apenas quando imagem selecionada) -->
+                    <div id="image-properties" class="property-group" style="display: none;">
+                        <h4>Imagem</h4>
+                        <div class="form-group">
+                            <label for="image-opacity">Opacidade:</label>
+                            <input type="range" id="image-opacity" min="0" max="100" value="100">
+                            <span id="image-opacity-value">100%</span>
+                        </div>
+                        <div class="form-group">
+                            <button id="flip-horizontal" class="action-button">
+                                <i class="fas fa-arrows-alt-h"></i> Espelhar Horizontal
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <button id="flip-vertical" class="action-button">
+                                <i class="fas fa-arrows-alt-v"></i> Espelhar Vertical
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Propriedades de ajustes (visível apenas quando ajustes selecionados) -->
+                    <div id="adjustment-properties" class="property-group" style="display: none;">
+                        <h4>Ajustes</h4>
+                        <div class="form-group">
+                            <label for="brightness-value">Brilho:</label>
+                            <input type="range" id="brightness-value" min="-100" max="100" value="0">
+                            <span id="brightness-value-display">0</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="contrast-value">Contraste:</label>
+                            <input type="range" id="contrast-value" min="-100" max="100" value="0">
+                            <span id="contrast-value-display">0</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="saturation-value">Saturação:</label>
+                            <input type="range" id="saturation-value" min="-100" max="100" value="0">
+                            <span id="saturation-value-display">0</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="blur-value">Desfoque:</label>
+                            <input type="range" id="blur-value" min="0" max="10" value="0" step="0.1">
+                            <span id="blur-value-display">0</span>
+                        </div>
+                        <div class="form-group">
+                            <button id="apply-adjustments" class="action-button primary">
+                                <i class="fas fa-check"></i> Aplicar Ajustes
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Propriedades de recorte (visível apenas quando ferramenta de recorte ativa) -->
+                    <div id="crop-properties" class="property-group" style="display: none;">
+                        <h4>Recortar</h4>
+                        <div class="form-group">
+                            <button id="apply-crop" class="action-button primary">
+                                <i class="fas fa-check"></i> Aplicar Recorte
+                            </button>
+                            <button id="cancel-crop" class="action-button">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Propriedades de rotação (visível apenas quando ferramenta de rotação ativa) -->
+                    <div id="rotate-properties" class="property-group" style="display: none;">
+                        <h4>Rotacionar</h4>
+                        <div class="form-group">
+                            <label for="rotation-angle">Ângulo:</label>
+                            <input type="range" id="rotation-angle" min="0" max="360" value="0">
+                            <span id="rotation-angle-value">0°</span>
+                        </div>
+                        <div class="form-group">
+                            <button id="rotate-left" class="action-button">
+                                <i class="fas fa-undo"></i> 90° Esquerda
+                            </button>
+                            <button id="rotate-right" class="action-button">
+                                <i class="fas fa-redo"></i> 90° Direita
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <button id="apply-rotation" class="action-button primary">
+                                <i class="fas fa-check"></i> Aplicar Rotação
+                            </button>
                         </div>
                     </div>
                 </div>
-                
-                <div class="tool-section">
-                    <h3><i class="fas fa-history"></i> Histórico</h3>
-                    <div class="tool-buttons">
-                        <button class="tool-button" id="undo-btn">
-                            <i class="fas fa-undo"></i> Desfazer
-                        </button>
-                        <button class="tool-button" id="redo-btn">
-                            <i class="fas fa-redo"></i> Refazer
-                        </button>
-                        <button class="tool-button" id="reset-btn">
-                            <i class="fas fa-sync-alt"></i> Resetar
-                        </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Salvar -->
+    <div id="save-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Salvar Imagem</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="save-filename">Nome do arquivo:</label>
+                    <input type="text" id="save-filename" placeholder="imagem_editada">
+                </div>
+                <div class="form-group">
+                    <label for="save-format">Formato:</label>
+                    <select id="save-format">
+                        <option value="webp">WebP (recomendado)</option>
+                        <option value="png">PNG</option>
+                        <option value="jpeg">JPEG</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="save-quality">Qualidade:</label>
+                    <input type="range" id="save-quality" min="10" max="100" value="90">
+                    <span id="save-quality-value">90%</span>
+                </div>
+                <div class="preview-container">
+                    <h4>Prévia:</h4>
+                    <div id="save-preview"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="confirm-save" class="action-button primary">
+                    <i class="fas fa-save"></i> Salvar
+                </button>
+                <button id="cancel-save" class="action-button">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Formas -->
+    <div id="shapes-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Selecionar Forma</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="shapes-grid">
+                    <div class="shape-item" data-shape="rect">
+                        <div class="shape-preview rect"></div>
+                        <span>Retângulo</span>
+                    </div>
+                    <div class="shape-item" data-shape="circle">
+                        <div class="shape-preview circle"></div>
+                        <span>Círculo</span>
+                    </div>
+                    <div class="shape-item" data-shape="triangle">
+                        <div class="shape-preview triangle"></div>
+                        <span>Triângulo</span>
+                    </div>
+                    <div class="shape-item" data-shape="line">
+                        <div class="shape-preview line"></div>
+                        <span>Linha</span>
+                    </div>
+                    <div class="shape-item" data-shape="polygon">
+                        <div class="shape-preview polygon"></div>
+                        <span>Polígono</span>
+                    </div>
+                    <div class="shape-item" data-shape="star">
+                        <div class="shape-preview star"></div>
+                        <span>Estrela</span>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <div class="editor-footer">
-            <div class="zoom-controls">
-                <button class="zoom-button" id="zoom-out">
-                    <i class="fas fa-search-minus"></i>
-                </button>
-                <span class="zoom-level" id="zoom-level">100%</span>
-                <button class="zoom-button" id="zoom-in">
-                    <i class="fas fa-search-plus"></i>
-                </button>
-            </div>
-            
-            <div class="save-controls">
-                <button class="action-button secondary" id="download-btn">
-                    <i class="fas fa-download"></i> Download
-                </button>
-                <button class="action-button" id="apply-changes-btn">
-                    <i class="fas fa-check"></i> Aplicar
-                </button>
-            </div>
-        </div>
     </div>
-    
-    <!-- Loading overlay -->
-    <div class="loading-overlay" id="loading-overlay">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">Carregando imagem...</div>
+
+    <!-- Mensagem de Sucesso -->
+    <div id="success-message" class="message-popup">
+        <i class="fas fa-check-circle"></i>
+        <span id="success-text">Imagem salva com sucesso!</span>
     </div>
-    
-    <!-- Fabric.js para manipulação de canvas -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
-    
-    <!-- Script do editor -->
-    <script src="js/editor.js"></script>
+
+    <script src="/js/editor.js"></script>
 </body>
 </html>
