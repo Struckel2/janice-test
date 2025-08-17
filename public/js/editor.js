@@ -38,8 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Carregar a imagem
-    loadImage(imageId);
+    // Inicializar sessão de edição
+    initEditSession(imageId);
 
     // Configurar seções colapsáveis
     setupCollapsibleSections();
