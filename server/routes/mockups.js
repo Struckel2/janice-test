@@ -386,7 +386,7 @@ router.get('/:id/configuracoes', async (req, res) => {
     }
 
     // Verificar se o usuário tem permissão (criador ou admin)
-    if (mockup.criadoPor._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    if (mockup.criadoPor && mockup.criadoPor._id && mockup.criadoPor._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Sem permissão para acessar as configurações deste mockup'
@@ -440,7 +440,7 @@ router.delete('/:id', async (req, res) => {
     }
 
     // Verificar se o usuário é o criador ou admin
-    if (mockup.criadoPor._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    if (mockup.criadoPor && mockup.criadoPor._id && mockup.criadoPor._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: 'Sem permissão para deletar este mockup'
@@ -579,7 +579,7 @@ router.delete('/galeria/imagem/:imageId', async (req, res) => {
         }
         
         // Verificar se o usuário tem permissão (criador ou admin)
-        if (mockup.criadoPor.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+        if (mockup.criadoPor && mockup.criadoPor.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
             return res.status(403).json({
                 success: false,
                 message: 'Sem permissão para deletar esta imagem'

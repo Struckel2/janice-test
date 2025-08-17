@@ -9,23 +9,45 @@ const path = require('path');
 router.get('/image/:id', authMiddleware.isAuthenticated, async (req, res) => {
     try {
         const mockupId = req.params.id;
+        let realMockupId = mockupId;
+        let seed = null;
         
-        // Buscar mockup no banco de dados
-        const mockup = await Mockup.findById(mockupId);
+        // Verificar se o ID contém um underscore e extrair as partes
+        if (mockupId.includes('_')) {
+            const parts = mockupId.split('_');
+            realMockupId = parts[0];
+            seed = parts.slice(1).join('_'); // Juntar novamente caso haja múltiplos underscores
+            
+            console.log(`🔍 [MOCKUP-EDIT] ID original: ${mockupId}`);
+            console.log(`🔍 [MOCKUP-EDIT] ID real para busca: ${realMockupId}`);
+            console.log(`🔍 [MOCKUP-EDIT] Seed extraído: ${seed}`);
+        }
+        
+        // Buscar mockup no banco de dados usando o ID real (sem o seed)
+        const mockup = await Mockup.findById(realMockupId);
         
         if (!mockup) {
+            console.log(`❌ [MOCKUP-EDIT] Mockup não encontrado com ID: ${realMockupId}`);
             return res.status(404).json({ error: 'Mockup não encontrado' });
         }
         
+        // Log detalhado do mockup encontrado para diagnóstico
+        console.log(`🔍 [MOCKUP-EDIT] Mockup encontrado:`, {
+            id: mockup._id,
+            titulo: mockup.titulo,
+            criadoPor: mockup.criadoPor,
+            temMetadados: !!mockup.metadados,
+            temImagensSalvas: !!(mockup.metadados && mockup.metadados.imagensSalvas),
+            quantidadeImagensSalvas: mockup.metadados && mockup.metadados.imagensSalvas ? mockup.metadados.imagensSalvas.length : 0
+        });
+        
         // Verificar se o usuário tem permissão para acessar este mockup
-        if (mockup.criadoPor.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+        if (mockup.criadoPor && mockup.criadoPor.toString() !== req.user._id.toString() && !req.user.isAdmin) {
             return res.status(403).json({ error: 'Você não tem permissão para acessar este mockup' });
         }
         
-        // Verificar se o ID contém um underscore (formato mockupId_seed para imagens da galeria)
-        if (mockupId.includes('_')) {
-            // Formato da galeria: mockupId_seed
-            const [realMockupId, seed] = mockupId.split('_');
+        // Processar imagem específica se tiver seed (formato mockupId_seed para imagens da galeria)
+        if (seed) {
             
             console.log(`🔍 [MOCKUP-EDIT] Buscando imagem com ID: ${mockupId}`);
             console.log(`🔍 [MOCKUP-EDIT] Mockup ID real: ${realMockupId}, Seed: ${seed}`);
@@ -37,7 +59,10 @@ router.get('/image/:id', authMiddleware.isAuthenticated, async (req, res) => {
                 // Encontrar a imagem específica pelo seed - usando comparação mais flexível
                 // O seed pode ser um número ou uma string como "1:1"
                 const imagem = mockup.metadados.imagensSalvas.find(img => {
+                    if (!img.seed) return false;
                     const imgSeedStr = img.seed.toString();
+                    
+                    console.log(`🔍 [MOCKUP-EDIT] Comparando seed: "${seed}" com "${imgSeedStr}"`);
                     
                     // Comparação direta
                     if (imgSeedStr === seed) return true;
@@ -107,6 +132,7 @@ router.get('/image/:id', authMiddleware.isAuthenticated, async (req, res) => {
         
     } catch (error) {
         console.error('Erro ao obter imagem para edição:', error);
+        console.error('Stack trace:', error.stack);
         res.status(500).json({ error: `Erro ao obter imagem: ${error.message}` });
     }
 });
@@ -223,7 +249,7 @@ router.post('/save/:id', authMiddleware.isAuthenticated, async (req, res) => {
         }
         
         // Verificar se o usuário tem permissão para editar este mockup
-        if (mockup.criadoPor.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+        if (mockup.criadoPor && mockup.criadoPor.toString() !== req.user._id.toString() && !req.user.isAdmin) {
             return res.status(403).json({ error: 'Você não tem permissão para editar este mockup' });
         }
         
