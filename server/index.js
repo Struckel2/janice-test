@@ -121,6 +121,9 @@ app.use('/api/processos', requireAuth, require('./routes/processos'));
 console.log('📋 [ROUTE-REGISTER] Registrando /api/mockups (com auth)');
 app.use('/api/mockups', requireAuth, mockupRoutes);
 
+console.log('📋 [ROUTE-REGISTER] Registrando /api/mockups-edit (com auth)');
+app.use('/api/mockups-edit', requireAuth, require('./routes/mockups-edit'));
+
 // Rota geral da API (deve vir por último)
 console.log('📋 [ROUTE-REGISTER] Registrando /api (geral - por último)');
 app.use('/api', apiRoutes);

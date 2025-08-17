@@ -178,6 +178,34 @@ a<!DOCTYPE html>
                                 <small>As imagens dos mockups que você salvar aparecerão aqui organizadas por tipo</small>
                             </div>
                         </div>
+                        
+                        <!-- Template para itens da galeria com botão de edição -->
+                        <template id="gallery-item-template">
+                            <div class="gallery-item">
+                                <div class="gallery-item-image">
+                                    <img src="" alt="">
+                                    <div class="gallery-item-overlay">
+                                        <button class="gallery-view-btn" title="Visualizar">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="gallery-edit-btn" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="gallery-download-btn" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                        <button class="gallery-delete-btn" title="Excluir imagem">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="gallery-item-info">
+                                    <div class="gallery-item-type"></div>
+                                    <div class="gallery-item-title"></div>
+                                    <div class="gallery-item-date"></div>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
