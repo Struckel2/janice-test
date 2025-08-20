@@ -298,8 +298,23 @@ async function updateTempImage() {
             return;
         }
         
-        // Obter dados da imagem atual
-        const imageData = canvas.toDataURL('image/png');
+        let imageData;
+        let useExistingImage = false;
+        
+        try {
+            // Tentar obter dados da imagem atual
+            imageData = canvas.toDataURL('image/png');
+        } catch (canvasError) {
+            // Se falhar com erro de "tainted canvas", usar a URL atual
+            if (canvasError instanceof SecurityError || 
+                canvasError.message.includes('Tainted canvases may not be exported')) {
+                console.warn('Canvas contaminado, usando URL da imagem existente');
+                useExistingImage = true;
+            } else {
+                // Se for outro tipo de erro, propagar
+                throw canvasError;
+            }
+        }
         
         // Enviar para o servidor
         const response = await fetch(`/api/mockups-edit/update-temp/${sessionId}`, {
@@ -308,7 +323,9 @@ async function updateTempImage() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                imageData: imageData
+                imageData: imageData,
+                useExistingImage: useExistingImage,
+                currentImageUrl: currentImageUrl
             })
         });
         

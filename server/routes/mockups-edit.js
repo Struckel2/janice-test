@@ -438,8 +438,24 @@ router.post('/init-session/:id', authMiddleware.isAuthenticated, async (req, res
 router.post('/update-temp/:sessionId', authMiddleware.isAuthenticated, async (req, res) => {
     try {
         const { sessionId } = req.params;
-        const { imageData } = req.body;
+        const { imageData, useExistingImage, currentImageUrl } = req.body;
         
+        // Se useExistingImage for verdadeiro, usar a URL atual sem fazer upload
+        if (useExistingImage === true) {
+            if (!currentImageUrl) {
+                return res.status(400).json({ error: 'URL da imagem atual é obrigatória quando useExistingImage é verdadeiro' });
+            }
+            
+            console.log(`✅ [MOCKUP-EDIT-UPDATE] Usando URL existente devido a canvas contaminado: ${currentImageUrl}`);
+            
+            // Retornar a URL atual sem fazer upload
+            return res.json({
+                success: true,
+                imageUrl: currentImageUrl
+            });
+        }
+        
+        // Caso contrário, processar normalmente com os dados da imagem
         if (!imageData) {
             return res.status(400).json({ error: 'Dados da imagem são obrigatórios' });
         }
