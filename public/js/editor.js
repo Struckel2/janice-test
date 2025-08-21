@@ -98,71 +98,144 @@ function setupAIEditEvents() {
 
 // Função para processar edição com IA
 async function processAIEdit() {
+    console.log('===== INICIANDO PROCESSAMENTO DE EDIÇÃO COM IA =====');
+    
     const prompt = document.getElementById('ai-prompt').value.trim();
+    console.log('Prompt para edição com IA:', prompt);
+    
     if (!prompt) {
+        console.warn('Prompt vazio, exibindo alerta para o usuário');
         alert('Por favor, descreva a mudança que deseja fazer na imagem.');
         return;
     }
     
     // Verificar se temos uma sessão ativa
+    console.log('Verificando sessão ativa:', { sessionId, currentImageUrl });
+    
     if (!sessionId || !currentImageUrl) {
+        console.error('Sessão de edição não inicializada corretamente');
         alert('Erro: Sessão de edição não inicializada corretamente.');
         return;
     }
     
     // Primeiro, atualizar a imagem temporária para garantir que estamos usando a versão mais recente
+    console.log('Atualizando imagem temporária antes da edição com IA');
     try {
         await updateTempImage();
+        console.log('Imagem temporária atualizada com sucesso');
     } catch (updateError) {
         console.error('Erro ao atualizar imagem temporária antes da edição com IA:', updateError);
+        console.log('Continuando com a última versão salva da imagem');
         // Continuar mesmo com erro, usando a última versão salva
     }
     
     // Mostrar indicador de processamento
+    console.log('Exibindo indicador de processamento');
     document.getElementById('ai-processing').style.display = 'block';
     document.getElementById('ai-result').style.display = 'none';
     
     try {
+        // Preparar dados para envio
+        const requestData = {
+            prompt: prompt,
+            imageUrl: currentImageUrl
+        };
+        console.log('Dados da requisição:', requestData);
+        
         // Enviar para o servidor usando a URL da imagem temporária
+        console.log(`Enviando requisição para /api/mockups-edit/ai-edit/${sessionId}`);
         const response = await fetch(`/api/mockups-edit/ai-edit/${sessionId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                prompt: prompt,
-                imageUrl: currentImageUrl
-            })
+            body: JSON.stringify(requestData)
+        });
+        
+        console.log('Resposta recebida:', {
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok
         });
         
         if (!response.ok) {
             throw new Error(`Erro ao processar edição: ${response.status}`);
         }
         
+        console.log('Processando resposta JSON');
         const result = await response.json();
+        console.log('Resultado da edição com IA:', result);
+        
+        // Verificar se temos uma URL de imagem editada
+        if (!result.editedImageUrl) {
+            console.error('Resposta não contém URL da imagem editada');
+            throw new Error('Resposta não contém URL da imagem editada');
+        }
+        
+        console.log('URL da imagem editada:', result.editedImageUrl);
         
         // Mostrar resultado
+        console.log('Exibindo resultado da edição');
         document.getElementById('ai-processing').style.display = 'none';
         document.getElementById('ai-result').style.display = 'block';
         
         const previewContainer = document.querySelector('.ai-result-preview');
-        previewContainer.innerHTML = `<img src="${result.editedImageUrl}" alt="Imagem editada">`;
+        console.log('Container de prévia:', previewContainer);
+        
+        // Criar elemento de imagem com manipuladores de eventos
+        console.log('Criando elemento de imagem para prévia');
+        const previewImg = new Image();
+        
+        previewImg.onload = () => {
+            console.log('Imagem carregada com sucesso:', previewImg.src);
+            console.log('Dimensões da imagem:', {
+                width: previewImg.width,
+                height: previewImg.height
+            });
+        };
+        
+        previewImg.onerror = (error) => {
+            console.error('Erro ao carregar imagem:', error);
+            console.error('URL da imagem com erro:', previewImg.src);
+            previewContainer.innerHTML = `<p class="error-message">Erro ao carregar imagem. URL: ${result.editedImageUrl}</p>`;
+        };
+        
+        // Definir atributos da imagem
+        previewImg.src = result.editedImageUrl;
+        previewImg.alt = "Imagem editada";
+        previewImg.style.maxWidth = "100%";
+        
+        // Limpar container e adicionar a imagem
+        previewContainer.innerHTML = '';
+        previewContainer.appendChild(previewImg);
         
         // Armazenar URL da imagem editada para uso posterior
+        console.log('Armazenando URL da imagem editada para uso posterior');
         window.editedImageUrl = result.editedImageUrl;
         
     } catch (error) {
         console.error('Erro ao processar edição com IA:', error);
+        console.error('Stack trace:', error.stack);
         document.getElementById('ai-processing').style.display = 'none';
+        document.getElementById('ai-result').style.display = 'none';
         alert(`Erro ao processar edição com IA: ${error.message}`);
     }
 }
 
 // Função para aceitar resultado da IA
 async function acceptAIResult() {
-    if (!window.editedImageUrl) return;
+    console.log('===== ACEITANDO RESULTADO DA EDIÇÃO COM IA =====');
+    
+    if (!window.editedImageUrl) {
+        console.error('URL da imagem editada não disponível');
+        alert('Erro: URL da imagem editada não disponível');
+        return;
+    }
+    
+    console.log('URL da imagem editada:', window.editedImageUrl);
     
     // Mostrar overlay de carregamento
+    console.log('Exibindo overlay de carregamento');
     document.getElementById('loading-overlay').style.display = 'flex';
     document.getElementById('loading-overlay').innerHTML = `
         <div class="spinner"></div>
@@ -170,12 +243,28 @@ async function acceptAIResult() {
     `;
     
     // Carregar a imagem editada no canvas
-    fabric.Image.fromURL(window.editedImageUrl, async (img) => {
+    console.log('Carregando imagem editada no canvas');
+    fabric.Image.fromURL(window.editedImageUrl, async (img, isError) => {
+        if (isError) {
+            console.error('Erro ao carregar imagem no fabric.js');
+            document.getElementById('loading-overlay').style.display = 'none';
+            alert('Erro ao carregar imagem editada');
+            return;
+        }
+        
+        console.log('Imagem carregada com sucesso no fabric.js');
+        console.log('Dimensões da imagem:', {
+            width: img.width,
+            height: img.height
+        });
+        
         // Redimensionar a imagem para caber no canvas mantendo a proporção
         const scale = Math.min(
             canvas.width / img.width,
             canvas.height / img.height
         ) * 0.9;
+        
+        console.log('Escala calculada para a imagem:', scale);
         
         img.scale(scale);
         img.set({
@@ -186,31 +275,41 @@ async function acceptAIResult() {
             selectable: true
         });
         
+        console.log('Propriedades da imagem configuradas');
+        
         // Limpar o canvas e adicionar a imagem
+        console.log('Limpando canvas e adicionando imagem');
         canvas.clear();
         canvas.add(img);
         canvas.setActiveObject(img);
         canvas.renderAll();
         
         // Adicionar ao histórico de desfazer
+        console.log('Adicionando ao histórico de desfazer');
         addToUndoStack();
         
         // Limpar resultado
+        console.log('Limpando interface de resultado');
         document.getElementById('ai-result').style.display = 'none';
         document.getElementById('ai-prompt').value = '';
         
         // Atualizar a imagem temporária no servidor
+        console.log('Atualizando imagem temporária no servidor');
         try {
             await updateTempImage();
             console.log('Imagem temporária atualizada após edição com IA');
         } catch (error) {
             console.error('Erro ao atualizar imagem temporária após edição com IA:', error);
+            console.log('Continuando mesmo com erro');
             // Continuar mesmo com erro
         }
         
         // Esconder overlay de carregamento
+        console.log('Escondendo overlay de carregamento');
         document.getElementById('loading-overlay').style.display = 'none';
-    });
+        
+        console.log('===== EDIÇÃO COM IA APLICADA COM SUCESSO =====');
+    }, { crossOrigin: 'anonymous' });
 }
 
 // Função para rejeitar resultado da IA
