@@ -5,6 +5,24 @@ const authMiddleware = require('../middleware/auth');
 const Mockup = require('../models/Mockup');
 const path = require('path');
 
+// Função para pré-processar o prompt e garantir preservação da imagem original
+function preprocessPrompt(originalPrompt) {
+    // Verificar se o prompt já contém instruções de preservação
+    const containsPreservation = /preserv(e|ar)|mant(er|ém|enha)|não (mude|altere|modifique)/i.test(originalPrompt);
+    
+    if (containsPreservation) {
+        // Se já contém instruções de preservação, apenas retornar o prompt original
+        return originalPrompt;
+    }
+    
+    // Adicionar framework de preservação ao prompt
+    const preservationFramework = 
+        "Preserve a estrutura e elementos originais da imagem. " +
+        "Mantenha todos os elementos principais, apenas faça a seguinte modificação específica: ";
+    
+    return preservationFramework + originalPrompt;
+}
+
 // O fetch já deve estar disponível globalmente através do polyfill em server/config/fetch-polyfill.js
 console.log('🔍 [MOCKUP-EDIT] Iniciando módulo com fetch:', typeof fetch !== 'undefined' ? 'Disponível' : 'Não disponível');
 
@@ -519,13 +537,18 @@ router.post('/ai-edit/:sessionId', authMiddleware.isAuthenticated, async (req, r
                 auth: process.env.REPLICATE_API_TOKEN,
             });
             
-            // Modelo Flux 1.1 Pro
-            const model = "black-forest-labs/flux-1.1-pro";
+            // Modelo Flux Kontext Pro (para edição de imagens)
+            const model = "black-forest-labs/flux-kontext-pro";
+            
+            // Pré-processador de prompt para garantir preservação da imagem original
+            const processedPrompt = preprocessPrompt(prompt);
+            console.log('Prompt original:', prompt);
+            console.log('Prompt processado:', processedPrompt);
             
             // Parâmetros para o modelo
             const input = {
-                prompt: prompt,
-                image: imageUrl,
+                prompt: processedPrompt,
+                input_image: imageUrl, // Nota: Flux Kontext Pro usa input_image em vez de image
                 output_format: 'webp',
                 output_quality: 90,
                 safety_tolerance: 2
