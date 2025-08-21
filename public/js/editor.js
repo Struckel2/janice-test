@@ -164,7 +164,7 @@ async function processAIEdit() {
         
         console.log('Processando resposta JSON');
         const result = await response.json();
-        console.log('Resultado da edição com IA:', result);
+        console.log('Resultado da edição com IA (objeto completo):', result);
         
         // Verificar se temos uma URL de imagem editada
         if (!result.editedImageUrl) {
@@ -172,7 +172,40 @@ async function processAIEdit() {
             throw new Error('Resposta não contém URL da imagem editada');
         }
         
-        console.log('URL da imagem editada:', result.editedImageUrl);
+        // Verificar o tipo da URL da imagem editada
+        console.log('Tipo da URL da imagem editada:', typeof result.editedImageUrl);
+        
+        // Extrair a URL corretamente dependendo do tipo
+        let editedImageUrl;
+        if (typeof result.editedImageUrl === 'string') {
+            // Se for uma string, usar diretamente
+            editedImageUrl = result.editedImageUrl;
+        } else if (typeof result.editedImageUrl === 'object') {
+            // Se for um objeto, tentar extrair a URL
+            console.log('Estrutura do objeto editedImageUrl:', JSON.stringify(result.editedImageUrl));
+            
+            // Tentar diferentes propriedades comuns que podem conter a URL
+            if (result.editedImageUrl.url) {
+                editedImageUrl = result.editedImageUrl.url;
+            } else if (result.editedImageUrl.secure_url) {
+                editedImageUrl = result.editedImageUrl.secure_url;
+            } else if (result.editedImageUrl.output) {
+                editedImageUrl = result.editedImageUrl.output;
+            } else {
+                // Se não conseguir extrair, usar a primeira string que parecer uma URL
+                const objStr = JSON.stringify(result.editedImageUrl);
+                const urlMatch = objStr.match(/(https?:\/\/[^"]+)/);
+                if (urlMatch && urlMatch[1]) {
+                    editedImageUrl = urlMatch[1];
+                } else {
+                    throw new Error('Não foi possível extrair uma URL válida do objeto retornado');
+                }
+            }
+        } else {
+            throw new Error(`Tipo inesperado para editedImageUrl: ${typeof result.editedImageUrl}`);
+        }
+        
+        console.log('URL da imagem editada extraída:', editedImageUrl);
         
         // Mostrar resultado
         console.log('Exibindo resultado da edição');
@@ -201,7 +234,7 @@ async function processAIEdit() {
         };
         
         // Definir atributos da imagem
-        previewImg.src = result.editedImageUrl;
+        previewImg.src = editedImageUrl;
         previewImg.alt = "Imagem editada";
         previewImg.style.maxWidth = "100%";
         
@@ -211,7 +244,7 @@ async function processAIEdit() {
         
         // Armazenar URL da imagem editada para uso posterior
         console.log('Armazenando URL da imagem editada para uso posterior');
-        window.editedImageUrl = result.editedImageUrl;
+        window.editedImageUrl = editedImageUrl;
         
     } catch (error) {
         console.error('Erro ao processar edição com IA:', error);
@@ -229,6 +262,13 @@ async function acceptAIResult() {
     if (!window.editedImageUrl) {
         console.error('URL da imagem editada não disponível');
         alert('Erro: URL da imagem editada não disponível');
+        return;
+    }
+    
+    // Verificar se a URL da imagem editada é válida
+    if (typeof window.editedImageUrl !== 'string' || !window.editedImageUrl.startsWith('http')) {
+        console.error('URL da imagem editada inválida:', window.editedImageUrl);
+        alert('Erro: URL da imagem editada inválida');
         return;
     }
     
