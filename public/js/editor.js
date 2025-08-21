@@ -306,8 +306,7 @@ async function updateTempImage() {
             imageData = canvas.toDataURL('image/png');
         } catch (canvasError) {
             // Se falhar com erro de "tainted canvas", usar a URL atual
-            if (canvasError instanceof SecurityError || 
-                canvasError.message.includes('Tainted canvases may not be exported')) {
+            if (canvasError.message.includes('Tainted canvases may not be exported')) {
                 console.warn('Canvas contaminado, usando URL da imagem existente');
                 useExistingImage = true;
             } else {
