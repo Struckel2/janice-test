@@ -542,10 +542,59 @@ router.post('/ai-edit/:sessionId', authMiddleware.isAuthenticated, async (req, r
             // Executar o modelo
             const output = await replicate.run(model, { input });
             
+            console.log('Resposta do Replicate (output):', output);
+            
+            // Extrair a URL da imagem editada
+            let editedImageUrl;
+            
+            // Verificar se output é um array (versão mais recente do Replicate)
+            if (Array.isArray(output) && output.length > 0) {
+                // Acessar o primeiro elemento do array
+                const firstOutput = output[0];
+                console.log('Primeiro elemento do output:', firstOutput);
+                
+                // Verificar se o objeto tem o método url()
+                if (firstOutput && typeof firstOutput.url === 'function') {
+                    editedImageUrl = firstOutput.url();
+                    console.log('URL extraída usando método url():', editedImageUrl);
+                } else {
+                    // Tentar acessar diretamente se for uma string
+                    editedImageUrl = firstOutput;
+                    console.log('Usando primeiro elemento diretamente:', editedImageUrl);
+                }
+            } else if (typeof output === 'string') {
+                // Compatibilidade com versões antigas que retornam string diretamente
+                editedImageUrl = output;
+                console.log('Output é uma string:', editedImageUrl);
+            } else if (output && typeof output === 'object') {
+                // Tentar extrair URL de um objeto
+                if (output.url && typeof output.url === 'function') {
+                    editedImageUrl = output.url();
+                    console.log('URL extraída do objeto usando método url():', editedImageUrl);
+                } else if (output.output) {
+                    editedImageUrl = output.output;
+                    console.log('URL extraída da propriedade output:', editedImageUrl);
+                } else {
+                    // Tentar encontrar qualquer propriedade que pareça uma URL
+                    const objStr = JSON.stringify(output);
+                    const urlMatch = objStr.match(/(https?:\/\/[^"]+)/);
+                    if (urlMatch && urlMatch[1]) {
+                        editedImageUrl = urlMatch[1];
+                        console.log('URL extraída via regex do JSON:', editedImageUrl);
+                    } else {
+                        console.error('Não foi possível extrair uma URL válida do objeto retornado:', output);
+                        throw new Error('Não foi possível extrair uma URL válida do objeto retornado');
+                    }
+                }
+            } else {
+                console.error('Formato de resposta do Replicate não reconhecido:', output);
+                throw new Error('Formato de resposta do Replicate não reconhecido');
+            }
+            
             // Retornar URL da imagem editada
             res.json({
                 success: true,
-                editedImageUrl: output
+                editedImageUrl: editedImageUrl
             });
             
         } catch (replicateError) {
