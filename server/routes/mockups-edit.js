@@ -7,6 +7,25 @@ const path = require('path');
 
 // Função para pré-processar o prompt e garantir preservação da imagem original
 function preprocessPrompt(originalPrompt) {
+    console.log('Pré-processando prompt original:', originalPrompt);
+    
+    // Verificar se é uma solicitação de mudança de cor
+    const colorChangeRegex = /muda[r]?\s+a\s+cor\s+de\s+(\w+)\s+para\s+(\w+)|trocar?\s+(\w+)\s+por\s+(\w+)|mudar?\s+(\w+)\s+para\s+(\w+)/i;
+    const colorMatch = originalPrompt.match(colorChangeRegex);
+    
+    if (colorMatch) {
+        // Extrair as cores mencionadas
+        const fromColor = colorMatch[1] || colorMatch[3] || colorMatch[5];
+        const toColor = colorMatch[2] || colorMatch[4] || colorMatch[6];
+        
+        if (fromColor && toColor) {
+            // Criar um prompt específico para mudança de cor
+            const colorChangePrompt = `Mude APENAS as partes ${fromColor}s da imagem para a cor ${toColor}. Mantenha absolutamente todos os outros elementos, cores, formas, posições e detalhes exatamente iguais. Não altere nada além das áreas que são especificamente da cor ${fromColor}.`;
+            console.log('Prompt de mudança de cor criado:', colorChangePrompt);
+            return colorChangePrompt;
+        }
+    }
+    
     // Verificar se o prompt já contém instruções de preservação
     const containsPreservation = /preserv(e|ar)|mant(er|ém|enha)|não (mude|altere|modifique)|keep|maintain|same/i.test(originalPrompt);
     
@@ -16,14 +35,14 @@ function preprocessPrompt(originalPrompt) {
         return originalPrompt;
     }
     
-    // Adicionar framework de preservação ao prompt seguindo as melhores práticas da documentação
+    // Framework de preservação aprimorado para outros tipos de edição
     const preservationFramework = 
         "Preserve a estrutura e elementos originais da imagem. " +
-        "Mantenha todos os elementos principais como pessoas, objetos, posições, expressões faciais e detalhes do fundo exatamente iguais, " +
-        "apenas faça a seguinte modificação específica: ";
+        "Mantenha todos os elementos principais como pessoas, objetos, posições, expressões faciais e detalhes do fundo exatamente iguais. " +
+        "Faça APENAS a seguinte modificação específica, sem alterar nada mais: ";
     
     const enhancedPrompt = preservationFramework + originalPrompt;
-    console.log('Prompt original aprimorado com framework de preservação');
+    console.log('Prompt original aprimorado com framework de preservação:', enhancedPrompt);
     return enhancedPrompt;
 }
 
@@ -558,7 +577,8 @@ router.post('/ai-edit/:sessionId', authMiddleware.isAuthenticated, async (req, r
                 gender: "none",
                 aspect_ratio: "match_input_image",
                 output_format: "png",
-                safety_tolerance: 2
+                safety_tolerance: 2,
+                prompt_upsampling: true  // Habilitar melhoria automática de prompt
             };
             
             console.log('===== INICIANDO CHAMADA AO REPLICATE =====');
