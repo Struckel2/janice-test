@@ -8,19 +8,23 @@ const path = require('path');
 // Função para pré-processar o prompt e garantir preservação da imagem original
 function preprocessPrompt(originalPrompt) {
     // Verificar se o prompt já contém instruções de preservação
-    const containsPreservation = /preserv(e|ar)|mant(er|ém|enha)|não (mude|altere|modifique)/i.test(originalPrompt);
+    const containsPreservation = /preserv(e|ar)|mant(er|ém|enha)|não (mude|altere|modifique)|keep|maintain|same/i.test(originalPrompt);
     
     if (containsPreservation) {
         // Se já contém instruções de preservação, apenas retornar o prompt original
+        console.log('Prompt já contém instruções de preservação, mantendo original');
         return originalPrompt;
     }
     
-    // Adicionar framework de preservação ao prompt
+    // Adicionar framework de preservação ao prompt seguindo as melhores práticas da documentação
     const preservationFramework = 
         "Preserve a estrutura e elementos originais da imagem. " +
-        "Mantenha todos os elementos principais, apenas faça a seguinte modificação específica: ";
+        "Mantenha todos os elementos principais como pessoas, objetos, posições, expressões faciais e detalhes do fundo exatamente iguais, " +
+        "apenas faça a seguinte modificação específica: ";
     
-    return preservationFramework + originalPrompt;
+    const enhancedPrompt = preservationFramework + originalPrompt;
+    console.log('Prompt original aprimorado com framework de preservação');
+    return enhancedPrompt;
 }
 
 // O fetch já deve estar disponível globalmente através do polyfill em server/config/fetch-polyfill.js
@@ -558,7 +562,7 @@ router.post('/ai-edit/:sessionId', authMiddleware.isAuthenticated, async (req, r
                 model,
                 input: {
                     ...input,
-                    image: imageUrl + ' (URL Cloudinary)'
+                    input_image: imageUrl + ' (URL Cloudinary)'
                 }
             });
             
