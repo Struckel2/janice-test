@@ -566,12 +566,52 @@ router.post('/ai-edit/:sessionId', authMiddleware.isAuthenticated, async (req, r
             try {
                 // Executar o modelo
                 console.log('Chamando replicate.run()...');
-                const output = await replicate.run(model, { input });
+                let output = await replicate.run(model, { input });
                 
                 console.log('===== RESPOSTA DO REPLICATE RECEBIDA =====');
                 console.log('Tipo da resposta:', typeof output);
                 console.log('É array?', Array.isArray(output));
                 console.log('É null ou undefined?', output === null || output === undefined);
+                console.log('É ReadableStream?', output && typeof output === 'object' && output.constructor && output.constructor.name === 'ReadableStream');
+                
+                // Verificar se a resposta é um ReadableStream e processá-lo
+                if (output && typeof output === 'object' && output.constructor && output.constructor.name === 'ReadableStream') {
+                    console.log('Resposta é um ReadableStream, processando...');
+                    
+                    try {
+                        // Converter ReadableStream para texto
+                        const reader = output.getReader();
+                        let chunks = [];
+                        let done = false;
+                        
+                        while (!done) {
+                            const { value, done: doneReading } = await reader.read();
+                            done = doneReading;
+                            if (value) {
+                                chunks.push(value);
+                            }
+                        }
+                        
+                        // Concatenar chunks e converter para string
+                        const allChunks = new Uint8Array(chunks.reduce((acc, chunk) => [...acc, ...chunk], []));
+                        const responseText = new TextDecoder('utf-8').decode(allChunks);
+                        
+                        console.log('Texto extraído do ReadableStream:', responseText);
+                        
+                        // Tentar converter para JSON
+                        try {
+                            output = JSON.parse(responseText);
+                            console.log('ReadableStream convertido para JSON:', output);
+                        } catch (jsonError) {
+                            // Se não for JSON válido, usar o texto como está (pode ser uma URL direta)
+                            console.log('Não foi possível converter para JSON, usando texto como está');
+                            output = responseText;
+                        }
+                    } catch (streamError) {
+                        console.error('Erro ao processar ReadableStream:', streamError);
+                        throw new Error(`Erro ao processar resposta do Replicate: ${streamError.message}`);
+                    }
+                }
                 
                 if (output !== null && output !== undefined) {
                     if (typeof output === 'object' && !Array.isArray(output)) {
