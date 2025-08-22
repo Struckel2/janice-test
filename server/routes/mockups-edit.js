@@ -553,7 +553,7 @@ router.post('/ai-edit/:sessionId', authMiddleware.isAuthenticated, async (req, r
             const input = {
                 prompt: processedPrompt,
                 input_image: imageUrl, // Nota: Flux Kontext Pro usa input_image em vez de image
-                output_format: 'webp',
+                output_format: 'png', // Nota: Replicate só aceita 'jpg' ou 'png', não 'webp'
                 output_quality: 90,
                 safety_tolerance: 2
             };
