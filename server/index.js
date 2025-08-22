@@ -53,6 +53,19 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '500mb' }));
 app.use(morgan('dev')); // Logging HTTP requests
 
+// Middleware para garantir encoding UTF-8 em todas as respostas
+app.use((req, res, next) => {
+  if (!res.getHeader('Content-Type')) {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  } else {
+    const contentType = res.getHeader('Content-Type');
+    if (typeof contentType === 'string' && !contentType.includes('charset=')) {
+      res.setHeader('Content-Type', `${contentType}; charset=utf-8`);
+    }
+  }
+  next();
+});
+
 // Configuração de sessões
 app.use(session({
   secret: process.env.SESSION_SECRET || 'fallback-secret-key',
