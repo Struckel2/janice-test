@@ -549,12 +549,15 @@ router.post('/ai-edit/:sessionId', authMiddleware.isAuthenticated, async (req, r
             console.log('Prompt original:', prompt);
             console.log('Prompt processado:', processedPrompt);
             
-            // Parâmetros para o modelo
+            // Parâmetros para o modelo conforme o schema
             const input = {
                 prompt: processedPrompt,
-                input_image: imageUrl, // Nota: Flux Kontext Pro usa input_image em vez de image
-                output_format: 'png', // Nota: Replicate só aceita 'jpg' ou 'png', não 'webp'
-                output_quality: 90,
+                input_image: imageUrl,
+                haircut: "No change",
+                hair_color: "No change",
+                gender: "none",
+                aspect_ratio: "match_input_image",
+                output_format: "png",
                 safety_tolerance: 2
             };
             
@@ -564,328 +567,54 @@ router.post('/ai-edit/:sessionId', authMiddleware.isAuthenticated, async (req, r
             console.log('Token Replicate configurado:', process.env.REPLICATE_API_TOKEN ? 'Sim (primeiros 5 caracteres: ' + process.env.REPLICATE_API_TOKEN.substring(0, 5) + '...)' : 'Não');
             
             try {
-                // Executar o modelo
-                console.log('Chamando replicate.run()...');
-                let output = await replicate.run(model, { input });
+                // Usar o método run() que já faz o polling internamente
+                console.log('Usando método run() para executar o modelo...');
+                const output = await replicate.run(model, { input });
                 
                 console.log('===== RESPOSTA DO REPLICATE RECEBIDA =====');
                 console.log('Tipo da resposta:', typeof output);
                 console.log('É array?', Array.isArray(output));
-                console.log('É null ou undefined?', output === null || output === undefined);
-                console.log('É ReadableStream?', output && typeof output === 'object' && output.constructor && output.constructor.name === 'ReadableStream');
-                
-                // Verificar se a resposta é um ReadableStream e processá-lo
-                if (output && typeof output === 'object' && output.constructor && output.constructor.name === 'ReadableStream') {
-                    console.log('Resposta é um ReadableStream, processando...');
-                    
-                    try {
-                        // Acumular todos os chunks antes de processar
-                        const chunks = [];
-                        const reader = output.getReader();
-                        
-                        let done = false;
-                        while (!done) {
-                            const { value, done: doneReading } = await reader.read();
-                            done = doneReading;
-                            if (value) {
-                                chunks.push(value);
-                            }
-                        }
-                        
-                        // Converter os chunks acumulados para texto
-                        const decoder = new TextDecoder('utf-8');
-                        let responseText = '';
-                        
-                        for (const chunk of chunks) {
-                            responseText += decoder.decode(chunk, { stream: true });
-                        }
-                        responseText += decoder.decode(); // Finalizar a decodificação
-                        
-                        console.log('===== CONTEÚDO BRUTO DO READABLESTREAM =====');
-                        console.log('Tamanho do texto extraído:', responseText.length);
-                        console.log('Primeiros 200 caracteres:', responseText.substring(0, 200));
-                        console.log('Últimos 200 caracteres:', responseText.substring(Math.max(0, responseText.length - 200)));
-                        
-                        // Tentar converter para JSON primeiro (formato esperado do Replicate)
-                        try {
-                            if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
-                                const jsonResponse = JSON.parse(responseText);
-                                console.log('ReadableStream convertido para JSON com sucesso');
-                                console.log('Estrutura da resposta JSON:', Object.keys(jsonResponse));
-                                
-                                // Verificar se a resposta tem o formato esperado do Replicate
-                                if (jsonResponse.status) {
-                                    console.log('Status da resposta Replicate:', jsonResponse.status);
-                                    
-                                    // Verificar se a operação foi bem-sucedida
-                                    if (jsonResponse.status === 'succeeded') {
-                                        // Extrair a URL da propriedade output (formato padrão do Replicate)
-                                        if (jsonResponse.output && typeof jsonResponse.output === 'string' && jsonResponse.output.startsWith('http')) {
-                                            const imageUrl = jsonResponse.output;
-                                            console.log('URL extraída da propriedade output:', imageUrl);
-                                            
-                                            // Retornar URL da imagem editada
-                                            res.json({
-                                                success: true,
-                                                editedImageUrl: imageUrl
-                                            });
-                                            return; // Encerrar a função aqui
-                                        }
-                                    } else if (jsonResponse.status === 'processing') {
-                                        console.log('Predição ainda em processamento, verificando se há URL parcial');
-                                    } else if (jsonResponse.status === 'failed' && jsonResponse.error) {
-                                        throw new Error(`Erro retornado pelo Replicate: ${jsonResponse.error}`);
-                                    }
-                                }
-                                
-                                // Se não encontrou na estrutura padrão, procurar em qualquer propriedade
-                                output = jsonResponse;
-                            } else {
-                                console.log('Conteúdo do ReadableStream não é JSON, procurando URLs diretamente no texto');
-                                
-                                // Tentar extrair URL diretamente usando regex
-                                const urlRegex = /(https?:\/\/[^\s"',<>]+\.(jpg|jpeg|png|webp|gif))/i;
-                                const urlMatch = responseText.match(urlRegex);
-                                
-                                if (urlMatch && urlMatch[1]) {
-                                    const extractedUrl = urlMatch[1];
-                                    console.log('URL de imagem extraída diretamente via regex:', extractedUrl);
-                                    
-                                    // Retornar URL da imagem editada imediatamente
-                                    res.json({
-                                        success: true,
-                                        editedImageUrl: extractedUrl
-                                    });
-                                    return; // Encerrar a função aqui
-                                }
-                                
-                                // Se não encontrou URL de imagem específica, tentar URL genérica
-                                const genericUrlMatch = responseText.match(/(https?:\/\/[^\s"',<>]+)/i);
-                                if (genericUrlMatch && genericUrlMatch[1]) {
-                                    const extractedUrl = genericUrlMatch[1];
-                                    console.log('URL genérica extraída via regex:', extractedUrl);
-                                    
-                                    // Retornar URL extraída imediatamente
-                                    res.json({
-                                        success: true,
-                                        editedImageUrl: extractedUrl
-                                    });
-                                    return; // Encerrar a função aqui
-                                }
-                                
-                                output = responseText;
-                            }
-                        } catch (jsonError) {
-                            console.log('Erro ao converter para JSON:', jsonError.message);
-                            console.log('Tentando extrair URL diretamente do texto');
-                            
-                            // Tentar extrair URL diretamente usando regex
-                            const urlRegex = /(https?:\/\/[^\s"',<>]+\.(jpg|jpeg|png|webp|gif))/i;
-                            const urlMatch = responseText.match(urlRegex);
-                            
-                            if (urlMatch && urlMatch[1]) {
-                                const extractedUrl = urlMatch[1];
-                                console.log('URL de imagem extraída diretamente via regex após falha no JSON:', extractedUrl);
-                                
-                                // Retornar URL da imagem editada imediatamente
-                                res.json({
-                                    success: true,
-                                    editedImageUrl: extractedUrl
-                                });
-                                return; // Encerrar a função aqui
-                            }
-                            
-                            // Se não encontrou URL de imagem específica, tentar URL genérica
-                            const genericUrlMatch = responseText.match(/(https?:\/\/[^\s"',<>]+)/i);
-                            if (genericUrlMatch && genericUrlMatch[1]) {
-                                const extractedUrl = genericUrlMatch[1];
-                                console.log('URL genérica extraída via regex após falha no JSON:', extractedUrl);
-                                
-                                // Retornar URL extraída imediatamente
-                                res.json({
-                                    success: true,
-                                    editedImageUrl: extractedUrl
-                                });
-                                return; // Encerrar a função aqui
-                            }
-                            
-                            output = responseText;
-                        }
-                        
-                        // Se chegamos aqui, não conseguimos extrair uma URL válida do ReadableStream
-                        console.error('Não foi possível encontrar uma URL válida no ReadableStream');
-                        console.error('Conteúdo do ReadableStream:', responseText.substring(0, 1000) + '...');
-                        throw new Error('Não foi possível encontrar uma URL válida na resposta do Replicate');
-                    } catch (streamError) {
-                        console.error('Erro ao processar ReadableStream:', streamError);
-                        throw new Error(`Erro ao processar resposta do Replicate: ${streamError.message}`);
-                    }
-                }
-                
-                if (output !== null && output !== undefined) {
-                    if (typeof output === 'object' && !Array.isArray(output)) {
-                        console.log('Chaves do objeto:', Object.keys(output).join(', '));
-                    }
-                    console.log('Resposta completa:', JSON.stringify(output, null, 2));
-                } else {
-                    console.log('Resposta é null ou undefined');
-                    throw new Error('Resposta vazia do Replicate');
-                }
+                console.log('Resposta completa:', JSON.stringify(output, null, 2));
                 
                 // Extrair a URL da imagem editada
                 let editedImageUrl;
                 
-                // Verificar se a resposta segue o formato padrão do Replicate
-                if (typeof output === 'object' && output !== null) {
-                    console.log('===== ANALISANDO RESPOSTA DO REPLICATE =====');
-                    console.log('Tipo da resposta:', typeof output);
-                    console.log('Chaves disponíveis:', Object.keys(output));
-                    
-                    // Verificar se temos o formato padrão do Replicate com status e output
-                    if (output.status) {
-                        console.log('Status da resposta:', output.status);
-                        
-                        // Verificar se a operação foi bem-sucedida
-                        if (output.status === 'succeeded') {
-                            // Formato padrão do Replicate: a URL está na propriedade output
-                            if (output.output && typeof output.output === 'string' && output.output.startsWith('http')) {
-                                editedImageUrl = output.output;
-                                console.log('URL extraída da propriedade output (formato padrão):', editedImageUrl);
-                            } else {
-                                console.log('Propriedade output não contém uma URL válida, procurando em outras propriedades');
-                            }
-                        } else if (output.status === 'failed' && output.error) {
-                            throw new Error(`Erro retornado pelo Replicate: ${output.error}`);
-                        } else if (output.status === 'processing') {
-                            console.log('Predição ainda em processamento, verificando se há URL parcial');
-                        }
-                    }
-                    
-                    // Se não encontrou na estrutura padrão, procurar em outras propriedades comuns
-                    if (!editedImageUrl) {
-                        // Tentar extrair de propriedades comuns
-                        if (output.output && typeof output.output === 'string' && output.output.startsWith('http')) {
-                            editedImageUrl = output.output;
-                            console.log('URL extraída da propriedade output:', editedImageUrl);
-                        } else if (output.url && typeof output.url === 'string' && output.url.startsWith('http')) {
-                            editedImageUrl = output.url;
-                            console.log('URL extraída da propriedade url:', editedImageUrl);
-                        } else if (output.image && typeof output.image === 'string' && output.image.startsWith('http')) {
-                            editedImageUrl = output.image;
-                            console.log('URL extraída da propriedade image:', editedImageUrl);
-                        } else if (output.result && typeof output.result === 'string' && output.result.startsWith('http')) {
-                            editedImageUrl = output.result;
-                            console.log('URL extraída da propriedade result:', editedImageUrl);
-                        } else {
-                            // Procurar em qualquer propriedade que possa conter uma URL
-                            for (const key in output) {
-                                if (typeof output[key] === 'string' && output[key].startsWith('http')) {
-                                    editedImageUrl = output[key];
-                                    console.log(`URL extraída da propriedade ${key}:`, editedImageUrl);
-                                    break;
-                                }
-                            }
-                            
-                            // Se ainda não encontrou, tentar extrair via regex do JSON completo
-                            if (!editedImageUrl) {
-                                const objStr = JSON.stringify(output);
-                                const urlRegex = /(https?:\/\/[^\s"',<>]+\.(jpg|jpeg|png|webp|gif))/i;
-                                const urlMatch = objStr.match(urlRegex);
-                                
-                                if (urlMatch && urlMatch[1]) {
-                                    editedImageUrl = urlMatch[1];
-                                    console.log('URL de imagem extraída via regex do JSON completo:', editedImageUrl);
-                                } else {
-                                    // Tentar qualquer URL
-                                    const genericUrlMatch = objStr.match(/(https?:\/\/[^\s"',<>]+)/i);
-                                    if (genericUrlMatch && genericUrlMatch[1]) {
-                                        editedImageUrl = genericUrlMatch[1];
-                                        console.log('URL genérica extraída via regex do JSON completo:', editedImageUrl);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } 
-                // Caso 2: Resposta é uma string (URL direta)
-                else if (typeof output === 'string') {
-                    if (output.startsWith('http')) {
-                        editedImageUrl = output;
-                        console.log('Resposta é uma URL direta:', editedImageUrl);
+                if (typeof output === 'string' && output.startsWith('http')) {
+                    // Caso mais comum: output é uma URL direta
+                    editedImageUrl = output;
+                    console.log('URL extraída diretamente do output (string):', editedImageUrl);
+                } else if (output && typeof output.url === 'function') {
+                    // Se for um objeto com método url()
+                    editedImageUrl = output.url();
+                    console.log('URL extraída usando método url():', editedImageUrl);
+                } else if (Array.isArray(output) && output.length > 0) {
+                    // Alguns modelos retornam um array
+                    const firstOutput = output[0];
+                    if (typeof firstOutput === 'string' && firstOutput.startsWith('http')) {
+                        editedImageUrl = firstOutput;
+                        console.log('URL extraída do primeiro elemento do array output:', editedImageUrl);
                     } else {
-                        // Tentar extrair URL da string usando regex
-                        const urlMatch = output.match(/(https?:\/\/[^\s"',<>]+)/i);
-                        if (urlMatch && urlMatch[1]) {
-                            editedImageUrl = urlMatch[1];
-                            console.log('URL extraída da string via regex:', editedImageUrl);
-                        }
+                        throw new Error('Formato de output inesperado: array sem URL válida');
                     }
-                }
-                // Caso 3: Resposta é um array
-                else if (Array.isArray(output) && output.length > 0) {
-                    // Tentar extrair do primeiro elemento
-                    const firstItem = output[0];
+                } else {
+                    // Tentar extrair de qualquer lugar na resposta usando regex
+                    const responseStr = JSON.stringify(output);
+                    const urlMatch = responseStr.match(/(https?:\/\/[^\s"',<>]+\.(jpg|jpeg|png|webp|gif))/i);
                     
-                    if (typeof firstItem === 'string' && firstItem.startsWith('http')) {
-                        editedImageUrl = firstItem;
-                        console.log('URL extraída do primeiro elemento do array:', editedImageUrl);
-                    } else if (firstItem && typeof firstItem === 'object') {
-                        // Pode ser um objeto com uma URL
-                        if (firstItem.url && typeof firstItem.url === 'string') {
-                            editedImageUrl = firstItem.url;
-                            console.log('URL extraída da propriedade url do primeiro elemento:', editedImageUrl);
-                        } else if (firstItem.output && typeof firstItem.output === 'string') {
-                            editedImageUrl = firstItem.output;
-                            console.log('URL extraída da propriedade output do primeiro elemento:', editedImageUrl);
-                        }
-                    }
-                    
-                    // Se não encontrou no primeiro elemento, tentar nos outros
-                    if (!editedImageUrl) {
-                        for (let i = 1; i < output.length; i++) {
-                            const item = output[i];
-                            if (typeof item === 'string' && item.startsWith('http')) {
-                                editedImageUrl = item;
-                                console.log(`URL extraída do elemento ${i} do array:`, editedImageUrl);
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                // Verificação final e mensagem de erro mais detalhada
-                if (!editedImageUrl) {
-                    console.error('===== FALHA NA EXTRAÇÃO DE URL =====');
-                    console.error('Tipo da resposta:', typeof output);
-                    console.error('Resposta completa:', JSON.stringify(output, null, 2));
-                    
-                    // Mensagem de erro mais detalhada
-                    let errorMessage = 'Não foi possível encontrar uma URL válida na resposta do Replicate. ';
-                    
-                    if (typeof output === 'object' && output !== null) {
-                        errorMessage += `Propriedades disponíveis: ${Object.keys(output).join(', ')}`;
-                    } else if (Array.isArray(output)) {
-                        errorMessage += `Array com ${output.length} elementos`;
+                    if (urlMatch && urlMatch[1]) {
+                        editedImageUrl = urlMatch[1];
+                        console.log('URL extraída via regex da resposta completa:', editedImageUrl);
                     } else {
-                        errorMessage += `Tipo de resposta: ${typeof output}`;
+                        throw new Error('Não foi possível encontrar uma URL válida na resposta');
                     }
-                    
-                    throw new Error(errorMessage);
                 }
                 
-                // Verificação final
-                if (!editedImageUrl) {
-                    throw new Error('Não foi possível extrair uma URL válida da resposta');
-                }
+                // Retornar URL da imagem editada
+                res.json({
+                    success: true,
+                    editedImageUrl: editedImageUrl
+                });
                 
-                // Verificar se a URL parece válida
-                if (!editedImageUrl.startsWith('http')) {
-                    console.error('URL extraída não parece ser válida:', editedImageUrl);
-                    throw new Error('URL extraída não é válida');
-                }
-                
-                console.log('===== URL DA IMAGEM EDITADA EXTRAÍDA COM SUCESSO =====');
-                console.log('URL final:', editedImageUrl);
             } catch (replicateError) {
                 console.error('===== ERRO NA CHAMADA AO REPLICATE =====');
                 console.error('Mensagem de erro:', replicateError.message);
@@ -893,24 +622,21 @@ router.post('/ai-edit/:sessionId', authMiddleware.isAuthenticated, async (req, r
                 
                 // Se o erro tiver detalhes adicionais
                 if (replicateError.response) {
-                    console.error('Detalhes da resposta de erro:', replicateError.response);
+                    try {
+                        const responseText = await replicateError.response.text();
+                        console.error('Detalhes da resposta de erro:', responseText);
+                    } catch (textError) {
+                        console.error('Erro ao extrair texto da resposta:', textError.message);
+                    }
                 }
                 
                 throw replicateError;
             }
-            
-            // Retornar URL da imagem editada
-            res.json({
-                success: true,
-                editedImageUrl: editedImageUrl
-            });
-            
         } catch (replicateError) {
             console.error('Erro ao processar com Replicate:', replicateError);
             console.error('Stack trace:', replicateError.stack);
             res.status(500).json({ error: `Erro na edição com IA: ${replicateError.message}` });
         }
-        
     } catch (error) {
         console.error('Erro ao processar edição com IA:', error);
         console.error('Stack trace:', error.stack);
