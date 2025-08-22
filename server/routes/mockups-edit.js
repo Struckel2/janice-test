@@ -579,11 +579,11 @@ router.post('/ai-edit/:sessionId', authMiddleware.isAuthenticated, async (req, r
                     console.log('Resposta é um ReadableStream, processando...');
                     
                     try {
-                        // Converter ReadableStream para texto
+                        // Acumular todos os chunks antes de processar
+                        const chunks = [];
                         const reader = output.getReader();
-                        let chunks = [];
-                        let done = false;
                         
+                        let done = false;
                         while (!done) {
                             const { value, done: doneReading } = await reader.read();
                             done = doneReading;
@@ -592,20 +592,63 @@ router.post('/ai-edit/:sessionId', authMiddleware.isAuthenticated, async (req, r
                             }
                         }
                         
-                        // Concatenar chunks e converter para string
-                        const allChunks = new Uint8Array(chunks.reduce((acc, chunk) => [...acc, ...chunk], []));
-                        const responseText = new TextDecoder('utf-8').decode(allChunks);
+                        // Converter os chunks acumulados para texto
+                        const decoder = new TextDecoder('utf-8');
+                        let responseText = '';
                         
-                        console.log('Texto extraído do ReadableStream:', responseText);
+                        for (const chunk of chunks) {
+                            responseText += decoder.decode(chunk, { stream: true });
+                        }
+                        responseText += decoder.decode(); // Finalizar a decodificação
                         
-                        // Tentar converter para JSON
+                        console.log('Texto completo extraído do ReadableStream:', responseText);
+                        
+                        // Tentar converter para JSON ou usar como URL direta
                         try {
-                            output = JSON.parse(responseText);
-                            console.log('ReadableStream convertido para JSON:', output);
+                            if (responseText.trim().startsWith('{') || responseText.trim().startsWith('[')) {
+                                output = JSON.parse(responseText);
+                                console.log('ReadableStream convertido para JSON:', output);
+                            } else if (responseText.trim().startsWith('http')) {
+                                // Se o texto parece ser uma URL direta
+                                output = responseText.trim();
+                                console.log('ReadableStream contém URL direta:', output);
+                                
+                                // Se é uma URL direta, podemos retorná-la imediatamente
+                                editedImageUrl = output;
+                                console.log('URL extraída diretamente do ReadableStream:', editedImageUrl);
+                                
+                                // Retornar URL da imagem editada
+                                res.json({
+                                    success: true,
+                                    editedImageUrl: editedImageUrl
+                                });
+                                return; // Encerrar a função aqui
+                            } else {
+                                console.log('Conteúdo do ReadableStream não é JSON nem URL:', responseText);
+                                output = responseText;
+                            }
                         } catch (jsonError) {
-                            // Se não for JSON válido, usar o texto como está (pode ser uma URL direta)
-                            console.log('Não foi possível converter para JSON, usando texto como está');
-                            output = responseText;
+                            console.log('Não foi possível converter para JSON, usando texto como está:', responseText);
+                            
+                            // Verificar se o texto contém uma URL, mesmo que não seja JSON válido
+                            const urlMatch = responseText.match(/(https?:\/\/[^\s"]+)/);
+                            if (urlMatch && urlMatch[1]) {
+                                output = urlMatch[1];
+                                console.log('URL extraída via regex do texto:', output);
+                                
+                                // Se encontramos uma URL, podemos retorná-la imediatamente
+                                editedImageUrl = output;
+                                console.log('URL extraída via regex do ReadableStream:', editedImageUrl);
+                                
+                                // Retornar URL da imagem editada
+                                res.json({
+                                    success: true,
+                                    editedImageUrl: editedImageUrl
+                                });
+                                return; // Encerrar a função aqui
+                            } else {
+                                output = responseText;
+                            }
                         }
                     } catch (streamError) {
                         console.error('Erro ao processar ReadableStream:', streamError);
