@@ -191,7 +191,20 @@
             return;
         }
         
-        availableAnalyses.innerHTML = analyses.map(analysis => `
+        // Filtrar apenas análises concluídas (mesmo tratamento que as transcrições)
+        const completedAnalyses = analyses.filter(a => !a.emProgresso && !a.erro);
+        
+        if (!completedAnalyses.length) {
+            availableAnalyses.innerHTML = `
+                <div class="no-documents">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Nenhuma análise concluída disponível</p>
+                </div>
+            `;
+            return;
+        }
+        
+        availableAnalyses.innerHTML = completedAnalyses.map(analysis => `
             <div class="document-item" data-id="${analysis._id}" data-type="analysis">
                 <div class="document-item-content">
                     <div class="document-item-title">Análise de Mercado e Estratégia</div>

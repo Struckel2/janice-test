@@ -242,8 +242,8 @@ async function realizarAnaliseComProgresso(clienteId, cnpj, res, userId) {
       if (matchingProcess) {
         console.log(`🔍 [ANALISE] Processo encontrado para finalização: ${matchingProcess.id}`);
         
-          // Marcar processo como concluído usando o ID correto do processo
-          progressService.completeActiveProcess(matchingProcess.id, {
+        // Marcar processo como concluído usando o ID correto do processo
+        progressService.completeActiveProcess(matchingProcess.id, {
           progresso: 100,
           resultado: 'Análise CNPJ concluída com sucesso',
           resourceId: analiseTemp._id
@@ -256,6 +256,25 @@ async function realizarAnaliseComProgresso(clienteId, cnpj, res, userId) {
           clienteId: p.cliente ? p.cliente._id : 'N/A',
           status: p.status
         })));
+        
+        // CORREÇÃO: Criar um processo temporário para garantir que a análise seja marcada como concluída
+        console.log(`🔧 [ANALISE] Criando processo temporário para garantir conclusão da análise`);
+        const tempProcessId = `temp_${analiseTemp._id}`;
+        
+        // Registrar processo temporário
+        progressService.registerActiveProcess('sistema', {
+          id: tempProcessId,
+          tipo: 'analise',
+          titulo: `Análise CNPJ: ${cnpj}`,
+          cliente: { _id: clienteId }
+        }, { nome: 'Sistema', email: 'sistema@janice.app' });
+        
+        // Marcar imediatamente como concluído
+        progressService.completeActiveProcess(tempProcessId, {
+          progresso: 100,
+          resultado: 'Análise CNPJ concluída com sucesso',
+          resourceId: analiseTemp._id
+        });
       }
       
       // Enviar evento de conclusão via SSE
