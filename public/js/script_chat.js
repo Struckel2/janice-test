@@ -187,12 +187,12 @@ function initChatFunctionality() {
       // Carregar planos de ação
       const plans = await safeFetch(`/api/planos-acao/${currentClientId}`);
       
-      // Filtrar documentos com erro
-      const validAnalyses = Array.isArray(analyses) ? analyses.filter(analysis => !analysis.erro) : [];
-      const validPlans = Array.isArray(plans) ? plans.filter(plan => !plan.erro) : [];
+      // Filtrar documentos com erro ou em progresso
+      const validAnalyses = Array.isArray(analyses) ? analyses.filter(analysis => !analysis.erro && !analysis.emProgresso) : [];
+      const validPlans = Array.isArray(plans) ? plans.filter(plan => !plan.erro && !plan.emProgresso) : [];
       
-      console.log(`🗨️ Análises válidas: ${validAnalyses.length}`);
-      console.log(`🗨️ Planos válidos: ${validPlans.length}`);
+      console.log(`🗨️ Análises válidas: ${validAnalyses.length} de ${analyses ? analyses.length : 0}`);
+      console.log(`🗨️ Planos válidos: ${validPlans.length} de ${plans ? plans.length : 0}`);
       
       // Renderizar análises
       renderAvailableAnalyses(validAnalyses);
