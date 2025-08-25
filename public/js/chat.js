@@ -385,11 +385,31 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       
+      // Filtrar apenas análises concluídas (não em progresso e sem erro)
+      const completedAnalyses = response.filter(a => !a.emProgresso && !a.erro);
+      
+      if (!completedAnalyses.length) {
+        analysesList.innerHTML = `
+          <div class="documents-empty">
+            <i class="fas fa-file-alt"></i>
+            <p>Nenhuma análise concluída disponível</p>
+          </div>
+        `;
+        
+        analysesSelectionList.innerHTML = `
+          <div class="document-selection-empty">
+            <i class="fas fa-file-alt"></i>
+            <p>Nenhuma análise concluída disponível</p>
+          </div>
+        `;
+        return;
+      }
+      
       // Ordenar análises por data (mais recente primeiro)
-      response.sort((a, b) => new Date(b.dataCriacao) - new Date(a.dataCriacao));
+      completedAnalyses.sort((a, b) => new Date(b.dataCriacao) - new Date(a.dataCriacao));
       
       // Renderizar lista de análises na aba de documentos
-      analysesList.innerHTML = response.map(analysis => {
+      analysesList.innerHTML = completedAnalyses.map(analysis => {
         const analysisDate = formatDate(analysis.dataCriacao);
         
         return `
@@ -403,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }).join('');
       
       // Renderizar lista de análises para seleção
-      analysesSelectionList.innerHTML = response.map(analysis => {
+      analysesSelectionList.innerHTML = completedAnalyses.map(analysis => {
         const analysisDate = formatDate(analysis.dataCriacao);
         
         return `
@@ -467,11 +487,31 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       
+      // Filtrar apenas planos concluídos (não em progresso e sem erro)
+      const completedPlans = response.filter(p => !p.emProgresso && !p.erro);
+      
+      if (!completedPlans.length) {
+        actionPlansList.innerHTML = `
+          <div class="documents-empty">
+            <i class="fas fa-tasks"></i>
+            <p>Nenhum plano de ação concluído disponível</p>
+          </div>
+        `;
+        
+        actionPlansSelectionList.innerHTML = `
+          <div class="document-selection-empty">
+            <i class="fas fa-tasks"></i>
+            <p>Nenhum plano de ação concluído disponível</p>
+          </div>
+        `;
+        return;
+      }
+      
       // Ordenar planos por data (mais recente primeiro)
-      response.sort((a, b) => new Date(b.dataCriacao) - new Date(a.dataCriacao));
+      completedPlans.sort((a, b) => new Date(b.dataCriacao) - new Date(a.dataCriacao));
       
       // Renderizar lista de planos na aba de documentos
-      actionPlansList.innerHTML = response.map(plan => {
+      actionPlansList.innerHTML = completedPlans.map(plan => {
         const planDate = formatDate(plan.dataCriacao);
         
         return `
@@ -485,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }).join('');
       
       // Renderizar lista de planos para seleção
-      actionPlansSelectionList.innerHTML = response.map(plan => {
+      actionPlansSelectionList.innerHTML = completedPlans.map(plan => {
         const planDate = formatDate(plan.dataCriacao);
         
         return `
