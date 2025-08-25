@@ -189,8 +189,16 @@ function initChatFunctionality() {
       
       // Filtrar documentos com erro ou em progresso
       // Garantir que estamos trabalhando com arrays e filtrar documentos inválidos
-      const validAnalyses = Array.isArray(analyses) ? analyses.filter(analysis => !analysis.erro && !analysis.emProgresso) : [];
-      const validPlans = Array.isArray(plans) ? plans.filter(plan => !plan.erro && !plan.emProgresso) : [];
+      // Extrair dados do wrapper da API se presente
+      const analysesArray = Array.isArray(analyses) ? analyses : (analyses?.data || []);
+      const plansArray = Array.isArray(plans) ? plans : (plans?.data || []);
+      
+      // Filtrar documentos inválidos
+      const validAnalyses = analysesArray.filter(analysis => !analysis.erro && !analysis.emProgresso);
+      const validPlans = plansArray.filter(plan => !plan.erro && !plan.emProgresso);
+      
+      console.log(`🗨️ Análises após extração e filtragem: ${validAnalyses.length} de ${analysesArray.length}`);
+      console.log(`🗨️ Planos após extração e filtragem: ${validPlans.length} de ${plansArray.length}`);
       
       // Verificar se há documentos válidos
       if (validAnalyses.length === 0 && validPlans.length === 0) {
