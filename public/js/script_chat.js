@@ -187,11 +187,18 @@ function initChatFunctionality() {
       // Carregar planos de ação
       const plans = await safeFetch(`/api/planos-acao/${currentClientId}`);
       
+      // Filtrar documentos com erro
+      const validAnalyses = Array.isArray(analyses) ? analyses.filter(analysis => !analysis.erro) : [];
+      const validPlans = Array.isArray(plans) ? plans.filter(plan => !plan.erro) : [];
+      
+      console.log(`🗨️ Análises válidas: ${validAnalyses.length}`);
+      console.log(`🗨️ Planos válidos: ${validPlans.length}`);
+      
       // Renderizar análises
-      renderAvailableAnalyses(analyses);
+      renderAvailableAnalyses(validAnalyses);
       
       // Renderizar planos de ação
-      renderAvailablePlans(plans);
+      renderAvailablePlans(validPlans);
       
       // Atualizar lista de documentos selecionados
       updateSelectedDocumentsList();
@@ -445,10 +452,13 @@ function initChatFunctionality() {
   }
 }
 
-// Inicializar quando o DOM estiver pronto
+  // Inicializar quando o DOM estiver pronto
 document.addEventListener('DOMContentLoaded', () => {
   // Verificar se a funcionalidade já foi inicializada
   if (window.chatFunctionalityInitialized) return;
+  
+  // Definir codificação UTF-8 para garantir caracteres especiais
+  document.characterSet = "UTF-8";
   
   // Inicializar funcionalidade de chat
   initChatFunctionality();
