@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat - Janice</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/chat.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <header>
+      <div class="logo">
+        <img src="https://res.cloudinary.com/dxziwkbqk/image/upload/v1/janice/logo/janice-logo-dark" alt="Janice">
+      </div>
+      <nav>
+        <a href="/" class="nav-link"><i class="fas fa-home"></i> Início</a>
+      </nav>
+      <!-- User info will be added by JavaScript -->
+    </header>
+
+    <div class="chat-container">
+      <div class="chat-sidebar">
+        <div class="chat-client-info">
+          <div class="chat-client-logo" id="chat-client-logo">
+            <i class="fas fa-building"></i>
+          </div>
+          <div class="chat-client-details">
+            <h3 id="chat-client-name">Nome do Cliente</h3>
+            <p id="chat-client-cnpj">00.000.000/0000-00</p>
+          </div>
+        </div>
+
+        <div class="chat-tabs">
+          <button class="chat-tab-button active" data-tab="chat-history">
+            <i class="fas fa-history"></i> Histórico
+          </button>
+          <button class="chat-tab-button" data-tab="chat-documents">
+            <i class="fas fa-file-alt"></i> Documentos
+          </button>
+        </div>
+
+        <div class="chat-tab-content active" id="chat-history-tab">
+          <div class="chat-history-list" id="chat-history-list">
+            <!-- Chat history will be loaded here -->
+            <div class="chat-history-empty">
+              <i class="fas fa-comments"></i>
+              <p>Nenhuma conversa iniciada</p>
+              <small>Inicie uma nova conversa usando o botão abaixo</small>
+            </div>
+          </div>
+          <button class="new-chat-btn" id="new-chat-btn">
+            <i class="fas fa-plus"></i> Nova Conversa
+          </button>
+        </div>
+
+        <div class="chat-tab-content" id="chat-documents-tab">
+          <div class="documents-section">
+            <h4>Análises</h4>
+            <div class="documents-list" id="analyses-list">
+              <!-- Analyses will be loaded here -->
+              <div class="documents-empty">
+                <i class="fas fa-file-alt"></i>
+                <p>Nenhuma análise disponível</p>
+              </div>
+            </div>
+          </div>
+          <div class="documents-section">
+            <h4>Planos de Ação</h4>
+            <div class="documents-list" id="action-plans-list">
+              <!-- Action plans will be loaded here -->
+              <div class="documents-empty">
+                <i class="fas fa-tasks"></i>
+                <p>Nenhum plano de ação disponível</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-main">
+        <div class="chat-header">
+          <div class="chat-info">
+            <h2 id="chat-title">Chat</h2>
+            <span id="chat-type-badge" class="chat-type-badge">Estratégia</span>
+          </div>
+          <div class="chat-actions">
+            <button id="export-chat-btn" class="export-chat-btn" title="Exportar conversa">
+              <i class="fas fa-download"></i>
+            </button>
+            <button id="delete-chat-btn" class="delete-chat-btn" title="Excluir conversa">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="chat-messages" id="chat-messages">
+          <!-- Messages will be displayed here -->
+          <div class="chat-welcome">
+            <div class="chat-welcome-icon">
+              <i class="fas fa-comments"></i>
+            </div>
+            <h3>Bem-vindo ao Chat</h3>
+            <p>Selecione uma conversa existente ou inicie uma nova para começar.</p>
+          </div>
+        </div>
+
+        <div class="chat-input-container">
+          <textarea id="chat-input" placeholder="Digite sua mensagem..." rows="1"></textarea>
+          <button id="send-message-btn" disabled>
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Chat Modal -->
+    <div class="modal" id="new-chat-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Nova Conversa</h3>
+          <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="chat-type-selection">
+            <h4>Selecione o tipo de conversa:</h4>
+            <div class="chat-type-options">
+              <div class="chat-type-option" data-type="strategy">
+                <div class="chat-type-icon">
+                  <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="chat-type-info">
+                  <h5>Estratégia e Plano de Ação</h5>
+                  <p>Converse sobre estratégias de marketing e planos de ação para sua empresa.</p>
+                </div>
+              </div>
+              <div class="chat-type-option" data-type="client">
+                <div class="chat-type-icon">
+                  <i class="fas fa-user-tie"></i>
+                </div>
+                <div class="chat-type-info">
+                  <h5>Cliente Ideal</h5>
+                  <p>Simule uma conversa com seu cliente ideal para entender suas necessidades.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="document-selection">
+            <h4>Selecione os documentos base:</h4>
+            <div class="document-selection-tabs">
+              <button class="document-tab-button active" data-tab="analyses-selection">Análises</button>
+              <button class="document-tab-button" data-tab="action-plans-selection">Planos de Ação</button>
+            </div>
+
+            <div class="document-tab-content active" id="analyses-selection-tab">
+              <div class="document-selection-list" id="analyses-selection-list">
+                <!-- Analyses for selection will be loaded here -->
+                <div class="document-selection-empty">
+                  <i class="fas fa-file-alt"></i>
+                  <p>Nenhuma análise disponível</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="document-tab-content" id="action-plans-selection-tab">
+              <div class="document-selection-list" id="action-plans-selection-list">
+                <!-- Action plans for selection will be loaded here -->
+                <div class="document-selection-empty">
+                  <i class="fas fa-tasks"></i>
+                  <p>Nenhum plano de ação disponível</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="selected-documents">
+              <h4>Documentos selecionados: <span id="selected-count">0</span></h4>
+              <div class="selected-documents-list" id="selected-documents-list">
+                <!-- Selected documents will be displayed here -->
+                <div class="no-documents-selected">
+                  <i class="fas fa-info-circle"></i>
+                  <p>Selecione pelo menos um documento para continuar</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancel-chat-btn" class="cancel-btn">Cancelar</button>
+          <button id="start-chat-btn" class="primary-btn" disabled>Iniciar Conversa</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="delete-chat-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Excluir Conversa</h3>
+          <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>Tem certeza que deseja excluir esta conversa? Esta ação não pode ser desfeita.</p>
+        </div>
+        <div class="modal-footer">
+          <button id="cancel-delete-chat-btn" class="cancel-btn">Cancelar</button>
+          <button id="confirm-delete-chat-btn" class="danger-btn">Excluir</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="loading-spinner"></div>
+      <p id="loading-message">Carregando...</p>
+    </div>
+  </div>
+
+  <script src="js/chat.js"></script>
+</body>
+</html>
