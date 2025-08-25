@@ -5,7 +5,7 @@ const Cliente = require('../models/Cliente');
 const Analise = require('../models/Analise');
 const PlanoAcao = require('../models/PlanoAcao');
 const chatService = require('../services/chatService');
-const auth = require('../middleware/auth');
+const { requireAuth } = require('../middleware/auth');
 
 /**
  * Rotas para funcionalidade de chat
@@ -16,7 +16,7 @@ const auth = require('../middleware/auth');
  * @desc    Criar um novo chat
  * @access  Private
  */
-router.post('/', auth, async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   try {
     const { clienteId, tipo, analiseIds, planoAcaoIds } = req.body;
     
@@ -85,7 +85,7 @@ router.post('/', auth, async (req, res) => {
  * @desc    Obter chats de um cliente
  * @access  Private
  */
-router.get('/cliente/:clienteId', auth, async (req, res) => {
+router.get('/cliente/:clienteId', requireAuth, async (req, res) => {
   try {
     const { clienteId } = req.params;
     
@@ -121,7 +121,7 @@ router.get('/cliente/:clienteId', auth, async (req, res) => {
  * @desc    Obter um chat específico
  * @access  Private
  */
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -154,7 +154,7 @@ router.get('/:id', auth, async (req, res) => {
  * @desc    Gerar mensagem de boas-vindas para o chat
  * @access  Private
  */
-router.post('/welcome', auth, async (req, res) => {
+router.post('/welcome', requireAuth, async (req, res) => {
   try {
     const { clienteId, chatType, documentIds } = req.body;
     
@@ -217,7 +217,7 @@ router.post('/welcome', auth, async (req, res) => {
  * @desc    Gerar resposta para uma mensagem
  * @access  Private
  */
-router.post('/message', auth, async (req, res) => {
+router.post('/message', requireAuth, async (req, res) => {
   try {
     const { clienteId, chatType, message, documentIds, history } = req.body;
     
@@ -282,7 +282,7 @@ router.post('/message', auth, async (req, res) => {
  * @desc    Adicionar mensagem a um chat existente
  * @access  Private
  */
-router.post('/:id/message', auth, async (req, res) => {
+router.post('/:id/message', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { role, content } = req.body;
@@ -336,7 +336,7 @@ router.post('/:id/message', auth, async (req, res) => {
  * @desc    Desativar um chat (exclusão lógica)
  * @access  Private
  */
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     
