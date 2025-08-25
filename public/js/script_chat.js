@@ -188,8 +188,14 @@ function initChatFunctionality() {
       const plans = await safeFetch(`/api/planos-acao/${currentClientId}`);
       
       // Filtrar documentos com erro ou em progresso
+      // Garantir que estamos trabalhando com arrays e filtrar documentos inválidos
       const validAnalyses = Array.isArray(analyses) ? analyses.filter(analysis => !analysis.erro && !analysis.emProgresso) : [];
       const validPlans = Array.isArray(plans) ? plans.filter(plan => !plan.erro && !plan.emProgresso) : [];
+      
+      // Verificar se há documentos válidos
+      if (validAnalyses.length === 0 && validPlans.length === 0) {
+        console.log('🗨️ Nenhum documento válido encontrado');
+      }
       
       console.log(`🗨️ Análises válidas: ${validAnalyses.length} de ${analyses ? analyses.length : 0}`);
       console.log(`🗨️ Planos válidos: ${validPlans.length} de ${plans ? plans.length : 0}`);
