@@ -5,6 +5,7 @@ a<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Janice - AI Marketing Assistant</title>
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/chat-modal.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
@@ -52,6 +53,9 @@ a<!DOCTYPE html>
             <div class="client-actions">
                 <button id="edit-client-btn" class="action-button secondary">
                     <i class="fas fa-edit"></i> Editar
+                </button>
+                <button id="chat-client-btn" class="action-button primary">
+                    <i class="fas fa-comment-alt"></i> Chat
                 </button>
                 <button id="delete-client-btn" class="action-button danger">
                     <i class="fas fa-trash-alt"></i> Excluir
@@ -852,6 +856,91 @@ a<!DOCTYPE html>
     <input type="file" id="central-logo-input" class="logo-file-input" accept="image/*">
     <input type="file" id="detail-logo-input" class="logo-file-input" accept="image/*">
 
+    <!-- Modal para opções de chat -->
+    <div id="chat-options-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Iniciar Conversa</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Escolha o tipo de conversa que deseja iniciar:</p>
+                <div class="chat-options">
+                    <div class="chat-option" id="chat-strategy-option">
+                        <div class="chat-option-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="chat-option-content">
+                            <h4>Falar sobre estratégia e plano de ação</h4>
+                            <p>Converse com um especialista em marketing sobre estratégias e planos de ação para o cliente.</p>
+                        </div>
+                    </div>
+                    <div class="chat-option" id="chat-client-option">
+                        <div class="chat-option-icon">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div class="chat-option-content">
+                            <h4>Falar com o cliente ideal</h4>
+                            <p>Simule uma conversa com o perfil do cliente ideal para testar abordagens e mensagens.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para seleção de documentos para o chat -->
+    <div id="chat-documents-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Selecionar Documentos</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Selecione os documentos que serão usados como base para a conversa:</p>
+                
+                <div class="documents-selection">
+                    <div class="document-type-section">
+                        <h4><i class="fas fa-chart-line"></i> Análises Disponíveis</h4>
+                        <div id="chat-available-analyses" class="document-list">
+                            <div class="no-documents">
+                                <i class="fas fa-info-circle"></i>
+                                <p>Nenhuma análise disponível</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="document-type-section">
+                        <h4><i class="fas fa-tasks"></i> Planos de Ação Disponíveis</h4>
+                        <div id="chat-available-plans" class="document-list">
+                            <div class="no-documents">
+                                <i class="fas fa-info-circle"></i>
+                                <p>Nenhum plano de ação disponível</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="selected-documents" id="chat-selected-documents">
+                    <h4>Documentos Selecionados</h4>
+                    <div class="selected-list" id="chat-selected-documents-list">
+                        <div class="no-selection">
+                            <i class="fas fa-hand-pointer"></i>
+                            <p>Selecione pelo menos um documento acima</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-chat-documents-btn" class="action-button secondary">Cancelar</button>
+                <button id="start-chat-btn" class="action-button primary" disabled>
+                    <i class="fas fa-comment-alt"></i> Iniciar Chat
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="js/script.js"></script>
+    <script src="js/script_chat.js"></script>
 </body>
 </html>
