@@ -156,7 +156,7 @@ function initChatFunctionality() {
     console.log('🗨️ Carregando documentos disponíveis...');
     
     // Verificar se há cliente selecionado
-    if (!currentClientId) {
+    if (!window.currentClientId) {
       console.error('❌ Nenhum cliente selecionado');
       return;
     }
@@ -182,10 +182,10 @@ function initChatFunctionality() {
       }
       
       // Carregar análises
-      const analyses = await safeFetch(`/api/analises/cliente/${currentClientId}`);
+      const analyses = await safeFetch(`/api/analises/cliente/${window.currentClientId}`);
       
       // Carregar planos de ação
-      const plans = await safeFetch(`/api/planos-acao/${currentClientId}`);
+      const plans = await safeFetch(`/api/planos-acao/${window.currentClientId}`);
       
       // Filtrar documentos com erro ou em progresso
       // Garantir que estamos trabalhando com arrays e filtrar documentos inválidos
@@ -407,7 +407,7 @@ function initChatFunctionality() {
     console.log('🗨️ Documentos:', selectedDocuments);
     
     // Verificar se há cliente selecionado
-    if (!currentClientId) {
+    if (!window.currentClientId) {
       console.error('❌ Nenhum cliente selecionado');
       return;
     }
@@ -433,7 +433,7 @@ function initChatFunctionality() {
       const response = await safeFetch('/api/chat', {
         method: 'POST',
         body: JSON.stringify({
-          clienteId: currentClientId,
+          clienteId: window.currentClientId,
           tipo: selectedChatType,
           analiseIds,
           planoAcaoIds
@@ -449,7 +449,7 @@ function initChatFunctionality() {
       if (chatDocumentsModal) chatDocumentsModal.classList.remove('show');
       
       // Redirecionar para a página de chat
-      window.location.href = `/chat.html?cliente=${currentClientId}`;
+      window.location.href = `/chat.html?cliente=${window.currentClientId}`;
       
     } catch (error) {
       console.error('❌ Erro ao iniciar chat:', error);
